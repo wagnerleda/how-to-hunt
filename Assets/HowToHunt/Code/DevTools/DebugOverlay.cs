@@ -75,7 +75,6 @@ namespace HowToHunt.DevTools
                 if (!m.IsServerStarted) _sb.Append("  ping ").Append(m.TimeManager.RoundTripTime).Append(" ms");
                 if (m.IsServerStarted) _sb.Append("  players ").Append(m.ServerManager.Clients.Count);
             }
-            if (!string.IsNullOrEmpty(NetSession.RoomCode)) _sb.Append("\nparty code ").Append(NetSession.RoomCode);
             if (ExtraLine != null)
             {
                 _sb.Append('\n');

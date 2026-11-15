@@ -18,14 +18,17 @@ namespace HowToHunt.Net
         public void Register(ModuleRegistrar r)
         {
             NetSession.ResetStatics();
-            r.Command("host", "host [local]: start a party. Online (Steam room code) when Steam runs, otherwise local.",
+            r.Command("host", "host [local]: start a party. Online (Steam, invite friends) when Steam runs, otherwise local.",
                 args => NetSession.Host(args.Count > 0 && args[0] == "local"));
-            r.Command("join", "join <code>: join a party by its 6-character code (Steam).",
-                args =>
-                {
-                    if (args.Count == 0) r.Console.Warn("Usage: join <code>");
-                    else NetSession.JoinByCode(args.ArgString);
-                });
+            r.Command("invite", "Open the Steam invite dialog for your party.", _ =>
+            {
+                if (!NetSession.OpenInviteDialog()) r.Console.Warn("No online party to invite to. Host one first.");
+            });
+            r.Command("connect_lobby", "connect_lobby <steam lobby id>: join a friend's party (used by Steam invites).", args =>
+            {
+                if (args.Count > 0 && ulong.TryParse(args[0], out ulong id)) NetSession.JoinLobby(id);
+                else r.Console.Warn("Usage: connect_lobby <id>");
+            });
             r.Command("connect", "connect <ip>[:port]: join a local/LAN host (testing).", args =>
             {
                 string target = args.Count > 0 ? args[0] : "127.0.0.1";
@@ -45,10 +48,15 @@ namespace HowToHunt.Net
         public void Initialize()
         {
             Game.Root.gameObject.AddComponent<NetPump>();
+            // Accepting a Steam invite or "Join game" on a friend joins that party.
+            if (Game.Platform?.Lobbies != null) Game.Platform.Lobbies.JoinRequested += OnJoinRequested;
         }
+
+        private static void OnJoinRequested(ulong lobbyId) => NetSession.JoinLobby(lobbyId);
 
         public void Shutdown()
         {
+            if (Game.Platform?.Lobbies != null) Game.Platform.Lobbies.JoinRequested -= OnJoinRequested;
             if (NetSession.State != SessionState.Offline) NetSession.Disconnect("Quit.");
         }
 
@@ -56,7 +64,7 @@ namespace HowToHunt.Net
         {
             var sb = new StringBuilder();
             sb.Append($"state {NetSession.State} via {NetSession.Transport}");
-            if (!string.IsNullOrEmpty(NetSession.RoomCode)) sb.Append($", code {NetSession.RoomCode}");
+            if (!string.IsNullOrEmpty(NetSession.HostName)) sb.Append($", host {NetSession.HostName}");
             NetworkManager m = NetSession.Manager;
             if (m != null)
             {

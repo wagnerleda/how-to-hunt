@@ -93,6 +93,7 @@ namespace HowToHunt.Platform
         {
             if (!_initialized) return;
             _lobbies.Leave();
+            _lobbies.Dispose();
             SteamAPI.Shutdown();
             _initialized = false;
         }

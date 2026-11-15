@@ -38,9 +38,9 @@ Remote players: Fish-Net NetworkTickSmoother interpolates the Visual child; the 
 
 Host keeps a 1 s ring buffer per tick of hitbox poses (capsules/spheres, in `Sim`). A shot carries the shooter's tick and interpolation fraction; the host rewinds targets (capped by `sv_maxunlag`), traces in `Sim`, applies damage or capture from content data, and sends hit/kill/capture events back. Ambient insects are rewound analytically from seed + time. Fish-Net's built-in lag compensation is a paid Pro feature, so we own this (ADR 0001).
 
-## Lobby and room codes
+## Parties (Steam invites)
 
-Host: start the Fish-Net server on the Steam transport, create a public Steam lobby with `hth_game`, `hth_proto` (= build version), `hth_code`, `hth_locked`. Joiner: lobby search filtered on `hth_game` + `hth_code` → compare `hth_proto` ("update required" on mismatch) → join lobby → connect P2P to the lobby owner's Steam ID through Valve's relay. Local sessions (solo, LAN, editor multi-instance, bots) use Tugboat UDP.
+Host: start the Fish-Net server on the Steam transport, create a **friends-only** Steam lobby with `hth_game`, `hth_proto` (= build version), `hth_locked`, `hth_host`, and set rich presence `connect = +connect_lobby <id>`. Invite: `ActivateGameOverlayInviteDialog` (Esc > Invite friends) or the Steam friends list. Joiner: accepting an invite raises `GameLobbyJoinRequested_t` (or `GameRichPresenceJoinRequested_t`) → join lobby → check `hth_game` and `hth_proto` ("update required" on mismatch) → connect P2P to the lobby owner's Steam ID through Valve's relay. The menu also lists friends currently in a How to Hunt lobby (`GetFriendGamePlayed` + `RequestLobbyData`). Local sessions (solo, LAN, editor multi-instance, bots) use Tugboat UDP.
 
 ## Budgets (law; shown in the overlay, enforced by tests where possible)
 

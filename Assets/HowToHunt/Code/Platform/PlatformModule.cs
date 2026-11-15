@@ -33,7 +33,7 @@ namespace HowToHunt.Platform
                 if (p.Lobbies != null && p.Lobbies.InLobby)
                 {
                     LobbyInfo l = p.Lobbies.Current;
-                    registrar.Console.Print($"lobby {l.LobbyId} code {l.Code} owner {l.OwnerId} members {l.Members}/{l.MaxMembers} locked={l.Locked} proto={l.Protocol}");
+                    registrar.Console.Print($"lobby {l.LobbyId} host {l.HostName} owner {l.OwnerId} members {l.Members}/{l.MaxMembers} locked={l.Locked} proto={l.Protocol}");
                 }
             });
         }

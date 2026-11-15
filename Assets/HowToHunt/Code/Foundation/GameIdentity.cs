@@ -8,7 +8,6 @@ namespace HowToHunt.Foundation
         public const string LobbyGameKey = "hth_game";
         public const string LobbyGameValue = "how-to-hunt";
         public const string LobbyProtocolKey = "hth_proto";
-        public const string LobbyCodeKey = "hth_code";
         public const string LobbyLockedKey = "hth_locked";
         public const string LobbyHostNameKey = "hth_host";
 

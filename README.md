@@ -8,10 +8,10 @@ Status: **M0 (setup and risk spike)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [
 
 1. Open the project with Unity **6000.6.9f1** (Unity Hub, or `unity open .`).
 2. Open `Assets/HowToHunt/Scenes/Graybox.unity` and press Play.
-3. Click **Play solo**, or **Host a party** (needs Steam running) and give your friend the 6-character code.
+3. Click **Play solo**, or **Host a party** (needs Steam running), then Esc > **Invite friends**. Your friend must have the game open to accept the Steam invite (or use "Friends' parties" in the menu).
 4. Console: the key left of `1` (or F1). Try `help`, `find sv_`, `status`, `net_graph 2`.
 
-Controls: WASD, mouse, Space or mouse wheel to jump, Shift to walk, Esc for the menu (party code, leave).
+Controls: WASD, mouse, Space or mouse wheel to jump, Shift to walk, Esc for the menu (invite friends, leave).
 
 ## Build
 

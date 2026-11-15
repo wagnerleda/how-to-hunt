@@ -116,26 +116,6 @@ namespace HowToHunt.Tests
         }
 
         [Test]
-        public void RoomCode_GeneratesValidCodes_AndNormalizesInput()
-        {
-            var rng = new Random(1234);
-            for (int i = 0; i < 100; i++)
-            {
-                string code = RoomCode.Generate(rng);
-                Assert.IsTrue(RoomCode.TryNormalize(code, out string normalized));
-                Assert.AreEqual(code, normalized);
-            }
-
-            Assert.IsTrue(RoomCode.TryNormalize("ab-c d0o", out string n));
-            Assert.AreEqual("ABCD00", n);
-            Assert.IsTrue(RoomCode.TryNormalize("illl11", out n));
-            Assert.AreEqual("111111", n);
-            Assert.IsFalse(RoomCode.TryNormalize("ABCDE", out _), "too short");
-            Assert.IsFalse(RoomCode.TryNormalize("ABCDEFG", out _), "too long");
-            Assert.IsFalse(RoomCode.TryNormalize("ABCDU1", out _), "U is not in the alphabet");
-        }
-
-        [Test]
         public void ContentId_IsStableAndCaseInsensitive()
         {
             Assert.AreEqual(ContentId.FromKey("prey.butterfly"), ContentId.FromKey("Prey.Butterfly"));

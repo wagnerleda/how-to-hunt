@@ -32,11 +32,10 @@ namespace HowToHunt.Net
     {
         public SessionState State;
         public string Message;
-        public string RoomCode;
     }
 
     /// <summary>
-    /// Owns the network session: host, join by room code, local connect, disconnect.
+    /// Owns the network session: host, invite, join a friend (Steam lobby), local connect, disconnect.
     /// Gameplay never talks to Steam or Fish-Net transports directly; it reads <see cref="NetSession"/> and spawned objects.
     /// A fresh NetworkManager is created per session (from Resources/Net/NetworkManager) with the right transport.
     /// </summary>
@@ -51,11 +50,15 @@ namespace HowToHunt.Net
         public static NetworkManager Manager { get; private set; }
         public static SessionState State { get; private set; } = SessionState.Offline;
         public static SessionTransport Transport { get; private set; }
-        public static string RoomCode { get; private set; } = string.Empty;
+        /// <summary>Display name of the party host when connected to someone else's party.</summary>
+        public static string HostName { get; private set; } = string.Empty;
         public static string LastMessage { get; private set; } = string.Empty;
 
         public static bool IsServer => Manager != null && Manager.IsServerStarted;
         public static bool IsClient => Manager != null && Manager.IsClientStarted;
+
+        /// <summary>Connected players (host only; 0 otherwise).</summary>
+        public static int PlayerCount => Manager != null && Manager.IsServerStarted ? Manager.ServerManager.Clients.Count : 0;
 
         /// <summary>Raised on the main thread after a NetworkManager is created, before it starts (features hook events here).</summary>
         public static event Action<NetworkManager> ManagerCreated;
@@ -86,34 +89,34 @@ namespace HowToHunt.Net
 
             if (!online)
             {
-                RoomCode = string.Empty;
+                HostName = string.Empty;
                 SetState(SessionState.Hosting, $"Hosting locally on port {LocalPort}" +
                                                (Game.Platform != null && !Game.Platform.IsOnline ? $" ({Game.Platform.OfflineReason})" : "."));
                 return;
             }
 
-            string code = Foundation.RoomCode.Generate(new System.Random(Guid.NewGuid().GetHashCode()));
-            Game.Platform.Lobbies.CreateLobby(code, GameIdentity.MaxPartySize, result =>
+            Game.Platform.Lobbies.CreateLobby(GameIdentity.MaxPartySize, result =>
             {
                 if (!result.Ok)
                 {
                     Disconnect(result.Message);
                     return;
                 }
-                RoomCode = code;
                 Game.Platform.SetRichPresence("status", "Hunting");
-                SetState(SessionState.Hosting, $"Party code: {code}");
+                SetState(SessionState.Hosting, "Party ready. Press Esc > Invite friends (or Shift+Tab > friend > Invite to game).");
             });
         }
 
-        /// <summary>Join a party by room code over Steam.</summary>
-        public static void JoinByCode(string input)
+        /// <summary>Opens the Steam invite dialog for the current party.</summary>
+        public static bool OpenInviteDialog()
         {
-            if (!Foundation.RoomCode.TryNormalize(input, out string code))
-            {
-                Fail($"'{input}' is not a valid party code (6 letters/digits).");
-                return;
-            }
+            ILobbyService lobbies = Game.Platform?.Lobbies;
+            return lobbies != null && lobbies.OpenInviteDialog();
+        }
+
+        /// <summary>Join a friend's party (Steam lobby id from an invite, "Join game", or the friends' parties list).</summary>
+        public static void JoinLobby(ulong lobbyId)
+        {
             if (Game.Platform == null || !Game.Platform.IsOnline || Game.Platform.Lobbies == null)
             {
                 Fail(Game.Platform?.OfflineReason ?? "Steam is not available.");
@@ -122,8 +125,8 @@ namespace HowToHunt.Net
             if (State != SessionState.Offline) Disconnect("Joining another party.");
 
             Transport = SessionTransport.Steam;
-            SetState(SessionState.Connecting, $"Looking for party {code}...");
-            Game.Platform.Lobbies.JoinByCode(code, result =>
+            SetState(SessionState.Connecting, "Joining party...");
+            Game.Platform.Lobbies.JoinLobby(lobbyId, result =>
             {
                 if (State != SessionState.Connecting) return; // cancelled meanwhile
                 if (!result.Ok)
@@ -132,7 +135,7 @@ namespace HowToHunt.Net
                     return;
                 }
                 if (!CreateManager(SessionTransport.Steam)) return;
-                RoomCode = code;
+                HostName = result.Info.HostName;
                 Manager.TransportManager.Transport.SetClientAddress(result.Info.OwnerId.ToString());
                 _connectDeadline = Time.unscaledTime + ConnectTimeoutSeconds;
                 SetState(SessionState.Connecting, $"Connecting to {result.Info.HostName}...");
@@ -147,7 +150,7 @@ namespace HowToHunt.Net
             if (State != SessionState.Offline) Disconnect("Connecting elsewhere.");
             Transport = SessionTransport.Local;
             if (!CreateManager(SessionTransport.Local)) return;
-            RoomCode = string.Empty;
+            HostName = string.Empty;
             Manager.TransportManager.Transport.SetClientAddress(address);
             Manager.TransportManager.Transport.SetPort(port);
             _connectDeadline = Time.unscaledTime + ConnectTimeoutSeconds;
@@ -169,7 +172,7 @@ namespace HowToHunt.Net
             }
             Game.Platform?.Lobbies?.Leave();
             Game.Platform?.SetRichPresence("status", string.Empty);
-            RoomCode = string.Empty;
+            HostName = string.Empty;
             SetState(SessionState.Offline, reason);
         }
 
@@ -235,7 +238,7 @@ namespace HowToHunt.Net
             if (Manager == null) return;
             if (args.ConnectionState == LocalConnectionState.Started && State == SessionState.Connecting)
             {
-                SetState(SessionState.Connected, string.IsNullOrEmpty(RoomCode) ? "Connected." : $"Joined party {RoomCode}.");
+                SetState(SessionState.Connected, string.IsNullOrEmpty(HostName) ? "Connected." : $"Joined {HostName}'s party.");
             }
             else if (args.ConnectionState == LocalConnectionState.Stopped && !Manager.IsServerStarted &&
                      (State == SessionState.Connected || State == SessionState.Connecting))
@@ -263,14 +266,14 @@ namespace HowToHunt.Net
             State = state;
             LastMessage = message;
             Game.Console.Print($"[net] {message}");
-            EventBus.Publish(new SessionStateChanged { State = state, Message = message, RoomCode = RoomCode });
+            EventBus.Publish(new SessionStateChanged { State = state, Message = message });
         }
 
         internal static void ResetStatics()
         {
             Manager = null;
             State = SessionState.Offline;
-            RoomCode = string.Empty;
+            HostName = string.Empty;
             LastMessage = string.Empty;
             ManagerCreated = null;
         }
