@@ -45,6 +45,8 @@ namespace HowToHunt.Net
             r.Cvar(FakeLoss).Changed += _ => ApplyFakeNetwork(NetSession.Manager);
             NetSession.ManagerCreated += ApplyFakeNetwork;
             r.Command("disconnect", "Leave the current session.", _ => NetSession.Disconnect("You left the session."));
+            r.Command("net_stats", "Print bandwidth (this machine) and party size.", _ =>
+                r.Console.Print($"[net_stats] players {NetSession.PlayerCount} up {NetMeter.OutBytesPerSecond / 1024f:0.0} KB/s down {NetMeter.InBytesPerSecond / 1024f:0.0} KB/s fps {1f / UnityEngine.Mathf.Max(0.0001f, UnityEngine.Time.smoothDeltaTime):0}"));
             r.Command("status", "Show session state and connected players.", _ => r.Console.Print(Describe()));
         }
 

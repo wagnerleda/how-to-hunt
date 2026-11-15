@@ -82,7 +82,8 @@ namespace HowToHunt.Net
 
             if (!CreateManager(Transport)) return;
             Transport t = Manager.TransportManager.Transport;
-            t.SetMaximumClients(GameIdentity.MaxPartySize - 1);
+            // One spare transport slot so a 9th player gets a proper "party is full" message from the roster check.
+            t.SetMaximumClients(GameIdentity.MaxPartySize);
             if (Transport == SessionTransport.Local)
             {
                 t.SetServerBindAddress(string.Empty, IPAddressType.IPv4);
@@ -231,6 +232,7 @@ namespace HowToHunt.Net
         internal static void Update()
         {
             PartyRoster.Update();
+            NetMeter.Update();
             if (_endingAt > 0f && Time.unscaledTime >= _endingAt)
             {
                 _endingAt = 0f;

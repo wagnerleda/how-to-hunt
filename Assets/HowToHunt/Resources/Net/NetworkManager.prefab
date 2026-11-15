@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 5615437547206141427}
   - component: {fileID: 4939280605121572995}
   - component: {fileID: 5168266415684098197}
-  - component: {fileID: 4121729325052036662}
-  - component: {fileID: 3876158804617297401}
+  - component: {fileID: 8500978028759182803}
+  - component: {fileID: 6839442670964417727}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -86,7 +86,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34e4a322dca349547989b14021da4e23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Managing.Transporting.TransportManager
-  Transport: {fileID: 4121729325052036662}
+  Transport: {fileID: 8500978028759182803}
   _maximumClientPacketSize: 20480
   _intermediateLayer: {fileID: 0}
   _latencySimulator:
@@ -95,7 +95,7 @@ MonoBehaviour:
     _latency: 0
     _outOfOrder: 0
     _packetLoss: 0
---- !u!114 &4121729325052036662
+--- !u!114 &8500978028759182803
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -104,9 +104,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5584594369184885414}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f48f002b825cbd45a19bd96d90f9edb, type: 3}
+  m_Script: {fileID: 11500000, guid: 1735135378cea1141aed1a6674126181, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Transporting.Tugboat.Tugboat
+  m_EditorClassIdentifier: HowToHunt.Net::HowToHunt.Net.MeteredTugboat
   _stopSocketsOnThread: 0
   _dontRoute: 0
   _reuseAddress: 0
@@ -116,7 +116,7 @@ MonoBehaviour:
   _port: 7770
   _maximumClients: 4095
   _clientAddress: localhost
---- !u!114 &3876158804617297401
+--- !u!114 &6839442670964417727
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -125,9 +125,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5584594369184885414}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b846b8440885b549b410d44cc4b5592, type: 3}
+  m_Script: {fileID: 11500000, guid: 98f5e1b70d729b8418d8c53823c3cd9c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: FishySteamworks::FishySteamworks.FishySteamworks
+  m_EditorClassIdentifier: HowToHunt.Net::HowToHunt.Net.MeteredFishySteamworks
   _serverBindAddress: 
   _port: 7770
   _maximumClients: 9001

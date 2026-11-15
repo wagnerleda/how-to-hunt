@@ -83,9 +83,9 @@ namespace HowToHunt.DevTools
 
             if (m == null) return;
             if (m.IsServerStarted)
-                _net.SetText("tick {0} @{1}  players {2}", m.TimeManager.Tick, m.TimeManager.TickRate, NetSession.PlayerCount);
+                _net.SetText("tick {0}   players {2}  up {3:1} down {4:1} KB/s", m.TimeManager.Tick, m.TimeManager.TickRate, NetSession.PlayerCount, NetMeter.OutBytesPerSecond / 1024f, NetMeter.InBytesPerSecond / 1024f);
             else
-                _net.SetText("tick {0} @{1}  ping {2} ms", m.TimeManager.Tick, m.TimeManager.TickRate, m.TimeManager.RoundTripTime);
+                _net.SetText("tick {0}   ping {2} ms  up {3:1} down {4:1} KB/s", m.TimeManager.Tick, m.TimeManager.TickRate, m.TimeManager.RoundTripTime, NetMeter.OutBytesPerSecond / 1024f, NetMeter.InBytesPerSecond / 1024f);
             if (_shownState != NetSession.State || _shownTransport != NetSession.Transport)
             {
                 _shownState = NetSession.State;

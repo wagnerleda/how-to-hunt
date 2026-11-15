@@ -216,8 +216,8 @@ namespace HowToHunt.Editor
                 NetworkManager nm = go.AddComponent<NetworkManager>();
                 TimeManager tm = go.AddComponent<TimeManager>();
                 TransportManager transportManager = go.AddComponent<TransportManager>();
-                Tugboat tugboat = go.AddComponent<Tugboat>();
-                var steam = go.AddComponent<FishySteamworks.FishySteamworks>();
+                Tugboat tugboat = go.AddComponent<Net.MeteredTugboat>();
+                var steam = go.AddComponent<Net.MeteredFishySteamworks>();
 
                 var tmSo = new SerializedObject(tm);
                 tmSo.FindProperty("_tickRate").intValue = Foundation.GameIdentity.TickRate;
