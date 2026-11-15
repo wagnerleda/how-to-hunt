@@ -19,6 +19,9 @@ namespace HowToHunt.Sim.Movement
         private const float LeaveGroundUpSpeed = 3.556f;
         private const int MaxBumps = 4;
         private const int MaxClipPlanes = 5;
+        private const float OverClip = 1.001f;
+        /// <summary>1 Source unit/s, used to push off a plane we keep touching.</summary>
+        private const float NudgeSpeed = 0.0254f;
 
         public static void Step(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, ICollisionWorld world, float dt)
         {
@@ -65,7 +68,7 @@ namespace HowToHunt.Sim.Movement
                 AirAccelerate(ref s.Velocity, wishDir, wishSpeed, cfg, dt);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
                 fallSpeed = -s.Velocity.Y; // before the floor clips it away
-                FlyMove(ref s.Position, ref s.Velocity, ext, world, dt);
+                FlyMove(ref s.Position, ref s.Velocity, ext, world, dt, airborne: true);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
             }
 
@@ -274,7 +277,7 @@ namespace HowToHunt.Sim.Movement
         }
 
         /// <summary>Quake/Source "slide move": move, clip velocity against every plane hit, repeat.</summary>
-        public static void FlyMove(ref Vector3 pos, ref Vector3 vel, Vector3 ext, ICollisionWorld world, float dt)
+        public static void FlyMove(ref Vector3 pos, ref Vector3 vel, Vector3 ext, ICollisionWorld world, float dt, bool airborne = false)
         {
             Span<Vector3> planes = stackalloc Vector3[MaxClipPlanes];
             int numPlanes = 0;
@@ -308,7 +311,30 @@ namespace HowToHunt.Sim.Movement
                     vel = Vector3.Zero;
                     break;
                 }
+                // Hitting the same plane again (we were already touching it): nudge away from it instead of
+                // treating it as a second plane, which would stop us dead (Quake III does the same).
+                bool duplicate = false;
+                for (int k = 0; k < numPlanes; k++)
+                {
+                    if (Vector3.Dot(tr.Normal, planes[k]) > 0.99f)
+                    {
+                        vel += tr.Normal * NudgeSpeed;
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
                 planes[numPlanes++] = tr.Normal;
+
+                // Source: airborne against a single plane, just clip (no "stop dead" check). This is what keeps
+                // momentum while surfing; the multi-plane path below handles corners. The tiny over-clip keeps
+                // float rounding from leaving us moving into the plane.
+                if (airborne && numPlanes == 1)
+                {
+                    vel = ClipVelocity(original, planes[0], OverClip);
+                    original = vel;
+                    continue;
+                }
 
                 int i;
                 Vector3 clipped = vel;

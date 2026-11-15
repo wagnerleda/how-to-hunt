@@ -1,7 +1,7 @@
 {
     "name": "HowToHunt.Editor",
     "rootNamespace": "HowToHunt.Editor",
-    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "HowToHunt.Player", "HowToHunt.Platform", "HowToHunt.DevTools", "HowToHunt.UI", "FishNet.Runtime", "FishySteamworks"],
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "HowToHunt.Player", "HowToHunt.Platform", "HowToHunt.DevTools", "HowToHunt.UI", "FishNet.Runtime", "FishySteamworks", "Unity.TextMeshPro", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

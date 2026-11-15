@@ -12,7 +12,7 @@ namespace HowToHunt.Editor
     {
         private static readonly Dictionary<string, (Color color, float smoothness)> Entries = new Dictionary<string, (Color, float)>
         {
-            { "Grass", (Hex("8DBF5A"), 0.05f) },
+            { "Grass", (Hex("86B85A"), 0.05f) },
             { "Sand", (Hex("E8D29A"), 0.05f) },
             { "Rock", (Hex("9AA3A8"), 0.1f) },
             { "Wood", (Hex("B07A4A"), 0.1f) },
@@ -24,6 +24,9 @@ namespace HowToHunt.Editor
             { "PlayerSuit", (Hex("F28C28"), 0.2f) },
             { "Visor", (Hex("27323A"), 0.6f) },
             { "Trim", (Hex("3D5A6C"), 0.1f) },
+            { "Hazard", (Hex("C8553D"), 0.3f) },
+            { "Pad", (Hex("6C63FF"), 0.4f) },
+            { "Stripe", (Hex("CDB98A"), 0.05f) },
         };
 
         public static Material Get(string name)

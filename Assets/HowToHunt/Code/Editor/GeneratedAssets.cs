@@ -112,6 +112,12 @@ namespace HowToHunt.Editor
                 NetworkTickSmoother smoother = visual.AddComponent<NetworkTickSmoother>();
                 var smootherSo = new SerializedObject(smoother);
                 smootherSo.FindProperty("_initializationSettings.TargetTransform").objectReferenceValue = root.transform;
+                foreach (string settings in new[] { "_controllerMovementSettings", "_spectatorMovementSettings" })
+                {
+                    // Teleports (respawn, pads) snap instead of sliding across the map.
+                    smootherSo.FindProperty(settings + ".EnableTeleport").boolValue = true;
+                    smootherSo.FindProperty(settings + ".TeleportThreshold").floatValue = 4f;
+                }
                 smootherSo.ApplyModifiedPropertiesWithoutUndo();
 
                 var nobSo = new SerializedObject(nob);
