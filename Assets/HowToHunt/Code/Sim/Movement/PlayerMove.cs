@@ -22,9 +22,21 @@ namespace HowToHunt.Sim.Movement
 
         public static void Step(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, ICollisionWorld world, float dt)
         {
-            CategorizePosition(ref s, cfg, world);
+            s.Events = MoveEvents.None;
+            s.LandSpeed = 0f;
 
-            ComputeWish(in cmd, cfg, out Vector3 wishDir, out float wishSpeed);
+            if (s.Mode == MoveMode.Noclip)
+            {
+                NoclipMove(ref s, in cmd, cfg, dt);
+                return;
+            }
+
+            CategorizePosition(ref s, cfg, world);
+            bool wasOnGround = s.OnGround;
+
+            UpdateDuck(ref s, in cmd, cfg, world);
+
+            ComputeWish(in cmd, cfg, s.Ducked && s.OnGround, out Vector3 wishDir, out float wishSpeed);
 
             bool jumpDown = cmd.Has(MoveButtons.Jump);
             bool autoHop = cfg.AutoHop || cmd.Has(MoveButtons.AutoHop);
@@ -36,26 +48,82 @@ namespace HowToHunt.Sim.Movement
             {
                 s.Velocity.Y = cfg.JumpSpeed;
                 s.OnGround = false;
+                s.Events |= MoveEvents.Jumped;
             }
 
+            Vector3 ext = cfg.Hull(s.Ducked);
+            float fallSpeed = 0f;
             if (s.OnGround)
             {
                 s.Velocity.Y = 0f;
                 ApplyFriction(ref s.Velocity, cfg, dt);
                 Accelerate(ref s.Velocity, wishDir, wishSpeed, cfg.Accelerate, dt);
-                WalkMove(ref s, cfg, world, dt);
+                WalkMove(ref s, ext, cfg, world, dt);
             }
             else
             {
                 AirAccelerate(ref s.Velocity, wishDir, wishSpeed, cfg, dt);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
-                FlyMove(ref s.Position, ref s.Velocity, cfg.HullHalfExtents, world, dt);
+                fallSpeed = -s.Velocity.Y; // before the floor clips it away
+                FlyMove(ref s.Position, ref s.Velocity, ext, world, dt);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
             }
 
             CategorizePosition(ref s, cfg, world);
+            if (!wasOnGround && s.OnGround && (s.Events & MoveEvents.Jumped) == 0)
+            {
+                s.Events |= MoveEvents.Landed;
+                s.LandSpeed = MathF.Max(0f, fallSpeed);
+            }
             if (s.OnGround && s.Velocity.Y < 0f) s.Velocity.Y = 0f;
             ClampVelocity(ref s.Velocity, cfg.MaxVelocity);
+        }
+
+        /// <summary>
+        /// Ducking shrinks the hull. On the ground the head comes down; in the air the feet come up
+        /// (Source-style crouch-jump to reach higher ledges). Standing up needs room.
+        /// </summary>
+        private static void UpdateDuck(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, ICollisionWorld world)
+        {
+            bool wantDuck = cmd.Has(MoveButtons.Duck);
+            if (wantDuck == s.Ducked) return;
+            float delta = cfg.HullHalfExtents.Y - cfg.DuckHalfHeight;
+            if (wantDuck)
+            {
+                s.Position.Y += s.OnGround ? -delta : delta;
+                s.Ducked = true;
+                s.Events |= MoveEvents.Ducked;
+                return;
+            }
+            // Unduck: grow back the way we shrank, only if the standing hull fits.
+            Vector3 standing = cfg.HullHalfExtents;
+            Vector3 target = s.Position + new Vector3(0f, s.OnGround ? delta : -delta, 0f);
+            TraceResult tr = world.TraceBox(target, target, standing);
+            if (tr.StartSolid)
+            {
+                // In the air, try growing upward instead (e.g. near the ground).
+                if (s.OnGround) return;
+                target = s.Position + new Vector3(0f, delta, 0f);
+                tr = world.TraceBox(target, target, standing);
+                if (tr.StartSolid) return;
+            }
+            s.Position = target;
+            s.Ducked = false;
+            s.Events |= MoveEvents.Unducked;
+        }
+
+        private static void NoclipMove(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, float dt)
+        {
+            float yaw = cmd.Yaw * Deg2Rad, pitch = cmd.Pitch * Deg2Rad;
+            var look = new Vector3(MathF.Sin(yaw) * MathF.Cos(pitch), -MathF.Sin(pitch), MathF.Cos(yaw) * MathF.Cos(pitch));
+            Vector3 wish = look * Math.Clamp(cmd.Forward, -1f, 1f) + Right(cmd.Yaw) * Math.Clamp(cmd.Side, -1f, 1f);
+            if (cmd.Has(MoveButtons.Jump)) wish.Y += 1f;
+            if (cmd.Has(MoveButtons.Duck)) wish.Y -= 1f;
+            float speed = cfg.NoclipSpeed * (cmd.Has(MoveButtons.Walk) ? 0.25f : 1f);
+            s.Velocity = wish.LengthSquared() > 1e-6f ? Vector3.Normalize(wish) * speed : Vector3.Zero;
+            s.Position += s.Velocity * dt;
+            s.OnGround = false;
+            s.GroundNormal = Vector3.Zero;
         }
 
         public static Vector3 Forward(float yawDegrees)
@@ -72,7 +140,7 @@ namespace HowToHunt.Sim.Movement
 
         public static float HorizontalSpeed(in Vector3 v) => MathF.Sqrt(v.X * v.X + v.Z * v.Z);
 
-        private static void ComputeWish(in MoveCmd cmd, MoveConfig cfg, out Vector3 wishDir, out float wishSpeed)
+        private static void ComputeWish(in MoveCmd cmd, MoveConfig cfg, bool duckedOnGround, out Vector3 wishDir, out float wishSpeed)
         {
             float f = Math.Clamp(cmd.Forward, -1f, 1f);
             float sd = Math.Clamp(cmd.Side, -1f, 1f);
@@ -86,7 +154,8 @@ namespace HowToHunt.Sim.Movement
             }
             wishDir = wish / len;
             wishSpeed = MathF.Min(len, 1f) * cfg.MaxSpeed;
-            if (cmd.Has(MoveButtons.Walk)) wishSpeed *= cfg.WalkSpeedFactor;
+            if (duckedOnGround) wishSpeed *= cfg.DuckSpeedFactor;
+            else if (cmd.Has(MoveButtons.Walk)) wishSpeed *= cfg.WalkSpeedFactor;
         }
 
         private static void ApplyFriction(ref Vector3 vel, MoveConfig cfg, float dt)
@@ -132,7 +201,7 @@ namespace HowToHunt.Sim.Movement
                 return;
             }
             Vector3 down = s.Position - new Vector3(0f, GroundProbe, 0f);
-            TraceResult tr = world.TraceBox(s.Position, down, cfg.HullHalfExtents);
+            TraceResult tr = world.TraceBox(s.Position, down, cfg.Hull(s.Ducked));
             s.GroundNormal = tr.Hit ? tr.Normal : Vector3.Zero;
             if (tr.Hit && !tr.AllSolid && tr.Normal.Y >= cfg.StandableNormalY)
             {
@@ -145,15 +214,14 @@ namespace HowToHunt.Sim.Movement
             }
         }
 
-        private static void WalkMove(ref MoveState s, MoveConfig cfg, ICollisionWorld world, float dt)
+        private static void WalkMove(ref MoveState s, Vector3 ext, MoveConfig cfg, ICollisionWorld world, float dt)
         {
-            Vector3 ext = cfg.HullHalfExtents;
             Vector3 dest = s.Position + s.Velocity * dt;
             TraceResult direct = world.TraceBox(s.Position, dest, ext);
             if (!direct.Hit && !direct.StartSolid)
             {
                 s.Position = direct.EndPosition;
-                StayOnGround(ref s, cfg, world);
+                StayOnGround(ref s, ext, cfg, world);
                 return;
             }
 
@@ -191,13 +259,12 @@ namespace HowToHunt.Sim.Movement
                 s.Position = upPos;
                 s.Velocity = new Vector3(upVel.X, downVel.Y, upVel.Z);
             }
-            StayOnGround(ref s, cfg, world);
+            StayOnGround(ref s, ext, cfg, world);
         }
 
         /// <summary>Keeps the player glued to the ground when walking down slopes and stairs.</summary>
-        private static void StayOnGround(ref MoveState s, MoveConfig cfg, ICollisionWorld world)
+        private static void StayOnGround(ref MoveState s, Vector3 ext, MoveConfig cfg, ICollisionWorld world)
         {
-            Vector3 ext = cfg.HullHalfExtents;
             Vector3 start = s.Position + new Vector3(0f, 0.02f, 0f);
             TraceResult lift = world.TraceBox(s.Position, start, ext);
             start = lift.EndPosition;

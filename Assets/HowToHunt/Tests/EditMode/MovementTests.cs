@@ -165,6 +165,82 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void Duck_LowersHull_AndSlowsDown()
+        {
+            MoveState s = Spawn(Vector3.Zero);
+            Run(ref s, new MoveCmd { Forward = 1f, Buttons = MoveButtons.Duck }, 128);
+            Assert.IsTrue(s.Ducked);
+            Assert.AreEqual(_cfg.DuckHalfHeight, s.Position.Y, 0.01f, "feet stay on the floor");
+            Assert.AreEqual(_cfg.MaxSpeed * _cfg.DuckSpeedFactor, PlayerMove.HorizontalSpeed(s.Velocity), 0.05f);
+        }
+
+        [Test]
+        public void Unduck_IsBlockedUnderLowCeiling()
+        {
+            // 1.5 m gap: fits the 1.37 m ducked hull, not the 1.83 m standing one.
+            _world.Add(Brush.Box(new Vector3(0, 2.5f, 0), new Vector3(5, 1f, 5)));
+            MoveState s = Spawn(Vector3.Zero);
+            s.Ducked = true;
+            s.Position.Y = _cfg.DuckHalfHeight;
+            Run(ref s, default, 16);
+            Assert.IsTrue(s.Ducked, "stood up into the ceiling");
+        }
+
+        [Test]
+        public void CrouchJump_ReachesHigherLedge()
+        {
+            // Ledge top at 1.6 m: a standing jump (feet peak ≈ 1.45 m) can't clear it, a crouch-jump (≈ 1.9 m) can.
+            _world.Add(Brush.Box(new Vector3(0, 0.8f, 4f), new Vector3(5, 0.8f, 2.5f)));
+            Assert.IsFalse(TryLedge(crouch: false), "standing jump should not clear 1.6 m");
+            Assert.IsTrue(TryLedge(crouch: true), "crouch-jump should clear 1.6 m");
+        }
+
+        private bool TryLedge(bool crouch)
+        {
+            // Run up, jump about 2.4 m before the ledge face (z = 1.5), keep running; duck once airborne if crouching.
+            MoveState s = Spawn(new Vector3(0, 0, -5f));
+            bool jumped = false;
+            for (int i = 0; i < 120; i++)
+            {
+                var cmd = new MoveCmd { Forward = 1f };
+                if (!jumped && s.Position.Z >= -1.3f) { cmd.Buttons |= MoveButtons.Jump; jumped = true; }
+                else if (jumped && crouch && !s.OnGround) cmd.Buttons |= MoveButtons.Duck;
+                PlayerMove.Step(ref s, in cmd, _cfg, _world, Dt);
+                float feet = s.Position.Y - _cfg.Hull(s.Ducked).Y;
+                if (s.OnGround && feet > 1.55f) return true; // standing on the ledge
+            }
+            return false;
+        }
+
+        [Test]
+        public void Landing_ReportsEventAndImpactSpeed()
+        {
+            MoveState s = Spawn(new Vector3(0, 3, 0));
+            bool landed = false;
+            for (int i = 0; i < 128 && !landed; i++)
+            {
+                PlayerMove.Step(ref s, default, _cfg, _world, Dt);
+                if ((s.Events & MoveEvents.Landed) != 0)
+                {
+                    landed = true;
+                    // v = sqrt(2 g h) ≈ sqrt(2 * 20.32 * 3) ≈ 11 m/s
+                    Assert.AreEqual(11f, s.LandSpeed, 0.6f);
+                }
+            }
+            Assert.IsTrue(landed);
+        }
+
+        [Test]
+        public void Noclip_FliesThroughWalls()
+        {
+            _world.Add(Brush.Box(new Vector3(0, 2, 3), new Vector3(5, 2, 0.5f)));
+            MoveState s = Spawn(Vector3.Zero);
+            s.Mode = MoveMode.Noclip;
+            Run(ref s, new MoveCmd { Forward = 1f }, 64);
+            Assert.Greater(s.Position.Z, 10f);
+        }
+
+        [Test]
         public void Step_IsDeterministic()
         {
             MoveState a = Spawn(Vector3.Zero), b = Spawn(Vector3.Zero);
