@@ -57,7 +57,7 @@ namespace HowToHunt.Net
         public void Shutdown()
         {
             if (Game.Platform?.Lobbies != null) Game.Platform.Lobbies.JoinRequested -= OnJoinRequested;
-            if (NetSession.State != SessionState.Offline) NetSession.Disconnect("Quit.");
+            if (NetSession.State != SessionState.Offline) NetSession.DisconnectNow("Quit.");
         }
 
         private static string Describe()

@@ -46,6 +46,15 @@ namespace HowToHunt.Net
 
         private static NetworkManager _prefab;
         private static float _connectDeadline;
+        private const int MaxReconnects = 3;
+        private const float ReconnectDelay = 2f;
+        private static int _reconnectAttempt;
+        private static float _endingAt;
+        private static string _endingReason;
+        private static float _reconnectAt;
+        private static ulong _lastLobby;
+        private static string _lastAddress;
+        private static ushort _lastPort;
 
         public static NetworkManager Manager { get; private set; }
         public static SessionState State { get; private set; } = SessionState.Offline;
@@ -115,17 +124,22 @@ namespace HowToHunt.Net
         }
 
         /// <summary>Join a friend's party (Steam lobby id from an invite, "Join game", or the friends' parties list).</summary>
-        public static void JoinLobby(ulong lobbyId)
+        public static void JoinLobby(ulong lobbyId) => JoinLobbyCore(lobbyId, reconnecting: false);
+
+        private static void JoinLobbyCore(ulong lobbyId, bool reconnecting)
         {
             if (Game.Platform == null || !Game.Platform.IsOnline || Game.Platform.Lobbies == null)
             {
                 Fail(Game.Platform?.OfflineReason ?? "Steam is not available.");
                 return;
             }
-            if (State != SessionState.Offline) Disconnect("Joining another party.");
+            if (!reconnecting && State != SessionState.Offline) Disconnect("Joining another party.");
+            if (!reconnecting) _reconnectAttempt = 0;
+            _lastLobby = lobbyId;
+            _lastAddress = null;
 
             Transport = SessionTransport.Steam;
-            SetState(SessionState.Connecting, "Joining party...");
+            SetState(SessionState.Connecting, reconnecting ? $"Reconnecting ({_reconnectAttempt}/{MaxReconnects})..." : "Joining party...");
             Game.Platform.Lobbies.JoinLobby(lobbyId, result =>
             {
                 if (State != SessionState.Connecting) return; // cancelled meanwhile
@@ -138,7 +152,7 @@ namespace HowToHunt.Net
                 CvarReplicator.MarkRemoteClient();
                 HostName = result.Info.HostName;
                 Manager.TransportManager.Transport.SetClientAddress(result.Info.OwnerId.ToString());
-                _connectDeadline = Time.unscaledTime + ConnectTimeoutSeconds;
+                _connectDeadline = Time.unscaledTime + (_reconnectAttempt > 0 ? 6f : ConnectTimeoutSeconds);
                 SetState(SessionState.Connecting, $"Connecting to {result.Info.HostName}...");
                 if (!Manager.ClientManager.StartConnection())
                     Fail("Could not start the connection.");
@@ -146,22 +160,55 @@ namespace HowToHunt.Net
         }
 
         /// <summary>Connect to a local/LAN host by address (loopback testing, second editor instance, bots).</summary>
-        public static void ConnectLocal(string address, ushort port = LocalPort)
+        public static void ConnectLocal(string address, ushort port = LocalPort) => ConnectLocalCore(address, port, reconnecting: false);
+
+        private static void ConnectLocalCore(string address, ushort port, bool reconnecting)
         {
-            if (State != SessionState.Offline) Disconnect("Connecting elsewhere.");
+            if (!reconnecting && State != SessionState.Offline) Disconnect("Connecting elsewhere.");
+            if (!reconnecting) _reconnectAttempt = 0;
+            _lastLobby = 0;
+            _lastAddress = address;
+            _lastPort = port;
             Transport = SessionTransport.Local;
             if (!CreateManager(SessionTransport.Local)) return;
             CvarReplicator.MarkRemoteClient();
             HostName = string.Empty;
             Manager.TransportManager.Transport.SetClientAddress(address);
             Manager.TransportManager.Transport.SetPort(port);
-            _connectDeadline = Time.unscaledTime + ConnectTimeoutSeconds;
+            _connectDeadline = Time.unscaledTime + (_reconnectAttempt > 0 ? 6f : ConnectTimeoutSeconds);
             SetState(SessionState.Connecting, $"Connecting to {address}:{port}...");
             if (!Manager.ClientManager.StartConnection())
                 Fail("Could not start the connection.");
         }
 
+        /// <summary>Leave the session on purpose (cancels any reconnect).</summary>
         public static void Disconnect(string reason = "Disconnected.")
+        {
+            _reconnectAt = 0f;
+            _reconnectAttempt = 0;
+            if (Manager != null && Manager.IsServerStarted && PlayerCount > 1 && _endingAt <= 0f)
+            {
+                // Tell the party first, then shut down a moment later so the message is delivered.
+                PartyRoster.NotifyEnding();
+                _endingAt = Time.unscaledTime + 0.25f;
+                _endingReason = reason;
+                return;
+            }
+            _endingAt = 0f;
+            TearDown(reason);
+        }
+
+        /// <summary>Leave right now (application quit): no deferred goodbye.</summary>
+        public static void DisconnectNow(string reason)
+        {
+            _reconnectAt = 0f;
+            _reconnectAttempt = 0;
+            _endingAt = 0f;
+            if (Manager != null && Manager.IsServerStarted) PartyRoster.NotifyEnding();
+            TearDown(reason);
+        }
+
+        private static void TearDown(string reason)
         {
             NetworkManager manager = Manager;
             Manager = null;
@@ -169,6 +216,7 @@ namespace HowToHunt.Net
             {
                 Unhook(manager);
                 CvarReplicator.Detach();
+                PartyRoster.Detach();
                 if (manager.IsClientStarted) manager.ClientManager.StopConnection();
                 if (manager.IsServerStarted) manager.ServerManager.StopConnection(true);
                 UnityEngine.Object.Destroy(manager.gameObject);
@@ -182,8 +230,24 @@ namespace HowToHunt.Net
         /// <summary>Called every frame by the Net module (connection timeout).</summary>
         internal static void Update()
         {
+            PartyRoster.Update();
+            if (_endingAt > 0f && Time.unscaledTime >= _endingAt)
+            {
+                _endingAt = 0f;
+                TearDown(_endingReason);
+                return;
+            }
             if (State == SessionState.Connecting && Manager != null && Time.unscaledTime > _connectDeadline)
-                Fail("Connection timed out. The host may be offline or behind a blocked network.");
+            {
+                if (_reconnectAttempt > 0) ScheduleReconnect("Reconnect attempt timed out.");
+                else Fail("Connection timed out. The host may be offline or behind a blocked network.");
+            }
+            if (_reconnectAt > 0f && Time.unscaledTime >= _reconnectAt)
+            {
+                _reconnectAt = 0f;
+                if (_lastLobby != 0) JoinLobbyCore(_lastLobby, reconnecting: true);
+                else if (!string.IsNullOrEmpty(_lastAddress)) ConnectLocalCore(_lastAddress, _lastPort, reconnecting: true);
+            }
         }
 
         private static bool CreateManager(SessionTransport transport)
@@ -221,6 +285,7 @@ namespace HowToHunt.Net
             Manager = manager;
             Hook(manager);
             CvarReplicator.Attach(manager);
+            PartyRoster.Attach(manager);
             ManagerCreated?.Invoke(manager);
             return true;
         }
@@ -242,13 +307,34 @@ namespace HowToHunt.Net
             if (Manager == null) return;
             if (args.ConnectionState == LocalConnectionState.Started && State == SessionState.Connecting)
             {
-                SetState(SessionState.Connected, string.IsNullOrEmpty(HostName) ? "Connected." : $"Joined {HostName}'s party.");
+                bool wasReconnect = _reconnectAttempt > 0;
+                _reconnectAttempt = 0;
+                SetState(SessionState.Connected, wasReconnect ? "Reconnected." : string.IsNullOrEmpty(HostName) ? "Connected." : $"Joined {HostName}'s party.");
             }
             else if (args.ConnectionState == LocalConnectionState.Stopped && !Manager.IsServerStarted &&
                      (State == SessionState.Connected || State == SessionState.Connecting))
             {
-                Disconnect(State == SessionState.Connected ? "The host ended the session or the connection was lost." : "Could not connect to the host.");
+                if (!string.IsNullOrEmpty(PartyRoster.LastRejectReason))
+                    Disconnect(PartyRoster.LastRejectReason); // kicked, locked, full or wrong version: don't retry
+                else if (State == SessionState.Connected || _reconnectAttempt > 0)
+                    ScheduleReconnect("Connection to the host was lost.");
+                else
+                    Disconnect("Could not connect to the host.");
             }
+        }
+
+        /// <summary>Lost the host: tear down and retry the same party a few times before giving up.</summary>
+        private static void ScheduleReconnect(string why)
+        {
+            if (_reconnectAttempt >= MaxReconnects)
+            {
+                Disconnect($"{why} Could not reconnect after {MaxReconnects} tries.");
+                return;
+            }
+            _reconnectAttempt++;
+            TearDown(why);
+            _reconnectAt = Time.unscaledTime + ReconnectDelay;
+            SetState(SessionState.Connecting, $"{why} Reconnecting ({_reconnectAttempt}/{MaxReconnects})...");
         }
 
         private static void OnServerConnectionState(ServerConnectionStateArgs args)

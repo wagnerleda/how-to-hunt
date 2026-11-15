@@ -39,6 +39,7 @@ namespace HowToHunt.Core
             console.ExceptionHandler = Debug.LogException;
             console.Output += EchoToUnityLog;
             CoreCvars.Register(console);
+            KeyBindings.Register(console);
             RegisterCoreCommands(console);
 
             Game.Modules = new ModuleRegistry();

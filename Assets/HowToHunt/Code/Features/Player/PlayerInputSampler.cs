@@ -8,7 +8,7 @@ namespace HowToHunt.Player
     /// <summary>
     /// Samples local input. Mouse look is applied every frame (lowest latency); movement keys are sampled per tick.
     /// Presses that happen between two ticks are latched so a quick tap is never lost.
-    /// Key bindings become rebindable in M2 (settings); these are the defaults.
+    /// Keys come from <see cref="KeyBindings"/> (rebindable in Settings or with bind_* cvars).
     /// </summary>
     public sealed class PlayerInputSampler
     {
@@ -47,7 +47,7 @@ namespace HowToHunt.Player
                 // Mouse-wheel jump: the classic bunny hop bind.
                 if (Mathf.Abs(mouse.scroll.ReadValue().y) > 0.01f) _jumpLatched = true;
             }
-            if (kb != null && kb.spaceKey.wasPressedThisFrame) _jumpLatched = true;
+            if (KeyBindings.WasPressedThisFrame(GameAction.Jump)) _jumpLatched = true;
         }
 
         /// <summary>Call once per tick; returns the command for this tick.</summary>
@@ -77,10 +77,10 @@ namespace HowToHunt.Player
                 _jumpLatched = false;
                 return cmd;
             }
-            cmd.Forward = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
-            cmd.Side = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f);
-            if (kb.spaceKey.isPressed || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
-            if (kb.leftCtrlKey.isPressed) cmd.Buttons |= MoveButtons.Duck;
+            cmd.Forward = (KeyBindings.IsPressed(GameAction.Forward) ? 1f : 0f) - (KeyBindings.IsPressed(GameAction.Back) ? 1f : 0f);
+            cmd.Side = (KeyBindings.IsPressed(GameAction.Right) ? 1f : 0f) - (KeyBindings.IsPressed(GameAction.Left) ? 1f : 0f);
+            if (KeyBindings.IsPressed(GameAction.Jump) || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
+            if (KeyBindings.IsPressed(GameAction.Crouch)) cmd.Buttons |= MoveButtons.Duck;
             if (MovementCvars.ClientAutoHop.Value) cmd.Buttons |= MoveButtons.AutoHop;
             _jumpLatched = false;
             return cmd;

@@ -31,3 +31,5 @@
 *.asset text eol=lf merge=unityyamlmerge
 *.meta text eol=lf
 *.cs text eol=lf diff=csharp
+*.hthdemo text eol=lf
+*.brushes text eol=lf

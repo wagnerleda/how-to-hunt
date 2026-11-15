@@ -24,8 +24,38 @@ namespace HowToHunt.Player
             if (_visor != null) _visorPos = _visor.localPosition;
         }
 
+        private TMPro.TextMeshPro _plate;
+        private int _plateVersion = -1;
+
+        /// <summary>Name tag over other players' heads, from the party roster, always facing the camera.</summary>
+        private void UpdateNameplate()
+        {
+            if (_motor.IsOwner || !_motor.IsClientInitialized) return;
+            if (_plate == null)
+            {
+                var go = new GameObject("Nameplate");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(0f, 1.35f, 0f);
+                _plate = go.AddComponent<TMPro.TextMeshPro>();
+                _plate.fontSize = 2.6f;
+                _plate.alignment = TMPro.TextAlignmentOptions.Center;
+                _plate.color = new Color(1f, 0.97f, 0.9f);
+                _plate.outlineWidth = 0.25f;
+                _plate.outlineColor = new Color32(30, 26, 22, 255);
+                _plate.rectTransform.sizeDelta = new Vector2(6f, 1f);
+            }
+            if (_plateVersion != Net.PartyRoster.Version)
+            {
+                _plateVersion = Net.PartyRoster.Version;
+                _plate.text = Net.PartyRoster.TryGet(_motor.OwnerId, out Net.PartyMember m) ? m.Name : string.Empty;
+            }
+            Camera cam = Camera.main;
+            if (cam != null) _plate.transform.rotation = Quaternion.LookRotation(_plate.transform.position - cam.transform.position);
+        }
+
         private void LateUpdate()
         {
+            UpdateNameplate();
             if (_body == null) return;
             var cfg = MovementCvars.Config;
             float target = _motor.State.Ducked ? cfg.DuckHalfHeight / cfg.HullHalfExtents.Y : 1f;
