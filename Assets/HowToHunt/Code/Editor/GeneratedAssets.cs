@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using FishNet.Component.Transforming.Beta;
 using FishNet.Managing;
 using FishNet.Managing.Object;
@@ -35,6 +36,7 @@ namespace HowToHunt.Editor
             EnsureMeshes();
             BuildPlayerPrefab();
             BuildNetworkManagerPrefab();
+            BuildButterflyPrefab();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
             Debug.Log("[HowToHunt] Generated assets rebuilt.");
@@ -121,6 +123,44 @@ namespace HowToHunt.Editor
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        public const string ButterflyModelPath = Root + "/Art/Models/Butterfly/Butterfly.fbx";
+        public const string ButterflyPrefabPath = Root + "/Prefabs/Ambient/Butterfly.prefab";
+
+        /// <summary>Asset-pipeline proof: Blender model + rig + Flap clip -> animated prefab. Gameplay comes in M3.</summary>
+        private static void BuildButterflyPrefab()
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(ButterflyModelPath);
+            AnimationClip flap = AssetDatabase.LoadAllAssetsAtPath(ButterflyModelPath).OfType<AnimationClip>().FirstOrDefault(c => c.name == "Flap");
+            if (model == null || flap == null)
+            {
+                Debug.LogWarning("[HowToHunt] Butterfly model or Flap clip missing; skipping prefab.");
+                return;
+            }
+            string controllerPath = Path.ChangeExtension(ButterflyModelPath, ".controller");
+            AssetDatabase.DeleteAsset(controllerPath);
+            UnityEditor.Animations.AnimatorController controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPathWithClip(controllerPath, flap);
+
+            EnsureFolder(Path.GetDirectoryName(ButterflyPrefabPath)!.Replace('\\', '/'));
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            try
+            {
+                instance.name = "Butterfly";
+                Animator animator = instance.TryGetComponent(out Animator existing) ? existing : instance.AddComponent<Animator>();
+                animator.runtimeAnimatorController = controller;
+                animator.cullingMode = AnimatorCullingMode.CullCompletely;
+                foreach (SkinnedMeshRenderer smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    smr.updateWhenOffscreen = false;
+                    smr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+                PrefabUtility.SaveAsPrefabAsset(instance, ButterflyPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
             }
         }
 

@@ -4,6 +4,7 @@
     "references": [
         "HowToHunt.Foundation",
         "HowToHunt.Sim",
+        "HowToHunt.Core",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

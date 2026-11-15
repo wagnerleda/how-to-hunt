@@ -108,6 +108,22 @@ namespace HowToHunt.Editor
             Box(surf, "Surf Start Tower", new Vector3(-30, 7, -10), new Vector3(6, 14, 6), "Rock");
             Box(surf, "Surf Start Step", new Vector3(-26, 2, -12), new Vector3(2, 4, 2), "Rock");
 
+            // Asset-pipeline proof: a few Blender butterflies hovering over the plaza (static placement; behavior in M3).
+            var butterfly = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ButterflyPrefabPath);
+            if (butterfly != null)
+            {
+                Transform ambient = new GameObject("Butterflies (pipeline proof)").transform;
+                var rng = new System.Random(7);
+                for (int i = 0; i < 6; i++)
+                {
+                    var b = (GameObject)PrefabUtility.InstantiatePrefab(butterfly, ambient);
+                    b.transform.SetPositionAndRotation(
+                        new Vector3(-3f + (float)rng.NextDouble() * 6f, 1.1f + (float)rng.NextDouble() * 0.8f, 7f + (float)rng.NextDouble() * 3f),
+                        Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f));
+                    b.transform.localScale = Vector3.one * 1.5f;
+                }
+            }
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
             Debug.Log($"[HowToHunt] Graybox scene saved to {ScenePath}");
