@@ -147,6 +147,15 @@ namespace HowToHunt.Foundation
                 bool end = i == text.Length;
                 char c = end ? '\0' : text[i];
                 if (c == '"') inQuotes = !inQuotes;
+                // '//' comments run to the end of the line, even if they contain ';'.
+                if (!inQuotes && c == '/' && i + 1 < text.Length && text[i + 1] == '/')
+                {
+                    if (i > start) ExecuteSingle(text.Substring(start, i - start));
+                    int newline = text.IndexOf('\n', i);
+                    i = newline < 0 ? text.Length : newline;
+                    start = i + 1;
+                    continue;
+                }
                 if (end || (!inQuotes && (c == ';' || c == '\n' || c == '\r')))
                 {
                     if (i > start) ExecuteSingle(text.Substring(start, i - start));

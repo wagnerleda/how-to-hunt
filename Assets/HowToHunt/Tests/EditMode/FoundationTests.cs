@@ -92,6 +92,18 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void Console_CommentsMayContainSemicolons()
+        {
+            var con = new ConsoleSystem();
+            var fov = con.Register(new FloatCvar("fov", 90f, "fov"));
+            var warnings = new List<string>();
+            con.Output += (level, line) => { if (level != ConsoleLevel.Info) warnings.Add(line); };
+            con.Execute("// generated; edit freely\nfov 100 // trailing; comment\n");
+            Assert.AreEqual(100f, fov.Value);
+            CollectionAssert.IsEmpty(warnings);
+        }
+
+        [Test]
         public void Console_ReplicatedCvarsAreHostControlled()
         {
             var con = new ConsoleSystem();
