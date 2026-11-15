@@ -87,6 +87,9 @@ namespace HowToHunt.Foundation
         /// <summary>Raised for every line printed to the console.</summary>
         public event Action<ConsoleLevel, string>? Output;
 
+        /// <summary>Receives exceptions thrown by command handlers (the game logs the full stack trace).</summary>
+        public Action<Exception>? ExceptionHandler { get; set; }
+
         /// <summary>Loads the text of a config file by name (for 'exec'). Set by the host application.</summary>
         public Func<string, string?>? ConfigLoader { get; set; }
 
@@ -204,6 +207,7 @@ namespace HowToHunt.Foundation
                 catch (Exception e)
                 {
                     Error($"{command.Name}: {e.Message}");
+                    ExceptionHandler?.Invoke(e);
                 }
                 return;
             }

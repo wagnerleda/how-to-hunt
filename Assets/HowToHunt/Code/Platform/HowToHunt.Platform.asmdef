@@ -1,0 +1,14 @@
+{
+    "name": "HowToHunt.Platform",
+    "rootNamespace": "HowToHunt.Platform",
+    "references": ["HowToHunt.Foundation", "HowToHunt.Core", "com.rlabrecque.steamworks.net"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

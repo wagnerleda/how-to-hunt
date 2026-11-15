@@ -1,0 +1,59 @@
+using HowToHunt.Foundation;
+using HowToHunt.Sim.Movement;
+
+namespace HowToHunt.Player
+{
+    /// <summary>
+    /// Every movement tunable as a console variable (meters and seconds; Source-equivalent defaults).
+    /// sv_* cvars are host-owned (Replicated) and cheat-protected so a client can't change its own physics.
+    /// </summary>
+    public static class MovementCvars
+    {
+        private const CvarFlags Sv = CvarFlags.Replicated | CvarFlags.Cheat;
+
+        public static readonly MoveConfig Config = new MoveConfig();
+
+        public static readonly FloatCvar Gravity = new FloatCvar("sv_gravity", 20.32f, "Gravity, m/s² (Source 800 u/s²).", Sv, 0f, 200f);
+        public static readonly FloatCvar Friction = new FloatCvar("sv_friction", 5.2f, "Ground friction.", Sv, 0f, 50f);
+        public static readonly FloatCvar StopSpeed = new FloatCvar("sv_stopspeed", 2.032f, "Below this speed friction acts as if at this speed, m/s.", Sv, 0f, 20f);
+        public static readonly FloatCvar Accelerate = new FloatCvar("sv_accelerate", 5.5f, "Ground acceleration.", Sv, 0f, 100f);
+        public static readonly FloatCvar AirAccelerate = new FloatCvar("sv_airaccelerate", 12f, "Air acceleration (strafe gain). Surf maps like 100-150.", Sv, 0f, 1000f);
+        public static readonly FloatCvar AirSpeedCap = new FloatCvar("sv_air_max_wishspeed", 0.762f, "Air wish-speed cap, m/s (Source 30 u/s).", Sv, 0f, 20f);
+        public static readonly FloatCvar MaxSpeed = new FloatCvar("sv_maxspeed", 6.35f, "Ground run speed, m/s (Source 250 u/s).", Sv, 0f, 50f);
+        public static readonly FloatCvar JumpSpeed = new FloatCvar("sv_jump_impulse", 7.67f, "Jump vertical speed, m/s (Source 301.99 u/s).", Sv, 0f, 50f);
+        public static readonly FloatCvar MaxVelocity = new FloatCvar("sv_maxvelocity", 88.9f, "Per-axis speed limit, m/s.", Sv, 1f, 500f);
+        public static readonly FloatCvar Standable = new FloatCvar("sv_standable_normal", 0.7f, "Surfaces with normal.y below this are surfable, not walkable.", Sv, 0f, 1f);
+        public static readonly FloatCvar StepHeight = new FloatCvar("sv_stepsize", 0.457f, "Max step-up height, m.", Sv, 0f, 2f);
+        public static readonly BoolCvar ServerAutoHop = new BoolCvar("sv_autobunnyhopping", false, "Force auto-hop for everyone.", Sv);
+        public static readonly BoolCvar ClientAutoHop = new BoolCvar("cl_autohop", false, "Accessibility: hold jump to keep hopping.", CvarFlags.Archive);
+
+        public static void Register(ConsoleSystem console)
+        {
+            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, JumpSpeed, MaxVelocity, Standable, StepHeight })
+            {
+                console.Register(c);
+                c.Changed += _ => Apply();
+            }
+            console.Register(ServerAutoHop).Changed += _ => Apply();
+            console.Register(ClientAutoHop);
+            Apply();
+        }
+
+        private static void Apply()
+        {
+            MoveConfig c = Config;
+            c.Gravity = Gravity;
+            c.Friction = Friction;
+            c.StopSpeed = StopSpeed;
+            c.Accelerate = Accelerate;
+            c.AirAccelerate = AirAccelerate;
+            c.AirSpeedCap = AirSpeedCap;
+            c.MaxSpeed = MaxSpeed;
+            c.JumpSpeed = JumpSpeed;
+            c.MaxVelocity = MaxVelocity;
+            c.StandableNormalY = Standable;
+            c.StepHeight = StepHeight;
+            c.AutoHop = ServerAutoHop;
+        }
+    }
+}

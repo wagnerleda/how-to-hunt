@@ -1,0 +1,14 @@
+{
+    "name": "HowToHunt.Editor",
+    "rootNamespace": "HowToHunt.Editor",
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "HowToHunt.Player", "HowToHunt.Platform", "HowToHunt.DevTools", "HowToHunt.UI", "FishNet.Runtime", "FishySteamworks"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

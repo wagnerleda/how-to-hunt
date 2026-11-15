@@ -27,7 +27,8 @@ namespace HowToHunt.Sim.Movement
             ComputeWish(in cmd, cfg, out Vector3 wishDir, out float wishSpeed);
 
             bool jumpDown = cmd.Has(MoveButtons.Jump);
-            bool jumpPressed = jumpDown && (cfg.AutoHop || !s.JumpHeld);
+            bool autoHop = cfg.AutoHop || cmd.Has(MoveButtons.AutoHop);
+            bool jumpPressed = jumpDown && (autoHop || !s.JumpHeld);
             s.JumpHeld = jumpDown;
 
             // Jump is checked before friction: landing and jumping on the same tick skips friction (bunny hop).

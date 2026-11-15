@@ -1,0 +1,14 @@
+{
+    "name": "HowToHunt.Net",
+    "rootNamespace": "HowToHunt.Net",
+    "references": ["HowToHunt.Foundation", "HowToHunt.Core", "FishNet.Runtime", "FishySteamworks"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

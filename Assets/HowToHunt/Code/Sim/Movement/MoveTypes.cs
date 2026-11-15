@@ -11,6 +11,8 @@ namespace HowToHunt.Sim.Movement
         Jump = 1 << 0,
         Duck = 1 << 1,
         Walk = 1 << 2,
+        /// <summary>Per-player accessibility option: holding jump keeps hopping. Sent with every cmd so host and client agree.</summary>
+        AutoHop = 1 << 3,
     }
 
     /// <summary>One tick of player intent. This is what clients send to the host (a "usercmd").</summary>
