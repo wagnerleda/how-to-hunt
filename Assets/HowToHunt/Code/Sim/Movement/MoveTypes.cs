@@ -10,7 +10,8 @@ namespace HowToHunt.Sim.Movement
         None = 0,
         Jump = 1 << 0,
         Duck = 1 << 1,
-        Walk = 1 << 2,
+        // 1 << 2 was Walk (removed: nobody holds shift to walk in this game).
+        Reserved = 1 << 2,
         /// <summary>Per-player accessibility option: holding jump keeps hopping. Sent with every cmd so host and client agree.</summary>
         AutoHop = 1 << 3,
     }
@@ -82,10 +83,9 @@ namespace HowToHunt.Sim.Movement
         public float Friction = 5.2f;             // sv_friction
         public float StopSpeed = 2.032f;          // sv_stopspeed 80
         public float Accelerate = 5.5f;           // sv_accelerate
-        public float AirAccelerate = 100f;        // sv_airaccelerate (KZ 100, surf 150, CS:GO MM 12)
+        public float AirAccelerate = 250f;        // sv_airaccelerate: forgiving for new players (KZ 100, surf 150, CS:GO MM 12)
         public float AirSpeedCap = 0.762f;        // 30 u/s: the bhop/strafe "wishspeed" cap in the air
         public float MaxSpeed = 6.35f;            // 250 u/s (knife run speed)
-        public float WalkSpeedFactor = 0.52f;
         public float DuckSpeedFactor = 0.34f;
         public float JumpSpeed = 7.67f;           // 301.99 u/s
         public float MaxVelocity = 88.9f;         // sv_maxvelocity 3500

@@ -122,7 +122,7 @@ namespace HowToHunt.Sim.Movement
             Vector3 wish = look * Math.Clamp(cmd.Forward, -1f, 1f) + Right(cmd.Yaw) * Math.Clamp(cmd.Side, -1f, 1f);
             if (cmd.Has(MoveButtons.Jump)) wish.Y += 1f;
             if (cmd.Has(MoveButtons.Duck)) wish.Y -= 1f;
-            float speed = cfg.NoclipSpeed * (cmd.Has(MoveButtons.Walk) ? 0.25f : 1f);
+            float speed = cfg.NoclipSpeed;
             s.Velocity = wish.LengthSquared() > 1e-6f ? Vector3.Normalize(wish) * speed : Vector3.Zero;
             s.Position += s.Velocity * dt;
             s.OnGround = false;
@@ -158,7 +158,6 @@ namespace HowToHunt.Sim.Movement
             wishDir = wish / len;
             wishSpeed = MathF.Min(len, 1f) * cfg.MaxSpeed;
             if (duckedOnGround) wishSpeed *= cfg.DuckSpeedFactor;
-            else if (cmd.Has(MoveButtons.Walk)) wishSpeed *= cfg.WalkSpeedFactor;
         }
 
         private static void ApplyFriction(ref Vector3 vel, MoveConfig cfg, float dt)

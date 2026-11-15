@@ -80,7 +80,6 @@ namespace HowToHunt.Player
             cmd.Forward = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
             cmd.Side = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f);
             if (kb.spaceKey.isPressed || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
-            if (kb.leftShiftKey.isPressed) cmd.Buttons |= MoveButtons.Walk;
             if (kb.leftCtrlKey.isPressed) cmd.Buttons |= MoveButtons.Duck;
             if (MovementCvars.ClientAutoHop.Value) cmd.Buttons |= MoveButtons.AutoHop;
             _jumpLatched = false;

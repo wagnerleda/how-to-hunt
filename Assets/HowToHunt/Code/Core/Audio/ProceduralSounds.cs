@@ -11,38 +11,48 @@ namespace HowToHunt.Core
     {
         private const int Rate = 44100;
 
+        /// <summary>Soft footstep on grass/dirt: two muffled noise taps (heel, toe), no tonal content.</summary>
         public static AudioClip Footstep(int seed)
         {
             var rng = new System.Random(seed);
-            float pitch = 0.9f + (float)rng.NextDouble() * 0.2f;
-            return Make($"step{seed}", 0.09f, (t, i) =>
+            float toe = 0.035f + (float)rng.NextDouble() * 0.02f;
+            float lp = 0f, lp2 = 0f;
+            return Make($"step{seed}", 0.16f, (t, i) =>
             {
-                float env = Mathf.Exp(-t * 55f);
-                float thump = Mathf.Sin(2f * Mathf.PI * 95f * pitch * t) * Mathf.Exp(-t * 70f);
-                return Noise(rng) * env * 0.55f + thump * 0.6f;
-            }, lowpass: 0.18f);
+                float heel = Mathf.Min(1f, t * 400f) * Mathf.Exp(-t * 45f);
+                float toeEnv = t < toe ? 0f : Mathf.Min(1f, (t - toe) * 300f) * Mathf.Exp(-(t - toe) * 38f) * 0.7f;
+                lp += (Noise(rng) - lp) * 0.09f;
+                lp2 += (lp - lp2) * 0.12f;
+                return lp2 * (heel + toeEnv);
+            });
         }
 
+        /// <summary>Barely-there cloth rustle for jumps.</summary>
         public static AudioClip Jump()
         {
             var rng = new System.Random(11);
-            return Make("jump", 0.14f, (t, i) =>
+            float lp = 0f, lp2 = 0f;
+            return Make("jump", 0.18f, (t, i) =>
             {
-                float env = Mathf.Min(1f, t * 120f) * Mathf.Exp(-t * 22f);
-                return Noise(rng) * env * 0.5f;
-            }, lowpass: 0.25f);
+                float env = Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / 0.18f));
+                lp += (Noise(rng) - lp) * 0.06f;
+                lp2 += (lp - lp2) * 0.2f;
+                return lp2 * env * env;
+            });
         }
 
+        /// <summary>Muffled body-weight thud: low filtered noise, no pitch sweep.</summary>
         public static AudioClip Land()
         {
             var rng = new System.Random(23);
-            return Make("land", 0.22f, (t, i) =>
+            float lp = 0f, lp2 = 0f;
+            return Make("land", 0.25f, (t, i) =>
             {
-                float f = Mathf.Lerp(75f, 42f, t / 0.22f);
-                float body = Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-t * 18f);
-                float grit = Noise(rng) * Mathf.Exp(-t * 35f) * 0.5f;
-                return body * 0.9f + grit;
-            }, lowpass: 0.12f);
+                float env = Mathf.Min(1f, t * 500f) * Mathf.Exp(-t * 20f);
+                lp += (Noise(rng) - lp) * 0.035f;
+                lp2 += (lp - lp2) * 0.06f;
+                return lp2 * env;
+            });
         }
 
         /// <summary>Seamless 3 s wind loop.</summary>

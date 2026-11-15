@@ -11,11 +11,13 @@ namespace HowToHunt.Player
     /// </summary>
     public sealed class MovementAudio : MonoBehaviour
     {
+        public static readonly Foundation.FloatCvar Volume = new Foundation.FloatCvar("snd_movement", 0.6f, "Volume of footsteps, jumps, landings and wind (they sit in the background).", Foundation.CvarFlags.Archive, 0f, 1f);
+
         private const int PoolSize = 16;
         private const float Stride = 1.9f;
 
         private AudioClip[] _steps;
-        private AudioClip _jump, _land, _chime, _whoosh, _zap;
+        private AudioClip _jump, _land, _chime, _whoosh;
         private AudioSource[] _pool;
         private int _next;
         private AudioSource _wind;
@@ -28,7 +30,6 @@ namespace HowToHunt.Player
             _land = ProceduralSounds.Land();
             _chime = ProceduralSounds.Chime();
             _whoosh = ProceduralSounds.Whoosh();
-            _zap = ProceduralSounds.Zap();
 
             _pool = new AudioSource[PoolSize];
             for (int i = 0; i < PoolSize; i++)
@@ -63,11 +64,11 @@ namespace HowToHunt.Player
 
         private void OnMoveFeedback(PlayerMotor motor, MoveEvents events, float landSpeed)
         {
-            if ((events & MoveEvents.Jumped) != 0) Play(motor, _jump, 0.35f, Random.Range(0.95f, 1.08f));
+            if ((events & MoveEvents.Jumped) != 0) Play(motor, _jump, 0.05f, Random.Range(0.95f, 1.05f));
             if ((events & MoveEvents.Landed) != 0 && landSpeed > 2.5f)
             {
                 float k = Mathf.Clamp01((landSpeed - 2.5f) / 12f);
-                Play(motor, _land, 0.25f + 0.6f * k, Mathf.Lerp(1.15f, 0.85f, k));
+                Play(motor, _land, 0.06f + 0.22f * k, Mathf.Lerp(1.05f, 0.9f, k));
                 motor.FootstepDistance = 0f;
             }
         }
@@ -77,9 +78,9 @@ namespace HowToHunt.Player
             if (motor != PlayerMotor.Local) return;
             switch (e)
             {
-                case PlayerMotor.ZoneEvent.Checkpoint: Play(motor, _chime, 0.45f, 1f); break;
-                case PlayerMotor.ZoneEvent.Respawned: Play(motor, _whoosh, 0.6f, 1f); break;
-                case PlayerMotor.ZoneEvent.Teleported: Play(motor, _zap, 0.5f, 1f); break;
+                case PlayerMotor.ZoneEvent.Checkpoint: Play(motor, _chime, 0.12f, 1f); break;
+                case PlayerMotor.ZoneEvent.Respawned: Play(motor, _whoosh, 0.25f, 1f); break;
+                case PlayerMotor.ZoneEvent.Teleported: Play(motor, _whoosh, 0.2f, 1.3f); break;
             }
         }
 
@@ -97,7 +98,7 @@ namespace HowToHunt.Player
                 m.FootstepDistance += speed * dt;
                 if (m.FootstepDistance < Stride) continue;
                 m.FootstepDistance = 0f;
-                float volume = Mathf.Clamp01(speed / MovementCvars.Config.MaxSpeed) * (s.Ducked ? 0.15f : 0.4f);
+                float volume = Mathf.Clamp01(speed / MovementCvars.Config.MaxSpeed) * (s.Ducked ? 0.03f : 0.09f);
                 Play(m, _steps[_stepIndex++ & 3], volume, Random.Range(0.92f, 1.08f));
             }
 
@@ -107,7 +108,7 @@ namespace HowToHunt.Player
             {
                 Vector3 v = local.State.Velocity.ToUnity();
                 float speed = v.magnitude;
-                target = Mathf.Clamp01((speed - 7f) / 20f) * 0.55f;
+                target = Mathf.Clamp01((speed - 8f) / 22f) * 0.22f * Volume.Value;
                 pitch = 0.75f + Mathf.Clamp01(speed / 40f) * 0.6f;
             }
             _wind.volume = Mathf.MoveTowards(_wind.volume, target, dt * 0.8f);
@@ -122,7 +123,7 @@ namespace HowToHunt.Player
             src.spatialBlend = local ? 0f : 1f;
             src.transform.position = motor.transform.position;
             src.pitch = pitch;
-            src.volume = volume;
+            src.volume = volume * Volume.Value;
             src.clip = clip;
             src.Play();
         }

@@ -26,6 +26,7 @@ namespace HowToHunt.Player
             r.Cvar(MovementHud.ShowSpeed);
             r.Cvar(MovementHud.Crosshair);
             PlayerCamera.Register(r.Console);
+            r.Cvar(MovementAudio.Volume);
             r.Command("respawn", "Move yourself back to a spawn point (host only for now).", _ => RespawnLocal());
             r.Command("noclip", "Fly through walls (sv_cheats 1).", _ =>
             {
