@@ -135,6 +135,7 @@ namespace HowToHunt.Net
                     return;
                 }
                 if (!CreateManager(SessionTransport.Steam)) return;
+                CvarReplicator.MarkRemoteClient();
                 HostName = result.Info.HostName;
                 Manager.TransportManager.Transport.SetClientAddress(result.Info.OwnerId.ToString());
                 _connectDeadline = Time.unscaledTime + ConnectTimeoutSeconds;
@@ -150,6 +151,7 @@ namespace HowToHunt.Net
             if (State != SessionState.Offline) Disconnect("Connecting elsewhere.");
             Transport = SessionTransport.Local;
             if (!CreateManager(SessionTransport.Local)) return;
+            CvarReplicator.MarkRemoteClient();
             HostName = string.Empty;
             Manager.TransportManager.Transport.SetClientAddress(address);
             Manager.TransportManager.Transport.SetPort(port);
@@ -166,6 +168,7 @@ namespace HowToHunt.Net
             if (manager != null)
             {
                 Unhook(manager);
+                CvarReplicator.Detach();
                 if (manager.IsClientStarted) manager.ClientManager.StopConnection();
                 if (manager.IsServerStarted) manager.ServerManager.StopConnection(true);
                 UnityEngine.Object.Destroy(manager.gameObject);
@@ -217,6 +220,7 @@ namespace HowToHunt.Net
 
             Manager = manager;
             Hook(manager);
+            CvarReplicator.Attach(manager);
             ManagerCreated?.Invoke(manager);
             return true;
         }

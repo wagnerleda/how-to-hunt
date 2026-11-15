@@ -159,6 +159,11 @@ namespace HowToHunt.Sim.Collision
 
         public int BrushCount => _count;
 
+        public IEnumerable<Brush> Brushes
+        {
+            get { for (int i = 0; i < _count; i++) yield return _brushes[i]; }
+        }
+
         public void Clear() => _count = 0;
 
         public void Add(Brush brush)

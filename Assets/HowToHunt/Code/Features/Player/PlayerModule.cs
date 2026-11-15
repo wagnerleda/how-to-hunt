@@ -22,7 +22,31 @@ namespace HowToHunt.Player
         public void Register(ModuleRegistrar r)
         {
             MovementCvars.Register(r.Console);
+            DemoRecorder.Register(r.Console);
             r.Command("respawn", "Move yourself back to a spawn point (host only for now).", _ => RespawnLocal());
+            r.Command("noclip", "Fly through walls (sv_cheats 1).", _ =>
+            {
+                if (PlayerMotor.Local == null) { r.Console.Warn("noclip: no local player."); return; }
+                if (!r.Console.Cheats.Value) { r.Console.Warn("noclip requires sv_cheats 1 (host)."); return; }
+                PlayerMotor.Local.CmdToggleNoclip();
+            });
+            r.Command("setpos", "setpos <x> <y> <z>: teleport your feet there (sv_cheats 1).", args =>
+            {
+                if (PlayerMotor.Local == null || args.Count < 3) { r.Console.Warn("Usage: setpos x y z"); return; }
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                if (!float.TryParse(args[0], System.Globalization.NumberStyles.Float, inv, out float x) ||
+                    !float.TryParse(args[1], System.Globalization.NumberStyles.Float, inv, out float y) ||
+                    !float.TryParse(args[2], System.Globalization.NumberStyles.Float, inv, out float z)) { r.Console.Warn("setpos: bad numbers."); return; }
+                PlayerMotor.Local.CmdSetPos(new Vector3(x, y, z));
+            });
+            r.Command("getpos", "Print your feet position, view angles and speed.", _ =>
+            {
+                PlayerMotor m = PlayerMotor.Local;
+                if (m == null) return;
+                var s = m.State;
+                float feetY = s.Position.Y - MovementCvars.Config.Hull(s.Ducked).Y;
+                r.Console.Print(System.FormattableString.Invariant($"setpos {s.Position.X:0.00} {feetY:0.00} {s.Position.Z:0.00}; yaw {m.ViewYaw:0.0} pitch {m.ViewPitch:0.0}; speed {Sim.Movement.PlayerMove.HorizontalSpeed(s.Velocity):0.00} m/s"));
+            });
         }
 
         public void Initialize()
@@ -35,6 +59,7 @@ namespace HowToHunt.Player
 
         public void Shutdown()
         {
+            DemoRecorder.Unregister();
             NetSession.ManagerCreated -= OnManagerCreated;
             PlayerMotor.LocalPlayerStarted -= PlayerCamera.Attach;
         }

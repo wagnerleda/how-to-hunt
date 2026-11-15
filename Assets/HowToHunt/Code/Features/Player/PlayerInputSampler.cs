@@ -16,6 +16,17 @@ namespace HowToHunt.Player
         private const float DegreesPerCount = 0.022f;
 
         private bool _jumpLatched;
+        private int _playIndex;
+        private MoveDemo _playback;
+
+        /// <summary>When set, commands come from this demo instead of the keyboard and mouse.</summary>
+        public MoveDemo Playback
+        {
+            get => _playback;
+            set { _playback = value; _playIndex = 0; }
+        }
+
+        public event System.Action<MoveDemo> PlaybackFinished;
 
         public float Yaw { get; set; }
         public float Pitch { get; set; }
@@ -23,7 +34,7 @@ namespace HowToHunt.Player
         /// <summary>Call every frame.</summary>
         public void UpdateFrame()
         {
-            if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
+            if (Playback != null || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
             Mouse mouse = Mouse.current;
             Keyboard kb = Keyboard.current;
             if (mouse != null)
@@ -42,6 +53,20 @@ namespace HowToHunt.Player
         /// <summary>Call once per tick; returns the command for this tick.</summary>
         public MoveCmd BuildCmd(float tickDelta)
         {
+            if (Playback != null)
+            {
+                if (_playIndex < Playback.Cmds.Count)
+                {
+                    MoveCmd played = Playback.Cmds[_playIndex++];
+                    Yaw = played.Yaw;
+                    Pitch = played.Pitch;
+                    return played;
+                }
+                MoveDemo finished = Playback;
+                Playback = null;
+                PlaybackFinished?.Invoke(finished);
+            }
+
             if (MovementCvars.BotForward.Value != 0f || MovementCvars.BotSide.Value != 0f || MovementCvars.BotYawSpeed.Value != 0f || MovementCvars.BotJump.Value)
                 return BuildBotCmd(tickDelta);
 

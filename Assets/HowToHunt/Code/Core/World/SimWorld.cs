@@ -14,6 +14,7 @@ namespace HowToHunt.Core
         private static bool _hooked;
 
         public static ICollisionWorld Current => World;
+        public static BrushWorld Brushes => World;
         public static int BrushCount => World.BrushCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
