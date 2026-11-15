@@ -259,6 +259,7 @@ GameObject:
   - component: {fileID: 718631556011006410}
   - component: {fileID: 6695922477862081840}
   - component: {fileID: 2414267057680932011}
+  - component: {fileID: 547273092238150943}
   m_Layer: 0
   m_Name: PlayerAvatar
   m_TagString: Untagged
@@ -355,3 +356,15 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 6695922477862081840}
   _networkObjectCache: {fileID: 0}
   _tickCallbacks: 6
+--- !u!114 &547273092238150943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7332040647779395840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5d833548afd76f46923e6ce6e28e8bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HowToHunt.Player::HowToHunt.Player.PlayerVisual

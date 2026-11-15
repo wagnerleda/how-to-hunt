@@ -34,6 +34,7 @@ namespace HowToHunt.Editor
             EnsurePlatformSettings();
             Palette.EnsureMaterials();
             EnsureMeshes();
+            EnsureFxMaterials();
             BuildPlayerPrefab();
             BuildNetworkManagerPrefab();
             BuildButterflyPrefab();
@@ -48,6 +49,23 @@ namespace HowToHunt.Editor
             string parent = Path.GetDirectoryName(path)!.Replace('\\', '/');
             EnsureFolder(parent);
             AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
+        }
+
+        /// <summary>Materials loaded at runtime by FX (must live in Resources so builds include them).</summary>
+        private static void EnsureFxMaterials()
+        {
+            const string path = ResourcesDir + "/FX/M_Dust.mat";
+            EnsureFolder(ResourcesDir + "/FX");
+            Material m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            m.SetColor("_BaseColor", new Color(0.86f, 0.78f, 0.6f));
+            m.SetFloat("_Smoothness", 0.05f);
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
         }
 
         private static void EnsurePlatformSettings()
@@ -89,6 +107,7 @@ namespace HowToHunt.Editor
             {
                 NetworkObject nob = root.AddComponent<NetworkObject>();
                 root.AddComponent<PlayerMotor>();
+                root.AddComponent<PlayerVisual>();
 
                 var visual = new GameObject("Visual");
                 visual.transform.SetParent(root.transform, false);

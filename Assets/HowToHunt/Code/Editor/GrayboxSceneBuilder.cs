@@ -286,7 +286,7 @@ namespace HowToHunt.Editor
             Visual(level, $"Pad {label}", feet + new Vector3(0, 0.02f, 0), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
             Zone(zones, $"Teleport {label}", feet + new Vector3(0, 1f, 0), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, target);
             float yaw = Mathf.Atan2(feet.x, feet.z) * Mathf.Rad2Deg;
-            Sign(signs, label, feet + new Vector3(0, 2.6f, 0), yaw, 1.6f);
+            Sign(signs, label, feet + new Vector3(0, 2.4f, 0), yaw, 0.9f);
         }
 
         private static void Zone(Transform parent, string name, Vector3 center, Vector3 size, ZoneKind kind, Transform target = null)
@@ -310,9 +310,8 @@ namespace HowToHunt.Editor
             tmp.text = text;
             tmp.fontSize = size * 4f;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = new Color(1f, 0.97f, 0.9f);
-            tmp.outlineWidth = 0.18f;
-            tmp.outlineColor = new Color32(40, 34, 30, 255);
+            // Dark slate reads well against the bright sky and walls (generated signs can't keep a per-sign outline material).
+            tmp.color = new Color(0.16f, 0.21f, 0.26f);
             tmp.rectTransform.sizeDelta = new Vector2(12f, 4f);
             tmp.textWrappingMode = TextWrappingModes.Normal;
         }

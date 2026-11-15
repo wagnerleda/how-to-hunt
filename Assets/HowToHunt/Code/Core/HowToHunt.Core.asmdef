@@ -1,7 +1,7 @@
 {
     "name": "HowToHunt.Core",
     "rootNamespace": "HowToHunt.Core",
-    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "Unity.InputSystem"],
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "Unity.InputSystem", "Unity.TextMeshPro", "UnityEngine.UI"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

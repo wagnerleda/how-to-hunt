@@ -1,7 +1,7 @@
 {
     "name": "HowToHunt.Player",
     "rootNamespace": "HowToHunt.Player",
-    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "FishNet.Runtime", "Unity.InputSystem"],
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "FishNet.Runtime", "Unity.InputSystem", "Unity.TextMeshPro", "UnityEngine.UI"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

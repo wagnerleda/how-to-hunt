@@ -77,6 +77,14 @@ namespace HowToHunt.Player
 
         public static PlayerMotor Local { get; private set; }
 
+        private static readonly System.Collections.Generic.List<PlayerMotor> Spawned = new System.Collections.Generic.List<PlayerMotor>(8);
+
+        /// <summary>All spawned players on this machine (for footsteps, HUD, bots).</summary>
+        public static System.Collections.Generic.IReadOnlyList<PlayerMotor> All => Spawned;
+
+        /// <summary>Distance walked since the last footstep sound (audio bookkeeping).</summary>
+        [System.NonSerialized] public float FootstepDistance;
+
         /// <summary>Jumped / landed / ducked events for camera, sound and particles (any player, real ticks only).</summary>
         public static event Action<PlayerMotor, MoveEvents, float> MoveFeedback;
 
@@ -103,11 +111,18 @@ namespace HowToHunt.Player
         public override void OnStartNetwork()
         {
             base.OnStartNetwork();
+            if (!Spawned.Contains(this)) Spawned.Add(this);
             _state = new MoveState { Position = transform.position.ToSim() };
             _checkpointFeet = transform.position - new Vector3(0f, MovementCvars.Config.HullHalfExtents.Y, 0f);
             _checkpointYaw = transform.eulerAngles.y;
             _input.Yaw = transform.eulerAngles.y;
             ViewYaw = _input.Yaw;
+        }
+
+        public override void OnStopNetwork()
+        {
+            base.OnStopNetwork();
+            Spawned.Remove(this);
         }
 
         public override void OnStartClient()

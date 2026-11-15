@@ -23,6 +23,9 @@ namespace HowToHunt.Player
         {
             MovementCvars.Register(r.Console);
             DemoRecorder.Register(r.Console);
+            r.Cvar(MovementHud.ShowSpeed);
+            r.Cvar(MovementHud.Crosshair);
+            PlayerCamera.Register(r.Console);
             r.Command("respawn", "Move yourself back to a spawn point (host only for now).", _ => RespawnLocal());
             r.Command("noclip", "Fly through walls (sv_cheats 1).", _ =>
             {
@@ -55,6 +58,9 @@ namespace HowToHunt.Player
             if (_playerPrefab == null) Debug.LogError("[Player] Missing Resources/Player/PlayerAvatar prefab.");
             NetSession.ManagerCreated += OnManagerCreated;
             PlayerMotor.LocalPlayerStarted += PlayerCamera.Attach;
+            MovementHud.Ensure();
+            Game.Root.gameObject.AddComponent<MovementAudio>();
+            Game.Root.gameObject.AddComponent<LandingDust>();
         }
 
         public void Shutdown()

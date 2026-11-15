@@ -1,34 +1,44 @@
 using System;
-using System.Text;
 using FishNet.Managing;
 using HowToHunt.Core;
 using HowToHunt.Foundation;
 using HowToHunt.Net;
+using TMPro;
 using UnityEngine;
 
 namespace HowToHunt.DevTools
 {
     /// <summary>
-    /// Debug overlay: fps, frame time, tick, ping, main-thread allocations per frame, speed.
-    /// The text is rebuilt 4 times a second so the overlay itself stays cheap.
+    /// Debug overlay (top right): fps, frame time, main-thread allocations per frame, tick, ping, players.
+    /// Refreshed 4 times a second with TMP's allocation-free SetText, so it never shows up in its own alloc counter.
+    /// The allocation number is the budget check: steady-state gameplay must show 0 B/frame.
     /// </summary>
     public sealed class DebugOverlay : MonoBehaviour
     {
-        public static readonly IntCvar ShowFps = new IntCvar("cl_showfps", 1, "0 off, 1 fps + net, 2 + allocations and frame time.", CvarFlags.Archive, 0, 2);
+        public static readonly IntCvar ShowFps = new IntCvar("cl_showfps", 1, "0 off, 1 fps + net, 2 + frame time and allocations.", CvarFlags.Archive, 0, 2);
 
-        /// <summary>Features can contribute a line (e.g. speed). Must not allocate.</summary>
-        public static Func<StringBuilder, bool> ExtraLine;
-
-        private readonly StringBuilder _sb = new StringBuilder(256);
-        private string _text = string.Empty;
+        private TextMeshProUGUI _perf;
+        private TextMeshProUGUI _net;
+        private TextMeshProUGUI _state;
         private float _nextRefresh;
         private int _frames;
         private float _accumTime;
         private float _worstFrame;
         private long _lastAllocated;
         private long _allocAccum;
-        private GUIStyle _style;
-        private GUIStyle _shadow;
+        private SessionState _shownState = (SessionState)(-1);
+        private SessionTransport _shownTransport = (SessionTransport)(-1);
+
+        private static readonly string[] StateNames = Enum.GetNames(typeof(SessionState));
+        private static readonly string[] TransportNames = Enum.GetNames(typeof(SessionTransport));
+
+        private void Awake()
+        {
+            var color = new Color(0.95f, 0.97f, 1f, 0.9f);
+            _perf = Hud.Text("Perf", new Vector2(1f, 1f), new Vector2(-16, -12), 18, TextAlignmentOptions.TopRight, color);
+            _net = Hud.Text("Net", new Vector2(1f, 1f), new Vector2(-16, -36), 18, TextAlignmentOptions.TopRight, color);
+            _state = Hud.Text("NetState", new Vector2(1f, 1f), new Vector2(-16, -60), 18, TextAlignmentOptions.TopRight, color);
+        }
 
         private void Update()
         {
@@ -43,59 +53,50 @@ namespace HowToHunt.DevTools
 
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + 0.25f;
-            Rebuild();
+            Refresh();
             _frames = 0;
             _accumTime = 0f;
             _worstFrame = 0f;
             _allocAccum = 0;
         }
 
-        private void Rebuild()
+        private void Refresh()
         {
-            if (ShowFps.Value == 0)
-            {
-                _text = string.Empty;
-                return;
-            }
-            _sb.Clear();
-            float avgMs = _frames > 0 ? _accumTime / _frames * 1000f : 0f;
-            _sb.Append(Mathf.RoundToInt(_frames / Mathf.Max(0.0001f, _accumTime))).Append(" fps");
+            bool on = ShowFps.Value > 0;
+            NetworkManager m = NetSession.Manager;
+            SetActive(_perf.gameObject, on);
+            SetActive(_net.gameObject, on && m != null);
+            SetActive(_state.gameObject, on && m != null);
+            if (!on) return;
+
+            float fps = _frames / Mathf.Max(0.0001f, _accumTime);
             if (ShowFps.Value >= 2)
             {
-                _sb.Append("  ").Append(avgMs.ToString("0.0")).Append(" ms (worst ").Append((_worstFrame * 1000f).ToString("0.0")).Append(')');
-                long perFrame = _frames > 0 ? _allocAccum / _frames : 0;
-                _sb.Append("  alloc ").Append(perFrame).Append(" B/frame");
+                float avgMs = _frames > 0 ? _accumTime / _frames * 1000f : 0f;
+                float allocPerFrame = _frames > 0 ? (float)_allocAccum / _frames : 0f;
+                _perf.SetText("{0} fps  {1:1} ms (worst {2:1})  alloc {3} B/frame", Mathf.Round(fps), avgMs, _worstFrame * 1000f, Mathf.Round(allocPerFrame));
+            }
+            else
+            {
+                _perf.SetText("{0} fps", Mathf.Round(fps));
             }
 
-            NetworkManager m = NetSession.Manager;
-            if (m != null)
+            if (m == null) return;
+            if (m.IsServerStarted)
+                _net.SetText("tick {0} @{1}  players {2}", m.TimeManager.Tick, m.TimeManager.TickRate, NetSession.PlayerCount);
+            else
+                _net.SetText("tick {0} @{1}  ping {2} ms", m.TimeManager.Tick, m.TimeManager.TickRate, m.TimeManager.RoundTripTime);
+            if (_shownState != NetSession.State || _shownTransport != NetSession.Transport)
             {
-                _sb.Append('\n').Append(NetSession.State).Append(' ').Append(NetSession.Transport);
-                _sb.Append("  tick ").Append(m.TimeManager.Tick).Append(" @").Append(m.TimeManager.TickRate);
-                if (!m.IsServerStarted) _sb.Append("  ping ").Append(m.TimeManager.RoundTripTime).Append(" ms");
-                if (m.IsServerStarted) _sb.Append("  players ").Append(m.ServerManager.Clients.Count);
+                _shownState = NetSession.State;
+                _shownTransport = NetSession.Transport;
+                _state.text = StateNames[(int)_shownState] + " · " + TransportNames[(int)_shownTransport];
             }
-            if (ExtraLine != null)
-            {
-                _sb.Append('\n');
-                if (!ExtraLine(_sb)) _sb.Length--;
-            }
-            _text = _sb.ToString();
         }
 
-        private void OnGUI()
+        private static void SetActive(GameObject go, bool active)
         {
-            if (_text.Length == 0) return;
-            if (_style == null)
-            {
-                _style = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold };
-                _style.normal.textColor = new Color(0.95f, 0.97f, 1f);
-                _shadow = new GUIStyle(_style);
-                _shadow.normal.textColor = new Color(0f, 0f, 0f, 0.7f);
-            }
-            var r = new Rect(Screen.width - 330, 8, 320, 120);
-            GUI.Label(new Rect(r.x + 1, r.y + 1, r.width, r.height), _text, _shadow);
-            GUI.Label(r, _text, _style);
+            if (go.activeSelf != active) go.SetActive(active);
         }
     }
 }
