@@ -46,8 +46,13 @@ namespace HowToHunt.Core
             Game.Modules.DiscoverAndRegister();
             if (Game.Platform == null) Game.Platform = new OfflinePlatform("No platform module.");
 
-            ExecIfExists(console, ConfigFile);
-            ExecIfExists(console, "autoexec.cfg");
+            // -nocfg: neither read nor write config.cfg (several instances on one PC: tests, bots).
+            NoConfig = Array.IndexOf(Environment.GetCommandLineArgs(), "-nocfg") >= 0;
+            if (!NoConfig)
+            {
+                ExecIfExists(console, ConfigFile);
+                ExecIfExists(console, "autoexec.cfg");
+            }
             foreach (Cvar cvar in console.Cvars)
                 if ((cvar.Flags & CvarFlags.Archive) != 0) cvar.Changed += _ => ScheduleConfigSave();
 
@@ -90,8 +95,11 @@ namespace HowToHunt.Core
 
         private void ScheduleConfigSave() => _saveConfigAt = Time.unscaledTime + 1f;
 
+        private static bool NoConfig;
+
         private static void SaveConfig()
         {
+            if (NoConfig) return;
             try
             {
                 Directory.CreateDirectory(ConfigDirectory);
