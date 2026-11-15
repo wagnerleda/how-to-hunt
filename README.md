@@ -2,7 +2,7 @@
 
 Co-op incremental first-person hunting game (Unity 6, URP, Windows). Hunt prey by catching or killing it, sell it, upgrade your gear, unlock new biomes through bunny-hop and surf traversal courses. 1–8 players over Steam peer-to-peer, PvP allowed.
 
-Status: **M1 (movement lab)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](docs/adr), [docs/DESIGN.md](docs/DESIGN.md).
+Status: **M2 (co-op core)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](docs/adr), [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Run it
 
@@ -21,11 +21,14 @@ Movement lab: step on the purple pads in the plaza (BHOP, GAPS, SURF). Useful co
 powershell -ExecutionPolicy Bypass -File tools/build-windows.ps1
 ```
 
-Produces `Builds/Windows/HowToHunt.exe` (version `VERSION` + commit count) and runs a headless launch smoke test. See [docs/RELEASE.md](docs/RELEASE.md).
+Produces `Builds/Windows/HowToHunt.exe` (version `VERSION` + commit count) and runs a headless launch smoke test. The shareable installer: `tools/build-installer.ps1` => `Builds/Installer/HowToHunt-Setup-<version>.exe`. See [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Test
 
-EditMode tests live in `Assets/HowToHunt/Tests/EditMode` (Window > General > Test Runner, or `unity command test run --mode editor`).
+- EditMode tests: `Assets/HowToHunt/Tests/EditMode` (Window > General > Test Runner, or `unity command test run --mode editor`). Includes movement replays and lag-compensation proofs.
+- Loopback stress test (host + 7 bots + a refused 9th): `powershell -ExecutionPolicy Bypass -File tools/bots-test.ps1`
+- Lag compensation over a real network path: `powershell -ExecutionPolicy Bypass -File tools/lagcomp-test.ps1 -LatencyMs 150`
+- Installer + install/join/uninstall test: `powershell -ExecutionPolicy Bypass -File tools/build-installer.ps1 -TestInstall`
 
 ## Repo layout
 
