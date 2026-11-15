@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="HowToHunt.Sim.csproj" />
+  <Project Path="FishySteamworks.csproj" />
+  <Project Path="HowToHunt.Foundation.csproj" />
+  <Project Path="HowToHunt.Tests.EditMode.csproj" />
+</Solution>
