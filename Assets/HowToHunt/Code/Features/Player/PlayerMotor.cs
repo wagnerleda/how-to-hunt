@@ -19,24 +19,32 @@ namespace HowToHunt.Player
     {
         public struct ReplicateData : IReplicateData
         {
-            public float Forward;
-            public float Side;
-            public float Yaw;
-            public float Pitch;
+            // Packed to 7 bytes (bandwidth). The owner simulates the unpacked values too, so prediction stays exact.
+            public sbyte Forward;
+            public sbyte Side;
+            public ushort Yaw;   // 0..65535 = 0..360°
+            public short Pitch;  // -32767..32767 = -90..90°
             public byte Buttons;
             private uint _tick;
 
             public ReplicateData(in MoveCmd cmd)
             {
-                Forward = cmd.Forward;
-                Side = cmd.Side;
-                Yaw = cmd.Yaw;
-                Pitch = cmd.Pitch;
+                Forward = (sbyte)Mathf.RoundToInt(Mathf.Clamp(cmd.Forward, -1f, 1f) * 127f);
+                Side = (sbyte)Mathf.RoundToInt(Mathf.Clamp(cmd.Side, -1f, 1f) * 127f);
+                Yaw = (ushort)(Mathf.RoundToInt(Mathf.Repeat(cmd.Yaw, 360f) / 360f * 65536f) & 0xFFFF);
+                Pitch = (short)Mathf.RoundToInt(Mathf.Clamp(cmd.Pitch, -90f, 90f) / 90f * 32767f);
                 Buttons = (byte)cmd.Buttons;
                 _tick = 0;
             }
 
-            public MoveCmd ToCmd() => new MoveCmd { Forward = Forward, Side = Side, Yaw = Yaw, Pitch = Pitch, Buttons = (MoveButtons)Buttons };
+            public MoveCmd ToCmd() => new MoveCmd
+            {
+                Forward = Forward / 127f,
+                Side = Side / 127f,
+                Yaw = Yaw * (360f / 65536f),
+                Pitch = Pitch * (90f / 32767f),
+                Buttons = (MoveButtons)Buttons,
+            };
             public void Dispose() { }
             public uint GetTick() => _tick;
             public void SetTick(uint value) => _tick = value;
@@ -156,6 +164,8 @@ namespace HowToHunt.Player
 
         public override void CreateReconcile()
         {
+            // The host sends corrections every Nth tick (bandwidth); clients always keep their local copy.
+            if (IsServerStarted && TimeManager.Tick % (uint)MovementCvars.ReconcileInterval.Value != 0) return;
             PerformReconcile(new ReconcileData(in _state, _checkpointFeet, _checkpointYaw));
         }
 

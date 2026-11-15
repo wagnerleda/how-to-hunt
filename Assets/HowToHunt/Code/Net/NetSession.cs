@@ -82,8 +82,8 @@ namespace HowToHunt.Net
 
             if (!CreateManager(Transport)) return;
             Transport t = Manager.TransportManager.Transport;
-            // One spare transport slot so a 9th player gets a proper "party is full" message from the roster check.
-            t.SetMaximumClients(GameIdentity.MaxPartySize);
+            // Spare transport slots (the host's own client may use one) so a 9th player gets a proper "party is full" message from the roster check.
+            t.SetMaximumClients(GameIdentity.MaxPartySize + 1);
             if (Transport == SessionTransport.Local)
             {
                 t.SetServerBindAddress(string.Empty, IPAddressType.IPv4);

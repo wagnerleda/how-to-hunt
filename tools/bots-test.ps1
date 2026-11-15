@@ -16,14 +16,14 @@ New-Item -ItemType Directory -Force $logs | Out-Null
 Get-ChildItem $logs -Filter *.log | Remove-Item
 
 $stats = $Seconds - 8
-$hostArgs = @('-batchmode', '-nographics', '-logFile', "$logs/host.log", '+fps_max', '64', '+host', 'local',
+$hostArgs = @('-batchmode', '-nographics', '-logFile', "$logs/host.log", '+mat_vsync', '0', '+fps_max', '64', '+host', 'local',
     '+delay', "$stats", 'net_stats', '+delay', "$($stats + 1)", 'status', '+delay', "$Seconds", 'quit')
 $procs = @(Start-Process $exe -ArgumentList $hostArgs -PassThru)
 Start-Sleep -Seconds 4
 
 for ($i = 1; $i -le 8; $i++) {
     $yaw = 20 + 15 * $i
-    $botArgs = @('-batchmode', '-nographics', '-logFile', "$logs/bot$i.log", '+fps_max', '64', '+name', "Bot$i",
+    $botArgs = @('-batchmode', '-nographics', '-logFile', "$logs/bot$i.log", '+mat_vsync', '0', '+fps_max', '64', '+name', "Bot$i",
         '+cl_bot_forward', '1', '+cl_bot_yawspeed', "$yaw", '+cl_bot_jump', '1', '+connect', '127.0.0.1',
         '+delay', "$($stats - 4)", 'net_stats', '+delay', "$($Seconds - 5)", 'quit')
     $procs += Start-Process $exe -ArgumentList $botArgs -PassThru
@@ -48,9 +48,11 @@ for ($i = 1; $i -le 8; $i++) {
 $exceptions += ([regex]::Matches($hostLog, 'Exception')).Count
 $hostStats = [regex]::Match($hostLog, '\[net_stats\][^\r\n]*').Value
 
-Write-Host "Joined: $joined (expected 7)  refused as full: $refused (expected 1)  dropped before the end: $([Math]::Max(0, $left - $joined + $joined - 7 + 0))"
+$playersLate = 0
+$pm = [regex]::Match($hostStats, 'players (\d+)'); if ($pm.Success) { $playersLate = [int]$pm.Groups[1].Value }
+Write-Host "Joined: $joined (expected 7)  refused as full: $refused (expected 1)  connected near the end: $playersLate (expected 8 incl. host)"
 Write-Host "Host:  $hostStats"
 $clientStats | ForEach-Object { Write-Host "  $_" }
 Write-Host "Exceptions in logs: $exceptions"
-$ok = ($joined -eq 7) -and ($refused -eq 1) -and ($exceptions -eq 0)
+$ok = ($joined -eq 7) -and ($refused -eq 1) -and ($exceptions -eq 0) -and ($playersLate -eq 8)
 if ($ok) { Write-Host "BOTS TEST PASSED" } else { Write-Host "BOTS TEST FAILED (logs in Logs/bots)"; exit 1 }

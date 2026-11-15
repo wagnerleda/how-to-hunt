@@ -28,6 +28,7 @@ namespace HowToHunt.Player
         public static readonly FloatCvar Standable = new FloatCvar("sv_standable_normal", D.StandableNormalY, "Surfaces with normal.y below this are surfable, not walkable.", Sv, 0f, 1f);
         public static readonly FloatCvar StepHeight = new FloatCvar("sv_stepsize", D.StepHeight, "Max step-up height, m.", Sv, 0f, 2f);
         public static readonly BoolCvar ServerAutoHop = new BoolCvar("sv_autobunnyhopping", false, "Force auto-hop for everyone.", Sv);
+        public static readonly IntCvar ReconcileInterval = new IntCvar("sv_reconcile_interval", 3, "Host sends movement corrections every N ticks (1 = every tick).", CvarFlags.Replicated, 1, 16);
         public static readonly BoolCvar ClientAutoHop = new BoolCvar("cl_autohop", false, "Accessibility: hold jump to keep hopping.", CvarFlags.Archive);
 
         // Scripted input for automated tests and bots. Moves like any player; the host validates it like any input.
@@ -45,6 +46,7 @@ namespace HowToHunt.Player
             }
             console.Register(ServerAutoHop).Changed += _ => Apply();
             console.Register(ClientAutoHop);
+            console.Register(ReconcileInterval);
             console.Register(BotForward);
             console.Register(BotSide);
             console.Register(BotYawSpeed);
