@@ -77,7 +77,7 @@ namespace HowToHunt.Editor
             File.WriteAllText(Path.Combine(fullOutput, "version.txt"), version);
 
             // Debug symbols folders are not shipped.
-            foreach (string dir in Directory.GetDirectories(fullOutput, "*DoNotShip*")) Directory.Delete(dir, true);
+            foreach (string dir in Directory.GetDirectories(fullOutput, "*DontShip*")) Directory.Delete(dir, true);
 
             Debug.Log($"[Build] OK {version} ({(il2cpp ? "IL2CPP" : "Mono")}{(development ? ", development" : "")}) -> {fullOutput} " +
                       $"in {report.summary.totalTime.TotalSeconds:0}s, {report.summary.totalSize / (1024 * 1024)} MB");
