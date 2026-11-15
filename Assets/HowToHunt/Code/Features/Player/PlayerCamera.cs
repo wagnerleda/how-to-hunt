@@ -26,6 +26,10 @@ namespace HowToHunt.Player
         private float _kickVelocity;
         private float _roll;
         private float _fovBonus;
+        private float _recoil;
+
+        /// <summary>Visual recoil (view kick that settles back; aim is unaffected).</summary>
+        public void Kick(float degrees) => _recoil = Mathf.Min(_recoil + degrees, 6f);
 
         public static PlayerCamera Instance { get; private set; }
 
@@ -119,7 +123,8 @@ namespace HowToHunt.Player
             Vector3 center = _visual.position;
             float feetY = center.y - cfg.Hull(s.Ducked).Y;
             transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z),
-                Quaternion.Euler(_target.ViewPitch, _target.ViewYaw, -_roll));
+                Quaternion.Euler(_target.ViewPitch - _recoil, _target.ViewYaw, -_roll));
+            _recoil = Mathf.MoveTowards(_recoil, 0f, dt * (6f + _recoil * 8f));
 
             // Click to recapture the mouse after alt-tab or closing the console.
             if (!Game.UiHasFocus && Cursor.lockState != CursorLockMode.Locked &&

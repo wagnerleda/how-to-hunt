@@ -54,6 +54,9 @@ namespace HowToHunt.Editor
         /// <summary>Materials loaded at runtime by FX (must live in Resources so builds include them).</summary>
         private static void EnsureFxMaterials()
         {
+            UnlitFx("M_Tracer", new Color(1f, 0.86f, 0.5f));
+            UnlitFx("M_DebugSeen", new Color(0.3f, 0.55f, 1f));
+            UnlitFx("M_DebugChecked", new Color(0.3f, 1f, 0.45f));
             const string path = ResourcesDir + "/FX/M_Dust.mat";
             EnsureFolder(ResourcesDir + "/FX");
             Material m = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -65,6 +68,20 @@ namespace HowToHunt.Editor
             m.SetColor("_BaseColor", new Color(0.86f, 0.78f, 0.6f));
             m.SetFloat("_Smoothness", 0.05f);
             m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
+        }
+
+        private static void UnlitFx(string name, Color color)
+        {
+            string path = ResourcesDir + "/FX/" + name + ".mat";
+            EnsureFolder(ResourcesDir + "/FX");
+            Material m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            m.SetColor("_BaseColor", color);
             EditorUtility.SetDirty(m);
         }
 
@@ -108,6 +125,7 @@ namespace HowToHunt.Editor
                 NetworkObject nob = root.AddComponent<NetworkObject>();
                 root.AddComponent<PlayerMotor>();
                 root.AddComponent<PlayerVisual>();
+                root.AddComponent<Hunting.PlayerWeapon>();
 
                 var visual = new GameObject("Visual");
                 visual.transform.SetParent(root.transform, false);

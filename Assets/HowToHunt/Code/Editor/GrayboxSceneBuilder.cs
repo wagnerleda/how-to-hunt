@@ -70,6 +70,7 @@ namespace HowToHunt.Editor
             BuildSlopeGallery(level, signs);
             BuildLedgesAndStairs(level, signs);
             BuildSprintLane(level, signs);
+            BuildShootingRange(level, signs);
             PlaceButterflies();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -246,6 +247,49 @@ namespace HowToHunt.Editor
                 Visual(root, $"Stripe {i * 5}", new Vector3(-9f - i * 5f - 2.5f, 0.006f, 8f), new Vector3(5f, 0.012f, 4f), i % 2 == 0 ? "Sand" : "Stripe");
             for (int i = 0; i <= 14; i += 2)
                 Sign(signs, $"{i * 5} m", new Vector3(-9f - i * 5f, 0.8f, 10.5f), 270f, 1f);
+        }
+
+        /// <summary>South: firing line and three moving target dummies to prove lag-compensated hits (M2).</summary>
+        private static void BuildShootingRange(Transform level, Transform signs)
+        {
+            Transform root = Group(level, "Shooting Range");
+            Box(root, "Firing Line", new Vector3(8f, 0.05f, -22f), new Vector3(12f, 0.1f, 3f), "Sand");
+            Box(root, "Range Backstop", new Vector3(8f, 3f, -58f), new Vector3(30f, 6f, 1f), "Wall");
+            Box(root, "Range Side L", new Vector3(-7.5f, 1f, -40f), new Vector3(1f, 2f, 36f), "Wall");
+            Box(root, "Range Side R", new Vector3(23.5f, 1f, -40f), new Vector3(1f, 2f, 36f), "Wall");
+            Sign(signs, "RANGE\n<size=60%>left click to shoot - cl_showhits 1 shows what the host checked</size>", new Vector3(8f, 3.5f, -23.5f), 180f, 1.6f);
+            Dummy(root, "Target Dummy A", new Vector3(2f, 0f, -34f), new Vector3(14f, 0f, -34f), 3f);
+            Dummy(root, "Target Dummy B", new Vector3(0f, 0f, -44f), new Vector3(16f, 0f, -44f), 6f);
+            Dummy(root, "Target Dummy C", new Vector3(-2f, 0f, -54f), new Vector3(18f, 0f, -54f), 9f);
+        }
+
+        private static void Dummy(Transform parent, string name, Vector3 start, Vector3 end, float speed)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = start;
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.name = "Body";
+            body.transform.SetParent(go.transform, false);
+            body.transform.localPosition = new Vector3(0f, 0.8f, 0f);
+            body.transform.localScale = new Vector3(0.64f, 0.77f, 0.64f);
+            body.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("Ramp");
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Object.DestroyImmediate(head.GetComponent<Collider>());
+            head.name = "Head";
+            head.transform.SetParent(go.transform, false);
+            head.transform.localPosition = new Vector3(0f, 1.585f, 0f);
+            head.transform.localScale = Vector3.one * 0.38f;
+            head.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("Wall");
+            GameObject nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Object.DestroyImmediate(nose.GetComponent<Collider>());
+            nose.name = "Facing";
+            nose.transform.SetParent(go.transform, false);
+            nose.transform.localPosition = new Vector3(0f, 1.1f, 0.3f);
+            nose.transform.localScale = new Vector3(0.3f, 0.2f, 0.12f);
+            nose.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("Visor");
+            go.AddComponent<Hunting.TargetDummy>().Configure(start, end, speed);
         }
 
         private static void PlaceButterflies()

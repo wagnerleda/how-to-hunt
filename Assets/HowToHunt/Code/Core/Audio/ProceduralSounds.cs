@@ -85,6 +85,45 @@ namespace HowToHunt.Core
             return clip;
         }
 
+        /// <summary>Placeholder pistol: a short muffled pop with a soft tail (real recordings come in M3).</summary>
+        public static AudioClip Shot()
+        {
+            var rng = new System.Random(41);
+            float lp = 0f, lp2 = 0f;
+            return Make("shot", 0.3f, (t, i) =>
+            {
+                float env = Mathf.Min(1f, t * 3000f) * (Mathf.Exp(-t * 40f) + 0.15f * Mathf.Exp(-t * 9f));
+                lp += (Noise(rng) - lp) * 0.3f;
+                lp2 += (lp - lp2) * 0.25f;
+                return lp2 * env;
+            });
+        }
+
+        /// <summary>Soft confirmation tap for a hit (filtered noise, no beep).</summary>
+        public static AudioClip HitTick()
+        {
+            var rng = new System.Random(43);
+            float lp = 0f;
+            return Make("hittick", 0.05f, (t, i) =>
+            {
+                lp += (Noise(rng) - lp) * 0.45f;
+                return lp * Mathf.Exp(-t * 90f);
+            });
+        }
+
+        /// <summary>Low thud for a takedown.</summary>
+        public static AudioClip KillThunk()
+        {
+            var rng = new System.Random(47);
+            float lp = 0f, lp2 = 0f;
+            return Make("kill", 0.3f, (t, i) =>
+            {
+                lp += (Noise(rng) - lp) * 0.05f;
+                lp2 += (lp - lp2) * 0.08f;
+                return lp2 * Mathf.Min(1f, t * 800f) * Mathf.Exp(-t * 12f);
+            });
+        }
+
         public static AudioClip Chime()
         {
             return Make("chime", 0.42f, (t, i) =>
