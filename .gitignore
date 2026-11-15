@@ -79,3 +79,4 @@ crashlytics-build.properties
 /tools/out/
 *.blend1
 /Screenshots/
+*.slnx
