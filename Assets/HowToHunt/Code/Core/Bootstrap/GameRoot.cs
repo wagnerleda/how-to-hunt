@@ -154,11 +154,27 @@ namespace HowToHunt.Core
             console.Register("host_writeconfig", "Save config.cfg now.", _ => { SaveConfig(); console.Print($"Saved to {ConfigDirectory}"); });
             console.Register("version", "Print build and protocol version.", _ => console.Print($"version {Game.Version}, protocol {Game.ProtocolVersion}, Unity {Application.unityVersion}"));
             console.Register("clear", "Clear the console.", _ => DevConsoleView.ClearLog());
+            console.Register("delay", "delay <seconds> <command...>: run a command later (scripted tests).", args =>
+            {
+                if (args.Count < 2 || !float.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float seconds))
+                {
+                    console.Warn("Usage: delay <seconds> <command...>");
+                    return;
+                }
+                string rest = args.ArgString.Substring(args[0].Length).Trim();
+                Game.Root.StartCoroutine(Delayed(seconds, rest));
+            });
             console.Register("smoke_quit", "smoke_quit <seconds>: log SMOKE OK and quit after a delay (launch tests).", args =>
             {
                 float seconds = args.Count > 0 && float.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float s) ? s : 5f;
                 Game.Root.StartCoroutine(SmokeQuit(seconds));
             });
+        }
+
+        private static System.Collections.IEnumerator Delayed(float seconds, string command)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            ConsoleSystem.Global.Execute(command);
         }
 
         private static System.Collections.IEnumerator SmokeQuit(float seconds)

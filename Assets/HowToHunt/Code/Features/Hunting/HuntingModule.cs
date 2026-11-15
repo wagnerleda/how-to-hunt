@@ -23,6 +23,16 @@ namespace HowToHunt.Hunting
         public void Register(ModuleRegistrar r)
         {
             HuntingCvars.Register(r.Console);
+            r.Command("wpn_autofire", "wpn_autofire <dummy 0-2> <shots>: test aimbot, shoots a dummy where this machine sees it (sv_cheats 1).", args =>
+            {
+                if (args.Count < 2 || !int.TryParse(args[0], out int d) || !int.TryParse(args[1], out int n)) { r.Console.Warn("Usage: wpn_autofire <dummy> <shots>"); return; }
+                PlayerWeapon.ShotsFired = 0;
+                PlayerWeapon.HitsConfirmed = 0;
+                PlayerWeapon.AutoFireTarget = d;
+                PlayerWeapon.AutoFireShots = n;
+            }, Foundation.CommandFlags.Cheat);
+            r.Command("wpn_stats", "Shots fired and hits confirmed by the host since the last wpn_autofire.", _ =>
+                r.Console.Print($"[hit] {PlayerWeapon.HitsConfirmed}/{PlayerWeapon.ShotsFired} shots confirmed as hits"));
             r.Command("dummy_reset", "Restore all target dummies to full health (host).", _ =>
             {
                 if (!NetSession.IsServer) return;

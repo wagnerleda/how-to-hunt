@@ -41,8 +41,25 @@ namespace HowToHunt.Net
                 }
                 NetSession.ConnectLocal(target, port);
             });
+            r.Cvar(FakeLag).Changed += _ => ApplyFakeNetwork(NetSession.Manager);
+            r.Cvar(FakeLoss).Changed += _ => ApplyFakeNetwork(NetSession.Manager);
+            NetSession.ManagerCreated += ApplyFakeNetwork;
             r.Command("disconnect", "Leave the current session.", _ => NetSession.Disconnect("You left the session."));
             r.Command("status", "Show session state and connected players.", _ => r.Console.Print(Describe()));
+        }
+
+        public static readonly Foundation.IntCvar FakeLag = new Foundation.IntCvar("net_fakelag", 0, "Testing: add this many ms of latency to this machine's traffic.", Foundation.CvarFlags.None, 0, 1000);
+        public static readonly Foundation.FloatCvar FakeLoss = new Foundation.FloatCvar("net_fakeloss", 0f, "Testing: drop this percent of this machine's packets.", Foundation.CvarFlags.None, 0f, 50f);
+
+        private static void ApplyFakeNetwork(NetworkManager m)
+        {
+            if (m == null) return;
+            var sim = m.TransportManager.LatencySimulator;
+            bool on = FakeLag.Value > 0 || FakeLoss.Value > 0f;
+            sim.SetLatency(FakeLag.Value);
+            sim.SetPacketLoss(FakeLoss.Value / 100.0);
+            sim.SetEnabled(on);
+            if (on) Game.Console.Print($"[net] simulating {FakeLag.Value} ms latency, {FakeLoss.Value:0.#}% loss");
         }
 
         public void Initialize()

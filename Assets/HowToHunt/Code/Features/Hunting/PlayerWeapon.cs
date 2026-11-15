@@ -33,16 +33,41 @@ namespace HowToHunt.Hunting
 
         private void Awake() => _motor = GetComponent<PlayerMotor>();
 
+        // Test hook: wpn_autofire aims at a dummy exactly where this machine draws it (proves lag compensation).
+        public static int AutoFireTarget = -1;
+        public static int AutoFireShots;
+        public static int ShotsFired, HitsConfirmed;
+
         private void Update()
         {
-            if (!IsOwner || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
+            if (!IsOwner) return;
+            if (AutoFireShots > 0 && Time.time >= _nextFire)
+            {
+                AutoFire();
+                return;
+            }
+            if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
             if (!KeyBindings.WasPressedThisFrame(GameAction.Fire) || Time.time < _nextFire) return;
-            _nextFire = Time.time + 1f / HuntingCvars.FireRate.Value;
-
             Camera cam = Camera.main;
             if (cam == null) return;
+            Fire(cam.transform.position, cam.transform.forward);
+        }
+
+        private void AutoFire()
+        {
+            Camera cam = Camera.main;
+            if (cam == null || AutoFireTarget < 0 || AutoFireTarget >= TargetDummy.All.Count) { AutoFireShots = 0; return; }
+            AutoFireShots--;
+            var pose = TargetDummy.All[AutoFireTarget].Path.PoseAt(HitClock.ViewTick(), HitClock.TickRate);
+            Vector3 target = pose.Position.ToUnity() + new Vector3(0f, 0.8f, 0f);
             Vector3 origin = cam.transform.position;
-            Vector3 dir = cam.transform.forward;
+            Fire(origin, (target - origin).normalized);
+        }
+
+        private void Fire(Vector3 origin, Vector3 dir)
+        {
+            _nextFire = Time.time + 1f / HuntingCvars.FireRate.Value;
+            ShotsFired++;
             double viewTick = HitClock.ViewTick();
             LocalShot?.Invoke(this, origin, dir);
             HitFeedback.RememberSeen(viewTick);
@@ -101,6 +126,7 @@ namespace HowToHunt.Hunting
         [TargetRpc]
         private void RpcHitConfirm(NetworkConnection conn, Vector3 point, float damage, bool head, bool killed, int target, Vector3 checkedFeet, float checkedYaw, float rewoundTicks)
         {
+            HitsConfirmed++;
             HitFeedback.Confirm(point, damage, head, killed, target, checkedFeet, checkedYaw, rewoundTicks);
         }
 
