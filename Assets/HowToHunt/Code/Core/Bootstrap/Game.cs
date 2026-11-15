@@ -70,6 +70,9 @@ namespace HowToHunt.Core
             Modules = null;
             Root = null;
             Platform = null;
+#if UNITY_EDITOR
+            _editorVersion = null; // recompute (VERSION + commit count) on every Play
+#endif
         }
     }
 }

@@ -166,7 +166,7 @@ namespace HowToHunt.Net
         public static void Kick(int clientId)
         {
             if (_manager == null || !_manager.IsServerStarted) return;
-            if (!_manager.ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn) || conn.IsLocalClient) return;
+            if (!_manager.ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn) || IsHostConnection(conn)) return;
             Reject(conn, "You were removed from the party by the host.");
             Game.Console.Print($"[party] Kicked {(ServerMembers.TryGetValue(clientId, out PartyMember m) ? m.Name : "#" + clientId)}.");
         }
@@ -180,27 +180,36 @@ namespace HowToHunt.Net
 
         // --- server side ----------------------------------------------------------------------------------
 
+        /// <summary>The host's own client (its connection isn't always flagged local, depending on the transport).</summary>
+        private static bool IsHostConnection(NetworkConnection conn)
+        {
+            if (conn.IsLocalClient) return true;
+            var local = _manager != null && _manager.IsClientStarted ? _manager.ClientManager.Connection : null;
+            return local != null && local.IsValid && local.ClientId == conn.ClientId;
+        }
+
         private static void OnHello(NetworkConnection conn, HelloBroadcast hello, Channel channel)
         {
+            bool isHost = IsHostConnection(conn);
             if (hello.Protocol != Game.ProtocolVersion)
             {
                 Reject(conn, $"Update required: the host runs version {Game.ProtocolVersion}, you run {hello.Protocol}. Both players need the same build.");
                 return;
             }
-            if (!conn.IsLocalClient && Locked)
+            if (!isHost && Locked)
             {
                 Reject(conn, "This party is locked by the host.");
                 return;
             }
-            if (!conn.IsLocalClient && ServerMembers.Count >= GameIdentity.MaxPartySize)
+            if (!isHost && ServerMembers.Count >= GameIdentity.MaxPartySize)
             {
                 Reject(conn, $"This party is full ({GameIdentity.MaxPartySize} players).");
                 return;
             }
             string name = string.IsNullOrWhiteSpace(hello.Name) ? $"Hunter {conn.ClientId}" : hello.Name.Trim();
             if (name.Length > 32) name = name.Substring(0, 32);
-            ServerMembers[conn.ClientId] = new PartyMember(conn.ClientId, name, hello.SteamId, 0, conn.IsLocalClient);
-            if (!conn.IsLocalClient) Game.Console.Print($"[party] {name} joined.");
+            ServerMembers[conn.ClientId] = new PartyMember(conn.ClientId, name, hello.SteamId, 0, isHost);
+            if (!isHost) Game.Console.Print($"[party] {name} joined.");
             PushRoster();
         }
 
