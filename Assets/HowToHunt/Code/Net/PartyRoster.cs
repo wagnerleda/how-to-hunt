@@ -16,6 +16,8 @@ namespace HowToHunt.Net
         public string Protocol;
         public string Name;
         public ulong SteamId;
+        /// <summary>Per-session secret only the host's own process knows (identifies the host's client).</summary>
+        public ulong HostToken;
     }
 
     /// <summary>Host → client before disconnecting it: why.</summary>
@@ -73,6 +75,7 @@ namespace HowToHunt.Net
         private static NetworkManager _manager;
         private static float _nextPing;
         private static float _nextRoster;
+        private static ulong _hostToken;
 
         public static IReadOnlyList<PartyMember> Members => MembersList;
         public static bool Locked { get; private set; }
@@ -99,6 +102,7 @@ namespace HowToHunt.Net
         {
             Detach();
             _manager = manager;
+            _hostToken = ((ulong)(uint)Guid.NewGuid().GetHashCode() << 32) | (uint)Guid.NewGuid().GetHashCode() | 1UL;
             LastRejectReason = string.Empty;
             Locked = false;
             manager.ServerManager.RegisterBroadcast<HelloBroadcast>(OnHello);
@@ -181,16 +185,12 @@ namespace HowToHunt.Net
         // --- server side ----------------------------------------------------------------------------------
 
         /// <summary>The host's own client (its connection isn't always flagged local, depending on the transport).</summary>
-        private static bool IsHostConnection(NetworkConnection conn)
-        {
-            if (conn.IsLocalClient) return true;
-            var local = _manager != null && _manager.IsClientStarted ? _manager.ClientManager.Connection : null;
-            return local != null && local.IsValid && local.ClientId == conn.ClientId;
-        }
+        private static bool IsHostConnection(NetworkConnection conn) =>
+            conn.IsLocalClient || (ServerMembers.TryGetValue(conn.ClientId, out PartyMember m) && m.IsHost);
 
         private static void OnHello(NetworkConnection conn, HelloBroadcast hello, Channel channel)
         {
-            bool isHost = IsHostConnection(conn);
+            bool isHost = conn.IsLocalClient || (hello.HostToken != 0 && hello.HostToken == _hostToken);
             if (hello.Protocol != Game.ProtocolVersion)
             {
                 Reject(conn, $"Update required: the host runs version {Game.ProtocolVersion}, you run {hello.Protocol}. Both players need the same build.");
@@ -271,6 +271,7 @@ namespace HowToHunt.Net
                 Protocol = Game.ProtocolVersion,
                 Name = name,
                 SteamId = p != null && p.IsOnline ? p.LocalUserId : 0,
+                HostToken = _manager.IsServerStarted ? _hostToken : 0,
             });
             _nextPing = Time.unscaledTime + 1f;
         }
