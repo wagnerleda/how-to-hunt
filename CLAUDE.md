@@ -22,3 +22,8 @@
 - Third-party: Fish-Net 4.7.3 (4.7.4 git release does not compile), Steamworks.NET 2025.165.0, FishySteamworks vendored in `Assets/ThirdParty` (no upstream asmdef).
 - Blender: sources in `Art/Source`, exports in `Assets/HowToHunt/Art/Models/<Name>/` following docs/ASSETS.md. Commit before Blender MCP sessions.
 - Ask before paid services or unclear licenses; log every asset in docs/ASSETS.md. New ideas go to docs/IDEAS.md.
+
+## Movement lab
+- Rebuild the map: `HowToHunt.Editor.GrayboxSceneBuilder.Build()` (also exports collision to Tests/Data/Worlds).
+- Regenerate scripted demos after an intended physics/map change: `HowToHunt.Editor.MovementLabTools.GenerateScriptedDemos()`. ReplayTests replays every demo in Tests/Data/Demos (including ones recorded in the editor with `record`/`stop`).
+- Always leave Play mode when done testing: an Editor in Play mode registers with Steam as app 480, and closing Spacewar on the same account kills the Editor.

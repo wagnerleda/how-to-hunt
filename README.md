@@ -2,7 +2,7 @@
 
 Co-op incremental first-person hunting game (Unity 6, URP, Windows). Hunt prey by catching or killing it, sell it, upgrade your gear, unlock new biomes through bunny-hop and surf traversal courses. 1–8 players over Steam peer-to-peer, PvP allowed.
 
-Status: **M0 (setup and risk spike)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](docs/adr), [docs/DESIGN.md](docs/DESIGN.md).
+Status: **M1 (movement lab)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](docs/adr), [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Run it
 
@@ -11,7 +11,9 @@ Status: **M0 (setup and risk spike)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [
 3. Click **Play solo**, or **Host a party** (needs Steam running), then Esc > **Invite friends**. Your friend must have the game open to accept the Steam invite (or use "Friends' parties" in the menu).
 4. Console: the key left of `1` (or F1). Try `help`, `find sv_`, `status`, `net_graph 2`.
 
-Controls: WASD, mouse, Space or mouse wheel to jump, Shift to walk, Esc for the menu (invite friends, leave).
+Controls: WASD, mouse, Space or mouse wheel to jump, Ctrl to crouch, Shift to walk, Esc for the menu (invite friends, leave).
+
+Movement lab: step on the purple pads in the plaza (BHOP, GAPS, SURF). Useful console: `sv_cheats 1`, `noclip`, `getpos`, `setpos x y z`, `record name` / `stop` / `playdemo name`, `cl_showspeed 2`, `net_graph 2`, `find sv_`.
 
 ## Build
 
