@@ -27,6 +27,12 @@ namespace HowToHunt.Player
         public static readonly BoolCvar ServerAutoHop = new BoolCvar("sv_autobunnyhopping", false, "Force auto-hop for everyone.", Sv);
         public static readonly BoolCvar ClientAutoHop = new BoolCvar("cl_autohop", false, "Accessibility: hold jump to keep hopping.", CvarFlags.Archive);
 
+        // Scripted input for automated tests and bots. Moves like any player; the host validates it like any input.
+        public static readonly FloatCvar BotForward = new FloatCvar("cl_bot_forward", 0f, "Test: constant forward input -1..1.", CvarFlags.None, -1f, 1f);
+        public static readonly FloatCvar BotSide = new FloatCvar("cl_bot_side", 0f, "Test: constant strafe input -1..1.", CvarFlags.None, -1f, 1f);
+        public static readonly FloatCvar BotYawSpeed = new FloatCvar("cl_bot_yawspeed", 0f, "Test: constant turn rate, degrees/s.", CvarFlags.None, -720f, 720f);
+        public static readonly BoolCvar BotJump = new BoolCvar("cl_bot_jump", false, "Test: hold jump (auto-hop).");
+
         public static void Register(ConsoleSystem console)
         {
             foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, JumpSpeed, MaxVelocity, Standable, StepHeight })
@@ -36,6 +42,10 @@ namespace HowToHunt.Player
             }
             console.Register(ServerAutoHop).Changed += _ => Apply();
             console.Register(ClientAutoHop);
+            console.Register(BotForward);
+            console.Register(BotSide);
+            console.Register(BotYawSpeed);
+            console.Register(BotJump);
             Apply();
         }
 

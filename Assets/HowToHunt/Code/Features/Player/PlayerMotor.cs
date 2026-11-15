@@ -115,7 +115,7 @@ namespace HowToHunt.Player
 
         protected override void TimeManager_OnTick()
         {
-            PerformReplicate(IsOwner ? new ReplicateData(_input.BuildCmd()) : default);
+            PerformReplicate(IsOwner ? new ReplicateData(_input.BuildCmd((float)TimeManager.TickDelta)) : default);
         }
 
         protected override void TimeManager_OnPostTick() => CreateReconcile();

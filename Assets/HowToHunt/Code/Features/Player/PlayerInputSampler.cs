@@ -40,8 +40,11 @@ namespace HowToHunt.Player
         }
 
         /// <summary>Call once per tick; returns the command for this tick.</summary>
-        public MoveCmd BuildCmd()
+        public MoveCmd BuildCmd(float tickDelta)
         {
+            if (MovementCvars.BotForward.Value != 0f || MovementCvars.BotSide.Value != 0f || MovementCvars.BotYawSpeed.Value != 0f || MovementCvars.BotJump.Value)
+                return BuildBotCmd(tickDelta);
+
             var cmd = new MoveCmd { Yaw = Yaw, Pitch = Pitch };
             Keyboard kb = Keyboard.current;
             if (kb == null || Game.UiHasFocus)
@@ -55,6 +58,22 @@ namespace HowToHunt.Player
             if (kb.leftShiftKey.isPressed) cmd.Buttons |= MoveButtons.Walk;
             if (kb.leftCtrlKey.isPressed) cmd.Buttons |= MoveButtons.Duck;
             if (MovementCvars.ClientAutoHop.Value) cmd.Buttons |= MoveButtons.AutoHop;
+            _jumpLatched = false;
+            return cmd;
+        }
+
+        /// <summary>Scripted input for automated tests and bots (cl_bot_* cvars).</summary>
+        private MoveCmd BuildBotCmd(float tickDelta)
+        {
+            Yaw = Mathf.Repeat(Yaw + MovementCvars.BotYawSpeed.Value * tickDelta, 360f);
+            var cmd = new MoveCmd
+            {
+                Yaw = Yaw,
+                Pitch = Pitch,
+                Forward = MovementCvars.BotForward.Value,
+                Side = MovementCvars.BotSide.Value,
+                Buttons = MoveButtons.AutoHop | (MovementCvars.BotJump.Value ? MoveButtons.Jump : MoveButtons.None),
+            };
             _jumpLatched = false;
             return cmd;
         }

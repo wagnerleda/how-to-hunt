@@ -35,6 +35,21 @@ namespace HowToHunt.Editor
         /// <summary>Returns null on success, otherwise an error message.</summary>
         public static string BuildWindows(string outputDir, string version, bool development, bool il2cpp)
         {
+            // The stamped version must not churn ProjectSettings.asset in git: restore it after the build.
+            string previousVersion = PlayerSettings.bundleVersion;
+            try
+            {
+                return BuildWindowsInternal(outputDir, version, development, il2cpp);
+            }
+            finally
+            {
+                PlayerSettings.bundleVersion = previousVersion;
+                AssetDatabase.SaveAssets();
+            }
+        }
+
+        private static string BuildWindowsInternal(string outputDir, string version, bool development, bool il2cpp)
+        {
             ApplyPlayerSettings(version, il2cpp);
 
             string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();

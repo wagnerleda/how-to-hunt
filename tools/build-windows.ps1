@@ -42,7 +42,11 @@ if ($editorOpen) {
     Write-Host "Using the open Unity Editor."
     $outLiteral = $Output.Replace('\', '/')
     $code = "return HowToHunt.Editor.BuildScript.BuildWindows(`"$outLiteral`", `"$version`", $($dev.ToString().ToLower()), $($Il2cpp.IsPresent.ToString().ToLower())) ?? `"BUILD OK`";"
-    $result = & unity command script eval --project-path $root --timeout 3600 $code 2>&1
+    # Pass the code through a file: Windows PowerShell mangles embedded quotes in native arguments.
+    $codeFile = Join-Path $root 'Temp/build-eval.cs'
+    New-Item -ItemType Directory -Force (Split-Path $codeFile) | Out-Null
+    Set-Content -Path $codeFile -Value $code -Encoding UTF8
+    $result = & unity command script eval --project-path $root --file $codeFile --timeout 3600 2>&1
     $result | Select-Object -Last 3 | ForEach-Object { Write-Host $_ }
     if (-not (($result -join "`n") -match 'BUILD OK')) { throw "Build failed (see the Unity console)." }
 } else {
