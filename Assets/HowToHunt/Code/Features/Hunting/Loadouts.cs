@@ -23,6 +23,41 @@ namespace HowToHunt.Hunting
 
         public void AddUpgrade(uint id) => _upgrades.Add(id);
 
+        // --- attachments (Phase 5) ----------------------------------------------------------------------------
+
+        /// <summary>Changes whenever the fitted attachments do (viewmodels rebuild their attachment models).</summary>
+        public int FittedVersion { get; private set; }
+        private readonly Dictionary<uint, List<AttachmentDefinition>> _fitted = new Dictionary<uint, List<AttachmentDefinition>>();
+        private readonly Dictionary<ToolDefinition, GunSetup> _setups = new Dictionary<ToolDefinition, GunSetup>();
+        private static readonly List<AttachmentDefinition> None = new List<AttachmentDefinition>();
+
+        /// <summary>Replace every fitted attachment: parallel arrays of (tool id, attachment id).</summary>
+        public void SetFitted(IReadOnlyList<uint> tools, IReadOnlyList<uint> attachments)
+        {
+            _fitted.Clear();
+            FittedVersion++;
+            _setups.Clear();
+            if (tools == null || attachments == null) return;
+            for (int i = 0; i < tools.Count && i < attachments.Count; i++)
+            {
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new ContentId(attachments[i]));
+                if (a == null) continue;
+                if (!_fitted.TryGetValue(tools[i], out List<AttachmentDefinition> list)) _fitted[tools[i]] = list = new List<AttachmentDefinition>();
+                list.Add(a);
+            }
+        }
+
+        public IReadOnlyList<AttachmentDefinition> Fitted(ToolDefinition tool)
+            => tool != null && _fitted.TryGetValue(tool.Id.Value, out List<AttachmentDefinition> list) ? list : None;
+
+        /// <summary>The gun's numbers with this player's attachments (cached until they change).</summary>
+        public GunSetup Setup(ToolDefinition tool)
+        {
+            if (tool == null) return null;
+            if (!_setups.TryGetValue(tool, out GunSetup s)) _setups[tool] = s = GunSetup.For(tool, Fitted(tool));
+            return s;
+        }
+
         public bool HasUpgrade(UpgradeDefinition u) => u != null && _upgrades.Contains(u.Id.Value);
 
         public bool Owns(ToolDefinition tool)
@@ -47,6 +82,7 @@ namespace HowToHunt.Hunting
                 HeadshotMultiplier = tool.HeadshotMultiplier,
             };
             range = tool.Range;
+            if (tool.Archetype == ToolArchetype.Firearm) s.Damage *= Setup(tool).DamageMultiplier; // attachments (ammo types, barrels)
             s.Damage *= HuntingCvars.DamageScale.Value;
             foreach (UpgradeDefinition u in Loadouts.AllUpgrades)
             {
@@ -107,6 +143,7 @@ namespace HowToHunt.Hunting
             _upgrades = null;
             _tools = null;
             Local.SetUpgrades(System.Array.Empty<uint>());
+            Local.SetFitted(null, null);
         }
 
         private static List<UpgradeDefinition> Sorted(List<UpgradeDefinition> list)

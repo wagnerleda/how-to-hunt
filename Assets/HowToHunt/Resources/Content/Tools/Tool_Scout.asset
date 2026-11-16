@@ -45,6 +45,22 @@ MonoBehaviour:
   MuzzleOffset: {x: 0, y: 0.03, z: 0.78}
   ScopeOverlay: 1
   Weight: 1
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.03, z: 0.78}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: -0.025, z: 0.36}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.01, z: 0.1}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.02, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: -0.035, z: -0.39}
+    Euler: {x: 0, y: 0, z: 0}
   FireSounds: []
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}

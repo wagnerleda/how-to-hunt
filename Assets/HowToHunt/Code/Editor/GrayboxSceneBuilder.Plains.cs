@@ -386,6 +386,8 @@ namespace HowToHunt.Editor
             // Trader: sells the bag. Outfitter: the upgrade shop.
             Station(camp, signs, CampStationKind.Sell, "Trader", "TRADER\n<size=55%>sell your catch</size>", c + new Vector3(8f, 0f, -1f), 90f);
             Station(camp, signs, CampStationKind.Shop, "Outfitter", "OUTFITTER\n<size=55%>tools and upgrades</size>", c + new Vector3(-8f, 0f, -1f), 270f);
+            // Gunsmith (Phase 5): attachments for your guns.
+            Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f);
             Prop(camp, "log_stack", c + new Vector3(-10.5f, 0f, -2.5f), 3f, rng, collide: true, yaw: 90f);
             Prop(camp, "pot_large", c + new Vector3(10.3f, 0f, -2.8f), 3f, rng, collide: false, yaw: 0f);
             Prop(camp, "crop_pumpkin", c + new Vector3(9.4f, 0f, 1.3f), 3f, rng, collide: false, yaw: 20f);
@@ -453,7 +455,7 @@ namespace HowToHunt.Editor
             Visual(t, "Counter Top", feet + fwd * 1.2f + new Vector3(0f, 1.03f, 0f), new Vector3(3.4f, 0.08f, 1.15f), "Crate", yaw);
             Box(t, "Post L", feet + fwd * 1.8f - right * 1.6f + new Vector3(0f, 1.3f, 0f), new Vector3(0.18f, 2.6f, 0.18f), "Wood", yaw);
             Box(t, "Post R", feet + fwd * 1.8f + right * 1.6f + new Vector3(0f, 1.3f, 0f), new Vector3(0.18f, 2.6f, 0.18f), "Wood", yaw);
-            Visual(t, "Awning", feet + fwd * 1.3f + new Vector3(0f, 2.65f, 0f), new Vector3(3.8f, 0.12f, 1.8f), kind == CampStationKind.Sell ? "Bhop" : "Surf", yaw);
+            Visual(t, "Awning", feet + fwd * 1.3f + new Vector3(0f, 2.65f, 0f), new Vector3(3.8f, 0.12f, 1.8f), kind == CampStationKind.Sell ? "Bhop" : kind == CampStationKind.Shop ? "Surf" : "Ramp", yaw);
             Sign(signs, signText, feet + fwd * 1.85f + new Vector3(0f, 3.35f, 0f), yaw, 1.1f);
 
             var station = new GameObject($"Station {label}");

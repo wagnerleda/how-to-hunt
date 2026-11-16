@@ -245,7 +245,7 @@ namespace HowToHunt.Hunting
         }
 
         /// <summary>Host: a gunshot at <paramref name="at"/>. Prey that fear guns and hear it bolt away.</summary>
-        public static void HostGunshot(Vector3 at)
+        public static void HostGunshot(Vector3 at, float loudness = 1f)
         {
             if (!IsHost) return;
             Vec3 source = at.ToSim();
@@ -255,6 +255,7 @@ namespace HowToHunt.Hunting
                 PreyInstance p = Instances[i];
                 if (!p.Alive || p.IsFlyer) continue;
                 PreyBehavior b = p.Def.Behavior;
+                b.HearingRange *= loudness; // a suppressor shrinks how far prey hear the shot
                 PreyBrain.Startle(ref p.State, in b, source, time);
             }
         }

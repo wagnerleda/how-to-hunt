@@ -81,6 +81,17 @@ namespace HowToHunt.Economy
                     Sfx.Play2D("Kenney/handleCoins", 0.6f);
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
+                case EconomyEvent.AttachmentBought:
+                {
+                    AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(msg.EventContent));
+                    if (a != null) HuntFeedback.Feed($"Bought {a.DisplayName}");
+                    Sfx.Play2D("Kenney/confirmation_001", 0.5f);
+                    Sfx.Play2D("Kenney/handleCoins", 0.4f, 0.9f);
+                    break;
+                }
+                case EconomyEvent.AttachmentFitted:
+                    Sfx.Play2D("Kenney/click_001", 0.5f, 0.8f);
+                    break;
                 case EconomyEvent.Bought:
                 {
                     UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(new Foundation.ContentId(msg.EventContent));
@@ -128,7 +139,7 @@ namespace HowToHunt.Economy
             {
                 if (cam != null) item = WorldItems.Targeted(cam.transform.position, cam.transform.forward, WorldItems.PickupReach.Value);
                 Vector3 pos = me.transform.position;
-                station = CampStation.Nearest(pos, CampStationKind.Sell) ?? CampStation.Nearest(pos, CampStationKind.Shop);
+                station = CampStation.Nearest(pos, CampStationKind.Sell) ?? CampStation.Nearest(pos, CampStationKind.Shop) ?? CampStation.Nearest(pos, CampStationKind.Workshop);
             }
 
             int bag = EconomyNet.Local.Inventory.PreyCount;
@@ -147,6 +158,7 @@ namespace HowToHunt.Economy
             else if (station != null)
             {
                 if (station.Kind == CampStationKind.Sell) EconomyNet.RequestSell();
+                else if (station.Kind == CampStationKind.Workshop) WorkshopPanel.Open(station);
                 else ShopPanel.Open(station);
             }
         }
@@ -166,6 +178,7 @@ namespace HowToHunt.Economy
         {
             string key = KeyBindings.DisplayName(GameAction.Interact);
             if (station.Kind == CampStationKind.Shop) return $"[{key}] {station.Label}: browse upgrades";
+            if (station.Kind == CampStationKind.Workshop) return $"[{key}] {station.Label}: attachments for your guns";
             EconomyProfile p = EconomyNet.Local;
             int n = p.Inventory.PreyCount;
             if (n == 0) return $"{station.Label}: nothing to sell yet";

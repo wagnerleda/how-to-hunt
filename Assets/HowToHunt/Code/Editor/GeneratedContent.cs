@@ -153,6 +153,15 @@ namespace HowToHunt.Editor
                 t.AdsZoom = 1.15f;
                 t.SightOffset = new Vector3(0f, 0.075f, 0f);
                 t.MuzzleOffset = new Vector3(0f, 0.04f, 0.29f);
+                // Phase 5 mounts (model space): muzzle, top rail for a red dot, under the barrel, and internal slots.
+                t.AttachmentAnchors = new List<AttachmentAnchor>
+                {
+                    new AttachmentAnchor { Slot = AttachmentSlot.Muzzle, Position = new Vector3(0f, 0.04f, 0.29f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Optic, Position = new Vector3(0f, 0.066f, 0.1f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Underbarrel, Position = new Vector3(0f, 0.02f, 0.2f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Magazine, Position = new Vector3(0f, 0.02f, 0.05f) }, // the cylinder
+                    new AttachmentAnchor { Slot = AttachmentSlot.Ammo, Position = new Vector3(0f, 0.02f, 0.05f) },
+                };
                 t.Weight = 0;
                 t.HeadshotMultiplier = 2f;
                 t.Range = 150f;
@@ -163,7 +172,7 @@ namespace HowToHunt.Editor
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");
             });
 
-            Asset<ToolDefinition>("Tools/Tool_Scout", "tool.scout", "Scout Rifle",
+            ToolDefinition scout = Asset<ToolDefinition>("Tools/Tool_Scout", "tool.scout", "Scout Rifle",
                 "Bolt-action with a scope. Stays accurate on the move; far too much gun for small prey.", t =>
             {
                 t.Archetype = ToolArchetype.Firearm;
@@ -195,6 +204,15 @@ namespace HowToHunt.Editor
                 t.ScopeOverlay = true;
                 t.SightOffset = new Vector3(0f, 0.09f, -0.06f);
                 t.MuzzleOffset = new Vector3(0f, 0.03f, 0.78f);
+                // The scope is part of the rifle (no optic slot); muzzle, foregrip, magazine, ammo and butt pad.
+                t.AttachmentAnchors = new List<AttachmentAnchor>
+                {
+                    new AttachmentAnchor { Slot = AttachmentSlot.Muzzle, Position = new Vector3(0f, 0.03f, 0.78f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Underbarrel, Position = new Vector3(0f, -0.025f, 0.36f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Magazine, Position = new Vector3(0f, -0.01f, 0.1f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Ammo, Position = new Vector3(0f, 0.02f, 0.05f) },
+                    new AttachmentAnchor { Slot = AttachmentSlot.Stock, Position = new Vector3(0f, -0.035f, -0.39f) },
+                };
                 t.Weight = 1; // a little heavy: slows you slightly while held
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ScoutPrefabPath);
             });
@@ -267,6 +285,73 @@ namespace HowToHunt.Editor
                 u.Requires = pack;
             });
 
+            // --- Phase 5: the Gunsmith's attachments (expensive: a gun becomes a killing machine of its own) -----
+            GeneratedAssets.EnsureFolder(ContentDir + "/Attachments");
+            GameObject AttachmentModel(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"{GeneratedAssets.AttachmentsDir}/{name}.prefab");
+            Attach("muzzle_brake", "Muzzle Brake", "Tames the kick (recoil -25 %). A little louder.", AttachmentSlot.Muzzle, 450, 10, a =>
+            {
+                a.RecoilMultiplier = 0.75f;
+                a.NoiseMultiplier = 1.15f;
+                a.Visual = AttachmentModel("MuzzleBrake");
+            });
+            Attach("suppressor", "Suppressor", "Prey hear the shot from a third as far. Slightly shorter reach.", AttachmentSlot.Muzzle, 700, 20, a =>
+            {
+                a.NoiseMultiplier = 0.35f;
+                a.RangeMultiplier = 0.9f;
+                a.RecoilMultiplier = 0.9f;
+                a.DamageMultiplier = 0.95f;
+                a.Visual = AttachmentModel("Suppressor");
+            });
+            Attach("laser", "Laser Sight", "Steadier from the hip and on the move.", AttachmentSlot.Underbarrel, 500, 30, a =>
+            {
+                a.Tools = new List<ToolDefinition> { revolver };
+                a.SpreadMultiplier = 0.6f;
+                a.MoveSpreadMultiplier = 0.75f;
+                a.Visual = AttachmentModel("Laser");
+            });
+            Attach("foregrip", "Foregrip", "Recoil -20 %, tighter down the scope.", AttachmentSlot.Underbarrel, 450, 31, a =>
+            {
+                a.Tools = new List<ToolDefinition> { scout };
+                a.RecoilMultiplier = 0.8f;
+                a.AdsSpreadMultiplier = 0.8f;
+                a.Visual = AttachmentModel("Foregrip");
+            });
+            Attach("speed_loader", "Speed Loader", "Reloads almost twice as fast.", AttachmentSlot.Magazine, 400, 40, a =>
+            {
+                a.Tools = new List<ToolDefinition> { revolver };
+                a.ReloadMultiplier = 0.55f;
+            });
+            Attach("extended_mag", "Extended Magazine", "Three more rounds; a slower reload.", AttachmentSlot.Magazine, 550, 41, a =>
+            {
+                a.Tools = new List<ToolDefinition> { scout };
+                a.MagazineAdd = 3;
+                a.ReloadMultiplier = 1.1f;
+                a.Visual = AttachmentModel("ExtendedMag");
+            });
+            Attach("ammo_hollow", "Hollow Points", "Damage +25 %, but it falls off sooner.", AttachmentSlot.Ammo, 650, 50, a =>
+            {
+                a.DamageMultiplier = 1.25f;
+                a.RangeMultiplier = 0.8f;
+            });
+            Attach("ammo_match", "Match Rounds", "Keeps its damage a third further; a tighter group.", AttachmentSlot.Ammo, 550, 51, a =>
+            {
+                a.RangeMultiplier = 1.35f;
+                a.SpreadMultiplier = 0.85f;
+                a.AdsSpreadMultiplier = 0.85f;
+            });
+            Attach("red_dot", "Red Dot", "A clear dot to aim with and a little zoom.", AttachmentSlot.Optic, 500, 60, a =>
+            {
+                a.AdsZoom = 1.35f;
+                a.AdsSpreadMultiplier = 0.75f;
+                a.SightLift = 0.03f;
+                a.Visual = AttachmentModel("RedDot");
+            });
+            Attach("padded_stock", "Padded Stock", "Recoil -30 %.", AttachmentSlot.Stock, 550, 70, a =>
+            {
+                a.RecoilMultiplier = 0.7f;
+                a.Visual = AttachmentModel("PaddedStock");
+            });
+
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))
             {
@@ -289,6 +374,15 @@ namespace HowToHunt.Editor
             ContentRegistry.Reset();
             Debug.Log("[HowToHunt] Content rebuilt.");
         }
+
+        private static void Attach(string id, string name, string description, AttachmentSlot slot, double cost, int order, System.Action<AttachmentDefinition> fill)
+            => Asset<AttachmentDefinition>("Attachments/Attachment_" + id, "attachment." + id, name, description, a =>
+            {
+                a.Slot = slot;
+                a.CostCoins = cost;
+                a.SortOrder = order;
+                fill(a);
+            });
 
         private static T Asset<T>(string relativePath, string key, string displayName, string description, System.Action<T> fill) where T : ContentDefinition
         {

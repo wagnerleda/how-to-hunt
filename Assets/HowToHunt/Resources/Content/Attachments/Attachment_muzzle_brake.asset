@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d378e8530d805604c85a29135e56d3ea, type: 3}
+  m_Name: Attachment_muzzle_brake
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
+  _key: attachment.muzzle_brake
+  _displayName: Muzzle Brake
+  _description: Tames the kick (recoil -25 %). A little louder.
+  Slot: 0
+  Tools: []
+  CostCoins: 450
+  SortOrder: 10
+  RecoilMultiplier: 0.75
+  SpreadMultiplier: 1
+  MoveSpreadMultiplier: 1
+  AdsSpreadMultiplier: 1
+  RangeMultiplier: 1
+  DamageMultiplier: 1
+  BulletSpeedMultiplier: 1
+  NoiseMultiplier: 1.15
+  ReloadMultiplier: 1
+  MagazineAdd: 0
+  AdsZoom: 0
+  ScopeOverlay: 0
+  SightLift: 0.03
+  WeightAdd: 0
+  Visual: {fileID: 1504352850094246948, guid: 3d741f6c92552204ab7e868fe5811a48, type: 3}

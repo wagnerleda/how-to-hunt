@@ -83,7 +83,7 @@ namespace HowToHunt.Hunting
         private void LateUpdate()
         {
             ToolDefinition tool = PlayerTools.Local != null ? PlayerTools.Local.Equipped : null;
-            bool on = tool != null && tool.ScopeOverlay && ViewmodelController.AdsBlend >= ShowAbove;
+            bool on = tool != null && tool.Archetype == Sim.Hunting.ToolArchetype.Firearm && Loadouts.Local.Setup(tool).ScopeOverlay && ViewmodelController.AdsBlend >= ShowAbove;
             Show(on);
             if (!on) return;
             // Square lens the height of the screen; black bars fill the sides.

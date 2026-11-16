@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d378e8530d805604c85a29135e56d3ea, type: 3}
+  m_Name: Attachment_laser
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
+  _key: attachment.laser
+  _displayName: Laser Sight
+  _description: Steadier from the hip and on the move.
+  Slot: 2
+  Tools:
+  - {fileID: 11400000, guid: 1b0a0891b7fae754db187a4e5eb33a70, type: 2}
+  CostCoins: 500
+  SortOrder: 30
+  RecoilMultiplier: 1
+  SpreadMultiplier: 0.6
+  MoveSpreadMultiplier: 0.75
+  AdsSpreadMultiplier: 1
+  RangeMultiplier: 1
+  DamageMultiplier: 1
+  BulletSpeedMultiplier: 1
+  NoiseMultiplier: 1
+  ReloadMultiplier: 1
+  MagazineAdd: 0
+  AdsZoom: 0
+  ScopeOverlay: 0
+  SightLift: 0.03
+  WeightAdd: 0
+  Visual: {fileID: 178384760038707798, guid: b1490010d02f7ce4c8f1bc7ee252fa5d, type: 3}

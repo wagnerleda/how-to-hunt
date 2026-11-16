@@ -148,7 +148,9 @@ namespace HowToHunt.Hunting
         public static MuzzleProvider Muzzle;
         public delegate bool MuzzleProvider(ToolDefinition tool, out Vector3 origin, out Vector3 direction);
 
-        private int AmmoOf(int index, ToolDefinition tool) => _ammo[index] < 0 ? tool.MagazineSize : _ammo[index];
+        private static GunSetup Gun(ToolDefinition tool) => Loadouts.Local.Setup(tool);
+
+        private int AmmoOf(int index, ToolDefinition tool) => _ammo[index] < 0 ? Gun(tool).MagazineSize : _ammo[index];
 
         private void Update()
         {
@@ -207,9 +209,9 @@ namespace HowToHunt.Hunting
 
             }
             LocalReload = _reloadTool >= 0 ? Mathf.Clamp01((Time.time - _reloadStart) / Mathf.Max(0.01f, _reloadUntil - _reloadStart)) : -1f;
-            LocalMagazine = gun ? tool.MagazineSize : 0;
+            LocalMagazine = gun ? Gun(tool).MagazineSize : 0;
             LocalAmmo = gun ? AmmoOf(_equipped, tool) : 0;
-            PlayerInputSampler.LoadLevel = tool != null ? tool.Weight : 0;
+            PlayerInputSampler.LoadLevel = tool == null ? 0 : gun ? Gun(tool).Weight : tool.Weight;
             if (_equipped != _sentHeld) { _sentHeld = _equipped; CmdHeld((short)_equipped); }
             MovementHud.HideCrosshair = gun || LocalThrowCharge > 0f; // guns aim by the barrel; a charging throw shows its ring instead
             if (!gun) LocalAiming = false;
@@ -217,10 +219,10 @@ namespace HowToHunt.Hunting
 
         private void StartReload(ToolDefinition tool)
         {
-            if (_reloadTool >= 0 || _equipped < 0 || AmmoOf(_equipped, tool) >= tool.MagazineSize) return;
+            if (_reloadTool >= 0 || _equipped < 0 || AmmoOf(_equipped, tool) >= Gun(tool).MagazineSize) return;
             _reloadTool = _equipped;
             _reloadStart = Time.time;
-            _reloadUntil = Time.time + tool.ReloadSeconds;
+            _reloadUntil = Time.time + Gun(tool).ReloadSeconds;
             LocalAiming = false;
             if (tool.ReloadSound != null) Sfx.Play2D(tool.ReloadSound, 0.6f);
             else Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
@@ -236,14 +238,15 @@ namespace HowToHunt.Hunting
             if (Muzzle == null || !Muzzle(tool, out origin, out dir)) { origin = cam.transform.position; dir = cam.transform.forward; }
             // Accuracy: the cone widens with your speed (not for a scout rifle) and tightens down the sights.
             float speed = PlayerMove.HorizontalSpeed(_motor.State.Velocity);
-            float cone = GunMath.Spread(tool.Ballistics, speed, LocalAiming);
+            GunSetup setup = Gun(tool);
+            float cone = GunMath.Spread(setup.Ballistics, speed, LocalAiming);
             dir = GunMath.InCone(dir.ToSim(), cone, UnityEngine.Random.value, UnityEngine.Random.value).ToUnity();
             if (!HuntingCvars.InfiniteMag.Value) _ammo[_equipped] = AmmoOf(_equipped, tool) - 1;
             Use(origin, dir);
             // Recoil: the gun kicks in the hand (viewmodel), the view follows loosely (input sampler).
             float scale = HuntingCvars.RecoilScale.Value * (LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
-            float side = UnityEngine.Random.Range(-0.4f, 1f) * tool.RecoilSide;
-            _motor.Input.Kick(tool.RecoilUp * scale, side * scale, tool.RecoilRecover);
+            float side = UnityEngine.Random.Range(-0.4f, 1f) * setup.RecoilSide;
+            _motor.Input.Kick(setup.RecoilUp * scale, side * scale, setup.RecoilRecover);
         }
 
         private void AutoFire()
@@ -332,10 +335,11 @@ namespace HowToHunt.Hunting
                 // A real bullet: it flies along the barrel at the gun's muzzle speed (a little drop), checked segment by
                 // segment against targets rewound to what the shooter saw at that moment of the flight.
                 if (!HostTakeRound(toolIndex, tool)) return;
-                GunBallistics g = tool.Ballistics;
+                GunSetup setup = loadout.Setup(tool);
+                GunBallistics g = setup.Ballistics;
                 var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), dir.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = dir };
                 RpcShotFx(toolIndex, origin, dir);
-                PreyWorld.HostGunshot(origin);
+                PreyWorld.HostGunshot(origin, setup.NoiseMultiplier);
                 if (StepBullet(ref hb, (float)TimeManager.TickDelta)) _bullets.Add(hb);
                 return;
             }
@@ -460,7 +464,7 @@ namespace HowToHunt.Hunting
                 _serverAmmo[index] = -1;
                 _serverReloadUntil[index] = 0f;
             }
-            int ammo = _serverAmmo[index] < 0 ? tool.MagazineSize : _serverAmmo[index];
+            int ammo = _serverAmmo[index] < 0 ? Loadouts.ForClient(Owner.ClientId).Setup(tool).MagazineSize : _serverAmmo[index];
             if (ammo <= 0) { HitLog("empty magazine"); return false; }
             _serverAmmo[index] = ammo - 1;
             return true;
@@ -485,7 +489,7 @@ namespace HowToHunt.Hunting
             var tools = Loadouts.AllTools;
             if (toolIndex >= tools.Count || toolIndex >= MaxTools || tools[toolIndex].Archetype != ToolArchetype.Firearm) return;
             // A little shorter than the owner's: the owner's next shot must never arrive before the host's reload ends.
-            _serverReloadUntil[toolIndex] = Time.time + tools[toolIndex].ReloadSeconds * 0.8f;
+            _serverReloadUntil[toolIndex] = Time.time + Loadouts.ForClient(Owner.ClientId).Setup(tools[toolIndex]).ReloadSeconds * 0.8f;
         }
 
         private static void HitLog(string line)

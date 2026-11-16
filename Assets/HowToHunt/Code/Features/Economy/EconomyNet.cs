@@ -32,6 +32,9 @@ namespace HowToHunt.Economy
         InventoryFull,
         /// <summary>The outfitter handed back lost tools.</summary>
         ToolsReturned,
+        /// <summary>The gunsmith sold an attachment (EventContent) or fitted / took one off.</summary>
+        AttachmentBought,
+        AttachmentFitted,
     }
 
     public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull }
@@ -49,6 +52,9 @@ namespace HowToHunt.Economy
         public string Coins;
         public double Trophies;
         public uint[] Upgrades;
+        public uint[] Attachments;
+        public uint[] FittedTools;
+        public uint[] FittedAttachments;
         public uint[] ResearchPrey;
         public int[] ResearchCount;
         /// <summary>Every slot in order (exact layout, so slot numbers match on both sides).</summary>
@@ -61,7 +67,7 @@ namespace HowToHunt.Economy
         public string LifetimeCoins;
     }
 
-    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools }
+    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools, BuyAttachment, FitAttachment, UnfitAttachment }
 
     /// <summary>Client → host: sell, buy, pick an item up, throw or drop the held prey.</summary>
     public struct EconomyRequestBroadcast : IBroadcast
@@ -74,6 +80,8 @@ namespace HowToHunt.Economy
         public Vector3 Direction;
         /// <summary>Throw charge, 0..255.</summary>
         public byte Power;
+        /// <summary>Gunsmith: the tool an attachment goes on or comes off.</summary>
+        public uint Tool;
     }
 
     /// <summary>
@@ -153,6 +161,14 @@ namespace HowToHunt.Economy
 
         public static void RequestReclaimTools() => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.ReclaimTools });
 
+        public static void RequestBuyAttachment(uint attachment) => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.BuyAttachment, Upgrade = attachment });
+
+        public static void RequestFitAttachment(uint tool, uint attachment)
+            => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.FitAttachment, Tool = tool, Upgrade = attachment });
+
+        public static void RequestUnfitAttachment(uint tool, AttachmentSlot slot)
+            => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.UnfitAttachment, Tool = tool, Slot = (byte)slot });
+
         public static void RequestPickUp(ushort item) => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.PickUp, Item = item });
 
         /// <param name="power">Charge 0..1 (how long Throw was held, capped).</param>
@@ -165,7 +181,7 @@ namespace HowToHunt.Economy
         private static void OnStateFromHost(EconomyStateBroadcast msg, Channel channel)
         {
             Unpack(msg, Local, exact: true);
-            Loadouts.Local.SetUpgrades(Local.Upgrades);
+            Local.ApplyTo(Loadouts.Local);
             ProfileStore.MarkDirty();
             LocalChanged?.Invoke(msg);
         }
@@ -173,7 +189,7 @@ namespace HowToHunt.Economy
         /// <summary>The profile was loaded from disk (or reset): refresh what depends on it.</summary>
         public static void OnLocalLoaded()
         {
-            Loadouts.Local.SetUpgrades(Local.Upgrades);
+            Local.ApplyTo(Loadouts.Local);
             Local.ApplyCapacity();
             LocalChanged?.Invoke(new EconomyStateBroadcast { Event = (byte)EconomyEvent.Synced });
         }
@@ -186,7 +202,7 @@ namespace HowToHunt.Economy
             var p = new EconomyProfile();
             Unpack(msg, p, exact: false); // re-lays the slots with this build's tools and capacity
             Ledger[conn.ClientId] = p;
-            Loadouts.ForClient(conn.ClientId).SetUpgrades(p.Upgrades);
+            p.ApplyTo(Loadouts.ForClient(conn.ClientId));
             Send(conn, p, EconomyEvent.Synced);
         }
 
@@ -237,6 +253,9 @@ namespace HowToHunt.Economy
                 case EconomyRequestKind.Throw: Release(conn, p, req, thrown: true); break;
                 case EconomyRequestKind.Drop: Release(conn, p, req, thrown: false); break;
                 case EconomyRequestKind.ReclaimTools: Reclaim(conn, p); break;
+                case EconomyRequestKind.BuyAttachment: BuyAttachment(conn, p, req.Upgrade); break;
+                case EconomyRequestKind.FitAttachment: FitAttachment(conn, p, req.Tool, req.Upgrade); break;
+                case EconomyRequestKind.UnfitAttachment: UnfitAttachment(conn, p, req.Tool, (AttachmentSlot)req.Slot); break;
             }
         }
 
@@ -285,6 +304,48 @@ namespace HowToHunt.Economy
             if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null && p.Inventory.Add(ItemStack.Tool(u.Tool.Id.Value), 1) > 0)
                 DropAtFeet(conn.ClientId, ItemStack.Tool(u.Tool.Id.Value));
             Send(conn, p, EconomyEvent.Bought, content: upgradeId, coins: u.CostCoins);
+        }
+
+        // --- gunsmith (Phase 5) -------------------------------------------------------------------------------
+
+        /// <summary>Why this profile can't buy that attachment (None = it can). Used by the host and the workshop screen.</summary>
+        public static EconomyRefusal CanBuyAttachment(EconomyProfile p, AttachmentDefinition a)
+        {
+            if (a == null) return EconomyRefusal.Unknown;
+            if (p.Attachments.Contains(a.Id.Value)) return EconomyRefusal.AlreadyOwned;
+            if (p.Coins < a.CostCoins) return EconomyRefusal.TooPoor;
+            return EconomyRefusal.None;
+        }
+
+        private static void BuyAttachment(NetworkConnection conn, EconomyProfile p, uint id)
+        {
+            AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new ContentId(id));
+            EconomyRefusal why = CanBuyAttachment(p, a);
+            if (why == EconomyRefusal.None && !NearStation(conn, CampStationKind.Workshop)) why = EconomyRefusal.NotAtStation;
+            if (why != EconomyRefusal.None) { Refuse(conn, p, why, id); return; }
+            p.Coins -= a.CostCoins;
+            p.Attachments.Add(id);
+            Send(conn, p, EconomyEvent.AttachmentBought, content: id, coins: a.CostCoins);
+        }
+
+        private static void FitAttachment(NetworkConnection conn, EconomyProfile p, uint toolId, uint id)
+        {
+            AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new ContentId(id));
+            ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(toolId));
+            if (a == null || t == null || !a.Fits(t)) { Refuse(conn, p, EconomyRefusal.Unknown, id); return; }
+            if (!p.Attachments.Contains(id)) { Refuse(conn, p, EconomyRefusal.Locked, id); return; }
+            if (!NearStation(conn, CampStationKind.Workshop)) { Refuse(conn, p, EconomyRefusal.NotAtStation, id); return; }
+            p.Fit(toolId, a);
+            p.ApplyTo(Loadouts.ForClient(conn.ClientId));
+            Send(conn, p, EconomyEvent.AttachmentFitted, content: id);
+        }
+
+        private static void UnfitAttachment(NetworkConnection conn, EconomyProfile p, uint toolId, AttachmentSlot slot)
+        {
+            if (!NearStation(conn, CampStationKind.Workshop)) { Refuse(conn, p, EconomyRefusal.NotAtStation); return; }
+            if (!p.Unfit(toolId, slot)) return;
+            p.ApplyTo(Loadouts.ForClient(conn.ClientId));
+            Send(conn, p, EconomyEvent.AttachmentFitted);
         }
 
         /// <summary>Host: the outfitter replaces owned tools the player no longer carries (lost, dropped, taken).</summary>
@@ -405,6 +466,9 @@ namespace HowToHunt.Economy
                 Coins = p.Coins.Serialize(),
                 Trophies = p.Trophies,
                 Upgrades = p.Upgrades.ToArray(),
+                Attachments = new List<uint>(p.Attachments).ToArray(),
+                FittedTools = p.FittedTools.ToArray(),
+                FittedAttachments = p.FittedAttachments.ToArray(),
                 ResearchPrey = new uint[p.Research.Count],
                 ResearchCount = new int[p.Research.Count],
                 SlotKind = new byte[slots],
@@ -446,6 +510,16 @@ namespace HowToHunt.Economy
             if (msg.Upgrades != null)
                 foreach (uint u in msg.Upgrades)
                     if (exact || ContentRegistry.Get<UpgradeDefinition>(new ContentId(u)) != null) p.Upgrades.Add(u);
+            if (msg.Attachments != null)
+                foreach (uint a in msg.Attachments)
+                    if (exact || ContentRegistry.Get<AttachmentDefinition>(new ContentId(a)) != null) p.Attachments.Add(a);
+            if (msg.FittedTools != null && msg.FittedAttachments != null)
+                for (int i = 0; i < msg.FittedTools.Length && i < msg.FittedAttachments.Length; i++)
+                {
+                    AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new ContentId(msg.FittedAttachments[i]));
+                    ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(msg.FittedTools[i]));
+                    if (a != null && t != null && a.Fits(t) && p.Attachments.Contains(a.Id.Value)) p.Fit(t.Id.Value, a);
+                }
             if (msg.ResearchPrey != null && msg.ResearchCount != null)
                 for (int i = 0; i < msg.ResearchPrey.Length && i < msg.ResearchCount.Length; i++) p.Research[msg.ResearchPrey[i]] = msg.ResearchCount[i];
             p.Captures = msg.Captures;

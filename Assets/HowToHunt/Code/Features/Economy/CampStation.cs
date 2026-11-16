@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HowToHunt.Economy
 {
-    public enum CampStationKind { Sell, Shop }
+    public enum CampStationKind { Sell, Shop, Workshop }
 
     /// <summary>
     /// A place at camp where hunters sell their catch or buy upgrades (press Interact nearby). Level authors drop it
@@ -22,7 +22,7 @@ namespace HowToHunt.Economy
         public static IReadOnlyList<CampStation> All => Registered;
         public CampStationKind Kind => _kind;
         public float Radius => _radius;
-        public string Label => string.IsNullOrEmpty(_label) ? (_kind == CampStationKind.Sell ? "Trader" : "Outfitter") : _label;
+        public string Label => string.IsNullOrEmpty(_label) ? (_kind == CampStationKind.Sell ? "Trader" : _kind == CampStationKind.Shop ? "Outfitter" : "Gunsmith") : _label;
 
         public double ExpectedSale => _expectedSale;
 

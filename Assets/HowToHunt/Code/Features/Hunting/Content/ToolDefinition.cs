@@ -78,6 +78,18 @@ namespace HowToHunt.Hunting
             AdsSpreadFactor = AdsSpreadFactor,
         };
 
+        [Header("Attachments (Phase 5)")]
+        [Tooltip("Where each attachment slot mounts on the model (model space, pointing +Z). Slots without one are locked on this gun.")]
+        public List<AttachmentAnchor> AttachmentAnchors = new List<AttachmentAnchor>();
+
+        public bool TryAnchor(AttachmentSlot slot, out AttachmentAnchor anchor)
+        {
+            for (int i = 0; i < AttachmentAnchors.Count; i++)
+                if (AttachmentAnchors[i].Slot == slot) { anchor = AttachmentAnchors[i]; return true; }
+            anchor = default;
+            return false;
+        }
+
         [Header("Sounds (linked by the content build from Art/Weapons/<name>/: fire*, reload*, dry*, equip*, inspect*)")]
         [Tooltip("One is picked at random per shot. Empty: the shared default shot.")]
         public AudioClip[] FireSounds = Array.Empty<AudioClip>();
@@ -117,4 +129,16 @@ namespace HowToHunt.Hunting
         }
     }
 
+}
+
+namespace HowToHunt.Hunting
+{
+    /// <summary>A mount point for one attachment slot on a gun model.</summary>
+    [System.Serializable]
+    public struct AttachmentAnchor
+    {
+        public AttachmentSlot Slot;
+        public UnityEngine.Vector3 Position;
+        public UnityEngine.Vector3 Euler;
+    }
 }

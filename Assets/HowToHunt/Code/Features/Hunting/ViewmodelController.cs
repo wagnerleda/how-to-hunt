@@ -53,6 +53,7 @@ namespace HowToHunt.Hunting
         /// <summary>Local: how far the gun is raised to the eye (0 hip .. 1 aiming down sights).</summary>
         public static float AdsBlend { get; private set; }
         private float _inspectStart = -10f;
+        private int _fittedVersion = -1;
 
         private void Awake()
         {
@@ -168,6 +169,7 @@ namespace HowToHunt.Hunting
             }
             model.SetActive(true);
             _shown = model;
+            _fittedVersion = -1; // (re)mount attachments next frame
             if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Shing, 0.22f, Random.Range(0.97f, 1.04f));
             else if (tool.EquipSound != null) Sfx.Play2D(tool.EquipSound, 0.5f);
             else Sfx.Play2D("Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
@@ -181,8 +183,9 @@ namespace HowToHunt.Hunting
             {
                 // The gun jumps in the hand first (the view follows loosely, see PlayerInputSampler.Kick).
                 float scale = HuntingCvars.RecoilScale.Value * (PlayerTools.LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
-                _kickVel.x += tool.RecoilUp * KickImpulse * scale;
-                _kickVel.y += Random.Range(-0.5f, 1f) * tool.RecoilSide * KickImpulse * scale;
+                GunSetup gun = Loadouts.Local.Setup(tool);
+                _kickVel.x += gun.RecoilUp * KickImpulse * scale;
+                _kickVel.y += Random.Range(-0.5f, 1f) * gun.RecoilSide * KickImpulse * scale;
                 _kickVel.z += KickBackImpulse * scale;
             }
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
@@ -214,6 +217,11 @@ namespace HowToHunt.Hunting
             bool gunHeld = _tool != null && _tool.Archetype == ToolArchetype.Firearm;
             _ads = Mathf.MoveTowards(_ads, gunHeld && PlayerTools.LocalAiming ? 1f : 0f, Mathf.Min(Time.deltaTime, 0.05f) / AdsSeconds);
             AdsBlend = _ads;
+            if (_tool != null && _shown != null && _fittedVersion != Loadouts.Local.FittedVersion)
+            {
+                _fittedVersion = Loadouts.Local.FittedVersion;
+                AttachmentVisuals.Apply(_shown, _tool, Loadouts.Local.Fitted(_tool));
+            }
             bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
             if (!visible || (_tool == null && _heldPrey == null)) { _hasLastVelocity = false; return; }
@@ -309,11 +317,11 @@ namespace HowToHunt.Hunting
             if (a > 0f)
             {
                 Quaternion adsRot = Quaternion.Slerp(Quaternion.identity, _lag, 0.25f) * use;
-                Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * _tool.SightOffset + (bob + _springPos) * 0.2f;
+                Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * Loadouts.Local.Setup(_tool).SightOffset + (bob + _springPos) * 0.2f;
                 position = Vector3.Lerp(position, adsPos, a);
                 rotation = Quaternion.Slerp(rotation, adsRot, a);
             }
-            float zoom = gun ? Mathf.Lerp(1f, Mathf.Max(1f, _tool.AdsZoom), a) : 1f;
+            float zoom = gun ? Mathf.Lerp(1f, Mathf.Max(1f, Loadouts.Local.Setup(_tool).AdsZoom), a) : 1f;
             PlayerCamera.Zoom = zoom;
             PlayerInputSampler.SensitivityScale = 1f / zoom;
             // The viewmodel is drawn by the zoomed camera too: shrink it toward the eye by the zoom so it keeps its size

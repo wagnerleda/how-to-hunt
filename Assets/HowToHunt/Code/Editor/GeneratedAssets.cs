@@ -39,6 +39,7 @@ namespace HowToHunt.Editor
             BuildNetworkManagerPrefab();
             BuildButterflyPrefab();
             BuildScoutPrefab();
+            BuildAttachmentPrefabs();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
@@ -189,6 +190,60 @@ namespace HowToHunt.Editor
                 nobSo.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        public const string AttachmentsDir = Root + "/Prefabs/Attachments";
+
+        /// <summary>
+        /// Stand-in attachment models from primitives (origin at the mount, pointing +Z), until the owner's gun assets
+        /// land. Ammo, speed loaders and magazines inside the gun have no model.
+        /// </summary>
+        private static void BuildAttachmentPrefabs()
+        {
+            EnsureFolder(AttachmentsDir);
+            Attachment("MuzzleBrake", root =>
+            {
+                Part(root, "Body", PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.03f), new Vector3(0.04f, 0.03f, 0.04f), new Vector3(90f, 0f, 0f), "Gunmetal");
+                Part(root, "Vent L", PrimitiveType.Cube, new Vector3(-0.022f, 0f, 0.035f), new Vector3(0.008f, 0.02f, 0.03f), Vector3.zero, "Trim");
+                Part(root, "Vent R", PrimitiveType.Cube, new Vector3(0.022f, 0f, 0.035f), new Vector3(0.008f, 0.02f, 0.03f), Vector3.zero, "Trim");
+            });
+            Attachment("Suppressor", root =>
+                Part(root, "Can", PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.09f), new Vector3(0.042f, 0.09f, 0.042f), new Vector3(90f, 0f, 0f), "Gunmetal"));
+            Attachment("Laser", root =>
+            {
+                Part(root, "Body", PrimitiveType.Cube, new Vector3(0f, -0.018f, 0f), new Vector3(0.024f, 0.022f, 0.06f), Vector3.zero, "Gunmetal");
+                Part(root, "Lens", PrimitiveType.Cube, new Vector3(0f, -0.018f, 0.031f), new Vector3(0.012f, 0.012f, 0.004f), Vector3.zero, "Hazard");
+            });
+            Attachment("RedDot", root =>
+            {
+                Part(root, "Base", PrimitiveType.Cube, new Vector3(0f, 0.004f, 0f), new Vector3(0.028f, 0.008f, 0.05f), Vector3.zero, "Gunmetal");
+                // A hollow window (four bars) with the dot floating in the middle: you look through it.
+                Part(root, "Frame L", PrimitiveType.Cube, new Vector3(-0.016f, 0.029f, 0.012f), new Vector3(0.004f, 0.036f, 0.006f), Vector3.zero, "Gunmetal");
+                Part(root, "Frame R", PrimitiveType.Cube, new Vector3(0.016f, 0.029f, 0.012f), new Vector3(0.004f, 0.036f, 0.006f), Vector3.zero, "Gunmetal");
+                Part(root, "Frame T", PrimitiveType.Cube, new Vector3(0f, 0.046f, 0.012f), new Vector3(0.036f, 0.004f, 0.006f), Vector3.zero, "Gunmetal");
+                Part(root, "Frame B", PrimitiveType.Cube, new Vector3(0f, 0.012f, 0.012f), new Vector3(0.036f, 0.004f, 0.006f), Vector3.zero, "Gunmetal");
+                Part(root, "Dot", PrimitiveType.Cube, new Vector3(0f, 0.03f, 0.014f), new Vector3(0.0025f, 0.0025f, 0.001f), Vector3.zero, "Hazard");
+            });
+            Attachment("Foregrip", root =>
+                Part(root, "Grip", PrimitiveType.Cube, new Vector3(0f, -0.045f, 0f), new Vector3(0.03f, 0.08f, 0.035f), new Vector3(10f, 0f, 0f), "Gunmetal"));
+            Attachment("ExtendedMag", root =>
+                Part(root, "Mag", PrimitiveType.Cube, new Vector3(0f, -0.055f, 0f), new Vector3(0.03f, 0.09f, 0.05f), new Vector3(8f, 0f, 0f), "Gunmetal"));
+            Attachment("PaddedStock", root =>
+                Part(root, "Pad", PrimitiveType.Cube, new Vector3(0f, 0f, -0.015f), new Vector3(0.05f, 0.11f, 0.03f), Vector3.zero, "Rock"));
+        }
+
+        private static void Attachment(string name, System.Action<GameObject> build)
+        {
+            var root = new GameObject(name);
+            try
+            {
+                build(root);
+                PrefabUtility.SaveAsPrefabAsset(root, $"{AttachmentsDir}/{name}.prefab");
             }
             finally
             {

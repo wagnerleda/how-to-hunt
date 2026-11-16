@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d378e8530d805604c85a29135e56d3ea, type: 3}
+  m_Name: Attachment_padded_stock
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
+  _key: attachment.padded_stock
+  _displayName: Padded Stock
+  _description: Recoil -30 %.
+  Slot: 7
+  Tools: []
+  CostCoins: 550
+  SortOrder: 70
+  RecoilMultiplier: 0.7
+  SpreadMultiplier: 1
+  MoveSpreadMultiplier: 1
+  AdsSpreadMultiplier: 1
+  RangeMultiplier: 1
+  DamageMultiplier: 1
+  BulletSpeedMultiplier: 1
+  NoiseMultiplier: 1
+  ReloadMultiplier: 1
+  MagazineAdd: 0
+  AdsZoom: 0
+  ScopeOverlay: 0
+  SightLift: 0.03
+  WeightAdd: 0
+  Visual: {fileID: 5706586686688689306, guid: 9e8a88a53c31ad5498be4e41f938d5ea, type: 3}

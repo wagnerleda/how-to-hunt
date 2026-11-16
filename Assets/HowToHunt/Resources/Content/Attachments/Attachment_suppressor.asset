@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d378e8530d805604c85a29135e56d3ea, type: 3}
+  m_Name: Attachment_suppressor
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
+  _key: attachment.suppressor
+  _displayName: Suppressor
+  _description: Prey hear the shot from a third as far. Slightly shorter reach.
+  Slot: 0
+  Tools: []
+  CostCoins: 700
+  SortOrder: 20
+  RecoilMultiplier: 0.9
+  SpreadMultiplier: 1
+  MoveSpreadMultiplier: 1
+  AdsSpreadMultiplier: 1
+  RangeMultiplier: 0.9
+  DamageMultiplier: 0.95
+  BulletSpeedMultiplier: 1
+  NoiseMultiplier: 0.35
+  ReloadMultiplier: 1
+  MagazineAdd: 0
+  AdsZoom: 0
+  ScopeOverlay: 0
+  SightLift: 0.03
+  WeightAdd: 0
+  Visual: {fileID: 2926815400421400349, guid: ef36dd2f069880246bdc3e0b0749bc48, type: 3}

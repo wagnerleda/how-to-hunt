@@ -61,6 +61,7 @@ namespace HowToHunt.Economy
             var root = Game.Root.gameObject;
             root.AddComponent<EconomyHud>();
             root.AddComponent<ShopPanel>();
+            root.AddComponent<WorkshopPanel>();
             root.AddComponent<InventoryBar>();
             root.AddComponent<CashBurst>();
             root.AddComponent<WorldItemRenderer>();

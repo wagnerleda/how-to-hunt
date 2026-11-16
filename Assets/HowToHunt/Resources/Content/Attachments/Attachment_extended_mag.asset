@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d378e8530d805604c85a29135e56d3ea, type: 3}
+  m_Name: Attachment_extended_mag
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
+  _key: attachment.extended_mag
+  _displayName: Extended Magazine
+  _description: Three more rounds; a slower reload.
+  Slot: 3
+  Tools:
+  - {fileID: 11400000, guid: c8748dc2584035a4e93830151cd25bac, type: 2}
+  CostCoins: 550
+  SortOrder: 41
+  RecoilMultiplier: 1
+  SpreadMultiplier: 1
+  MoveSpreadMultiplier: 1
+  AdsSpreadMultiplier: 1
+  RangeMultiplier: 1
+  DamageMultiplier: 1
+  BulletSpeedMultiplier: 1
+  NoiseMultiplier: 1
+  ReloadMultiplier: 1.1
+  MagazineAdd: 3
+  AdsZoom: 0
+  ScopeOverlay: 0
+  SightLift: 0.03
+  WeightAdd: 0
+  Visual: {fileID: 3845844556161644231, guid: 7d303ecff23ae6447bb39e43e000ada1, type: 3}

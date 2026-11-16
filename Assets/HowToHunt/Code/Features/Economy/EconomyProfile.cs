@@ -29,6 +29,55 @@ namespace HowToHunt.Economy
         public int ResearchOf(uint prey) => Research.TryGetValue(prey, out int r) ? r : 0;
         public bool Owns(uint upgrade) => Upgrades.Contains(upgrade);
 
+        // --- gun attachments (Phase 5) ------------------------------------------------------------------------
+
+        /// <summary>Attachments bought at the Gunsmith (ids).</summary>
+        public readonly HashSet<uint> Attachments = new HashSet<uint>();
+        /// <summary>What is fitted, as parallel lists: tool id, attachment id (one per slot per tool).</summary>
+        public readonly List<uint> FittedTools = new List<uint>();
+        public readonly List<uint> FittedAttachments = new List<uint>();
+
+        /// <summary>The attachment fitted on this tool in that slot (null if none).</summary>
+        public AttachmentDefinition FittedIn(uint tool, AttachmentSlot slot)
+        {
+            for (int i = 0; i < FittedTools.Count; i++)
+            {
+                if (FittedTools[i] != tool) continue;
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(FittedAttachments[i]));
+                if (a != null && a.Slot == slot) return a;
+            }
+            return null;
+        }
+
+        /// <summary>Fit an attachment (replacing whatever was in its slot on that tool).</summary>
+        public void Fit(uint tool, AttachmentDefinition a)
+        {
+            Unfit(tool, a.Slot);
+            FittedTools.Add(tool);
+            FittedAttachments.Add(a.Id.Value);
+        }
+
+        public bool Unfit(uint tool, AttachmentSlot slot)
+        {
+            for (int i = FittedTools.Count - 1; i >= 0; i--)
+            {
+                if (FittedTools[i] != tool) continue;
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(FittedAttachments[i]));
+                if (a != null && a.Slot != slot) continue;
+                FittedTools.RemoveAt(i);
+                FittedAttachments.RemoveAt(i);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Push this profile's upgrades and fitted attachments into a loadout (host ledger or the local hotbar).</summary>
+        public void ApplyTo(Loadout loadout)
+        {
+            loadout.SetUpgrades(Upgrades);
+            loadout.SetFitted(FittedTools, FittedAttachments);
+        }
+
         /// <summary>Slots from the base plus every InventorySlots upgrade owned.</summary>
         public int SlotCapacity
         {
@@ -95,6 +144,9 @@ namespace HowToHunt.Economy
             Trophies = 0;
             Research.Clear();
             Upgrades.Clear();
+            Attachments.Clear();
+            FittedTools.Clear();
+            FittedAttachments.Clear();
             Inventory.Clear();
             Captures = 0;
             Kills = 0;
@@ -145,6 +197,9 @@ namespace HowToHunt.Economy
             public List<string> researchKeys = new List<string>();
             public List<int> researchCounts = new List<int>();
             public List<string> upgrades = new List<string>();
+            public List<string> attachments = new List<string>();
+            public List<string> fittedTools = new List<string>();
+            public List<string> fittedAttachments = new List<string>();
             // v3: every slot (kind 1 = tool, 2 = prey).
             public List<int> slotIndex = new List<int>();
             public List<byte> slotKind = new List<byte>();
@@ -197,6 +252,19 @@ namespace HowToHunt.Economy
                 UpgradeDefinition def = ContentRegistry.Get<UpgradeDefinition>(new Foundation.ContentId(u));
                 if (def != null) d.upgrades.Add(def.Key);
             }
+            foreach (uint a in _profile.Attachments)
+            {
+                AttachmentDefinition def = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(a));
+                if (def != null) d.attachments.Add(def.Key);
+            }
+            for (int i = 0; i < _profile.FittedTools.Count; i++)
+            {
+                ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new Foundation.ContentId(_profile.FittedTools[i]));
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(_profile.FittedAttachments[i]));
+                if (t == null || a == null) continue;
+                d.fittedTools.Add(t.Key);
+                d.fittedAttachments.Add(a.Key);
+            }
             for (int i = 0; i < Inventory.MaxSlots; i++)
             {
                 ItemStack s = _profile.Inventory[i];
@@ -232,6 +300,17 @@ namespace HowToHunt.Economy
             {
                 UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(key);
                 if (u != null && !_profile.Upgrades.Contains(u.Id.Value)) _profile.Upgrades.Add(u.Id.Value);
+            }
+            foreach (string key in d.attachments)
+            {
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(key);
+                if (a != null) _profile.Attachments.Add(a.Id.Value);
+            }
+            for (int i = 0; i < d.fittedTools.Count && i < d.fittedAttachments.Count; i++)
+            {
+                ToolDefinition t = ContentRegistry.Get<ToolDefinition>(d.fittedTools[i]);
+                AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(d.fittedAttachments[i]);
+                if (t != null && a != null && _profile.Attachments.Contains(a.Id.Value) && a.Fits(t)) _profile.Fit(t.Id.Value, a);
             }
             _profile.ApplyCapacity();
             if (savedVersion >= 3)
