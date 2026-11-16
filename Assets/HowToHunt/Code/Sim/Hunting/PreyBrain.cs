@@ -21,6 +21,10 @@ namespace HowToHunt.Sim.Hunting
         public float StaminaSeconds;
         /// <summary>Flee speed once tired: below a running player, so a chase pays off.</summary>
         public float TiredSpeed;
+        /// <summary>Flees from a player it can see this far away (clear line of sight). 0 = only the close FleeRadius.</summary>
+        public float SightRange;
+        /// <summary>Flees from gunshots heard within this distance (0 = unbothered: predators, deaf prey).</summary>
+        public float HearingRange;
     }
 
     /// <summary>Everything the host simulates for one ground prey. Small, copyable, deterministic.</summary>
@@ -50,6 +54,10 @@ namespace HowToHunt.Sim.Hunting
         private const float StepHeight = 0.45f;
 
         public static void Step(ref PreyState s, in PreyBehavior b, Vector3 nearestThreat, bool hasThreat, ICollisionWorld world, float time, float dt)
+            => Step(ref s, in b, nearestThreat, hasThreat, false, world, time, dt);
+
+        /// <param name="seesThreat">The prey has spotted the threat (see <see cref="CanSee"/>): flee even beyond FleeRadius.</param>
+        public static void Step(ref PreyState s, in PreyBehavior b, Vector3 nearestThreat, bool hasThreat, bool seesThreat, ICollisionWorld world, float time, float dt)
         {
             if (s.Ai == PreyAiState.Dead || s.Ai == PreyAiState.Captured) return;
 
@@ -59,7 +67,7 @@ namespace HowToHunt.Sim.Hunting
                 s.Timer -= dt;
                 if (s.Timer <= 0f) Enter(ref s, PreyAiState.Flee, 2f);
             }
-            else if (threatDist < b.FleeRadius)
+            else if (threatDist < b.FleeRadius || (hasThreat && seesThreat))
             {
                 s.LastThreatTime = time;
                 if (s.Ai != PreyAiState.Flee) Enter(ref s, PreyAiState.Flee, b.CalmDownSeconds);
@@ -110,6 +118,36 @@ namespace HowToHunt.Sim.Hunting
         }
 
         public static void Stun(ref PreyState s, in PreyBehavior b) => Enter(ref s, PreyAiState.Stunned, b.StunSeconds);
+
+        /// <summary>Eye height above the feet.</summary>
+        public static float EyeHeight(in PreyBehavior b) => b.HalfExtents.Y * 2f + 0.05f;
+
+        /// <summary>
+        /// Can the prey see a player's eye? Within SightRange × rangeScale (crouching players are harder to spot)
+        /// and with nothing solid in between (trees, rocks, hills).
+        /// </summary>
+        public static bool CanSee(in PreyState s, in PreyBehavior b, Vector3 threatEye, float rangeScale, ICollisionWorld world)
+        {
+            float range = b.SightRange * rangeScale;
+            if (range <= 0f) return false;
+            Vector3 eye = s.Position + new Vector3(0f, EyeHeight(b), 0f);
+            if (Vector3.DistanceSquared(eye, threatEye) > range * range) return false;
+            return !world.TraceBox(eye, threatEye, Vector3.Zero).Hit;
+        }
+
+        /// <summary>A loud noise (gunshot) at <paramref name="source"/>: bolt away from it if within hearing range.</summary>
+        public static bool Startle(ref PreyState s, in PreyBehavior b, Vector3 source, float time)
+        {
+            if (s.Ai == PreyAiState.Dead || s.Ai == PreyAiState.Captured || s.Ai == PreyAiState.Stunned) return false;
+            if (b.HearingRange <= 0f) return false;
+            Vector3 away = Horizontal(s.Position - source);
+            if (away.LengthSquared() > b.HearingRange * b.HearingRange) return false;
+            s.LastThreatTime = time;
+            if (s.Ai != PreyAiState.Flee) Enter(ref s, PreyAiState.Flee, b.CalmDownSeconds);
+            if (away.LengthSquared() > 1e-4f) s.MoveDir = Vector3.Normalize(away);
+            s.JinkTimer = 0.7f;
+            return true;
+        }
 
         private static void Move(ref PreyState s, in PreyBehavior b, ICollisionWorld world, float dt)
         {

@@ -47,6 +47,7 @@ namespace HowToHunt.Hunting
 
         // Host simulation (ground prey).
         public PreyState State;
+        public bool SeesThreat;
         public readonly PoseHistory History = new PoseHistory();
 
         // Client interpolation buffer (ground prey).
@@ -146,6 +147,7 @@ namespace HowToHunt.Hunting
     public static class PreyWorld
     {
         private const int SnapshotEveryTicks = 4; // 16 Hz
+        private const int SightEveryTicks = 6; // ~10 Hz line-of-sight checks per prey
 
         private static readonly List<PreyInstance> Instances = new List<PreyInstance>(64);
         private static NetworkManager _manager;
@@ -238,6 +240,21 @@ namespace HowToHunt.Hunting
             Broadcast(p);
         }
 
+        /// <summary>Host: a gunshot at <paramref name="at"/>. Prey that fear guns and hear it bolt away.</summary>
+        public static void HostGunshot(Vector3 at)
+        {
+            if (!IsHost) return;
+            Vec3 source = at.ToSim();
+            float time = Time.time;
+            for (int i = 0; i < Instances.Count; i++)
+            {
+                PreyInstance p = Instances[i];
+                if (!p.Alive || p.IsFlyer) continue;
+                PreyBehavior b = p.Def.Behavior;
+                PreyBrain.Startle(ref p.State, in b, source, time);
+            }
+        }
+
         /// <summary>Host: damaged but alive (ground prey get stunned, then flee).</summary>
         public static void HostDamage(PreyInstance p, float healthAfter)
         {
@@ -271,15 +288,25 @@ namespace HowToHunt.Hunting
                 // Nearest player is the threat.
                 Vec3 threat = default;
                 bool hasThreat = false;
+                int nearest = -1;
                 float best = float.MaxValue;
                 for (int k = 0; k < players.Count; k++)
                 {
                     Vec3 pos = players[k].State.Position;
                     float d = Vec3.DistanceSquared(pos, p.State.Position);
-                    if (d < best) { best = d; threat = pos; hasThreat = true; }
+                    if (d < best) { best = d; threat = pos; hasThreat = true; nearest = k; }
                 }
                 PreyBehavior b = p.Def.Behavior;
-                PreyBrain.Step(ref p.State, in b, threat, hasThreat, SimWorld.Current, time, dt);
+                // Sight: a line-of-sight trace every few ticks per prey (staggered by id), only when in range.
+                if (nearest < 0) p.SeesThreat = false;
+                else if ((tick + p.Id) % SightEveryTicks == 0)
+                {
+                    var ms = players[nearest].State;
+                    Vec3 eye = ms.Position + new Vec3(0f, MovementCvars.Config.EyeOffset(ms.Ducked), 0f);
+                    float scale = ms.Ducked ? HuntingCvars.CrouchSight.Value : 1f;
+                    p.SeesThreat = PreyBrain.CanSee(in p.State, in b, eye, scale, SimWorld.Current);
+                }
+                PreyBrain.Step(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt);
                 p.History.Record(tick, new EntityPose { Position = p.State.Position, Yaw = p.State.Yaw });
                 p.SetHostRender();
 

@@ -32,7 +32,14 @@ namespace HowToHunt.Hunting
         public PreyMovement Movement = PreyMovement.Ground;
         public float WalkSpeed = 1.2f;
         public float FleeSpeed = 6f;
+        [Tooltip("Flees from any player this close, seen or not (hears footsteps).")]
         public float FleeRadius = 7f;
+        [Tooltip("Flees from a player it can see this far away (line of sight; halved against crouching players).")]
+        public float SightRange = 20f;
+        [Tooltip("Flees from gunshots within this distance. 0 for prey that aren't scared of guns (predators).")]
+        public float HearingRange = 45f;
+        [Tooltip("Rare prey are warier: multiplies FleeRadius and SightRange.")]
+        public float Wariness = 1f;
         public float CalmDownSeconds = 2.5f;
         public float StunSeconds = 0.6f;
         [Tooltip("Seconds of full-speed flight before it tires (0 = never). Sprint above run speed, tire below it.")]
@@ -70,7 +77,9 @@ namespace HowToHunt.Hunting
         {
             WalkSpeed = WalkSpeed,
             FleeSpeed = FleeSpeed,
-            FleeRadius = FleeRadius,
+            FleeRadius = FleeRadius * Wariness,
+            SightRange = SightRange * Wariness,
+            HearingRange = HearingRange,
             CalmDownSeconds = CalmDownSeconds,
             HomeRadius = 18f,
             StunSeconds = StunSeconds,

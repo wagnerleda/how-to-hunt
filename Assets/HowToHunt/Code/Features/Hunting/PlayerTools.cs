@@ -217,7 +217,11 @@ namespace HowToHunt.Hunting
                     }
                     break;
             }
-            if (tool.Archetype == ToolArchetype.Firearm) RpcShotFx(origin, end);
+            if (tool.Archetype == ToolArchetype.Firearm)
+            {
+                RpcShotFx(origin, end);
+                PreyWorld.HostGunshot(origin);
+            }
         }
 
         private static void HitLog(string line)

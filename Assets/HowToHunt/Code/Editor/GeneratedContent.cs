@@ -73,6 +73,10 @@ namespace HowToHunt.Editor
                 p.StaminaSeconds = 3f;
                 p.TiredSpeed = 4.8f;
                 p.FleeRadius = 8f;
+                // Bolts from players it can see within 22 m (11 m if they crouch), and from gunshots within 45 m.
+                p.SightRange = 22f;
+                p.HearingRange = 45f;
+                p.Wariness = 1f;
                 p.CalmDownSeconds = 3f;
                 p.StunSeconds = 0.15f;
                 p.HalfExtents = new Vector3(0.15f, 0.15f, 0.2f);

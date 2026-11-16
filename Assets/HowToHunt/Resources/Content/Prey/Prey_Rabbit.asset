@@ -35,6 +35,9 @@ MonoBehaviour:
   WalkSpeed: 1.1
   FleeSpeed: 8.5
   FleeRadius: 8
+  SightRange: 22
+  HearingRange: 45
+  Wariness: 1
   CalmDownSeconds: 3
   StunSeconds: 0.15
   StaminaSeconds: 3
