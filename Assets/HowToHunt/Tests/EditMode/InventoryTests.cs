@@ -101,6 +101,7 @@ namespace HowToHunt.Tests
         {
             ContentRegistry.Reset();
             Loadouts.Reset();
+            HuntingCvars.AllTools.Value = false; // a play session may have left the cheat on
             var profile = new EconomyProfile();
             var slice = new EconomySaveSlice(profile, null);
             const string v1 = "{\"coins\":\"4.2;1\",\"trophies\":1,\"upgrades\":[],\"bagPrey\":[\"prey.butterfly\",\"prey.butterfly\",\"prey.rabbit\"],\"bagFlags\":[1,1,0]}";
