@@ -86,7 +86,7 @@ namespace HowToHunt.Economy
     public static class EconomyNet
     {
         public static readonly FloatCvar StationReach = new FloatCvar("sv_station_reach", 3.5f, "Extra distance (m) beyond a camp station's radius at which the host still accepts its use.", CvarFlags.Replicated | CvarFlags.Cheat, 0f, 50f);
-        public static readonly FloatCvar ThrowSpeed = new FloatCvar("sv_throw_speed", 13f, "How fast a fully charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 1f, 60f);
+        public static readonly FloatCvar ThrowSpeed = new FloatCvar("sv_throw_speed", 18f, "How fast a fully charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 1f, 60f);
         public static readonly FloatCvar ThrowTapTime = new FloatCvar("cl_throw_tap", 0.18f, "Holding Throw shorter than this (s) drops instead of throwing.", CvarFlags.Archive, 0.02f, 1f);
         public static readonly FloatCvar ThrowSpeedMin = new FloatCvar("sv_throw_speed_min", 4f, "How fast a barely charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 0.5f, 60f);
         public static readonly FloatCvar ThrowChargeTime = new FloatCvar("sv_throw_charge", 0.9f, "Seconds of holding Throw to reach full power (the cap).", CvarFlags.Replicated | CvarFlags.Cheat, 0.05f, 5f);
@@ -354,6 +354,7 @@ namespace HowToHunt.Economy
         public static EconomyRefusal CanBuy(EconomyProfile p, UpgradeDefinition u)
         {
             if (u == null) return EconomyRefusal.Unknown;
+            if (u.Unlisted) return EconomyRefusal.Locked;
             if (p.Owns(u.Id.Value)) return EconomyRefusal.AlreadyOwned;
             if (u.Requires != null && !p.Owns(u.Requires.Id.Value)) return EconomyRefusal.Locked;
             if (p.Coins < u.CostCoins || p.Trophies < u.CostTrophies) return EconomyRefusal.TooPoor;

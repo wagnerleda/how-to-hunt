@@ -53,6 +53,9 @@ namespace HowToHunt.Economy
         public GameObject Visual;
         /// <summary>Host: client id of the thrower while a throw is in flight (-1 = not a throw, or already landed/hit).</summary>
         public int ThrownBy = -1;
+        /// <summary>Client: the rotation drawn last frame (eases into the rest pose instead of snapping).</summary>
+        public Quaternion Shown;
+        public bool HasShown;
     }
 
     /// <summary>

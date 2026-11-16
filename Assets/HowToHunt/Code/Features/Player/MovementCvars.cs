@@ -24,6 +24,8 @@ namespace HowToHunt.Player
         public static readonly FloatCvar AirSpeedCap = new FloatCvar("sv_air_max_wishspeed", D.AirSpeedCap, "Air wish-speed cap, m/s (Source 30 u/s).", Sv, 0f, 20f);
         public static readonly FloatCvar MaxSpeed = new FloatCvar("sv_maxspeed", D.MaxSpeed, "Ground run speed, m/s (Source 250 u/s).", Sv, 0f, 50f);
         public static readonly FloatCvar SprintFactor = new FloatCvar("sv_sprint_factor", D.SprintFactor, "Ground speed while sprinting, x sv_maxspeed.", Sv, 1f, 3f);
+        public static readonly FloatCvar SprintStamina = new FloatCvar("sv_sprint_stamina", D.SprintStamina, "Seconds of sprint from fresh (the stamina bar).", Sv, 0.1f, 60f);
+        public static readonly FloatCvar StaminaRegen = new FloatCvar("sv_stamina_regen", D.StaminaRegen, "Seconds of sprint recovered per second while not sprinting.", Sv, 0f, 10f);
         public static readonly FloatCvar WaterSpeed = new FloatCvar("sv_water_speed", D.WaterSpeedFactor, "Ground speed while wading, x sv_maxspeed.", Sv, 0.1f, 1f);
         public static readonly FloatCvar ThrowSlow = new FloatCvar("sv_throw_slow", D.HitSlowFactor, "Speed multiplier for a moment after being hit by a thrown item (never a stun).", Sv, 0.1f, 1f);
         public static readonly FloatCvar LoadSlow = new FloatCvar("sv_load_slow", D.LoadSlowPerLevel, "Ground speed lost per weapon weight class while holding a heavy weapon (fraction).", Sv, 0f, 0.3f);
@@ -44,7 +46,7 @@ namespace HowToHunt.Player
 
         public static void Register(ConsoleSystem console)
         {
-            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, SprintFactor, WaterSpeed, ThrowSlow, LoadSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
+            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, SprintFactor, SprintStamina, StaminaRegen, WaterSpeed, ThrowSlow, LoadSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
             {
                 console.Register(c);
                 c.Changed += _ => Apply();
@@ -71,6 +73,8 @@ namespace HowToHunt.Player
             c.AirSpeedCap = AirSpeedCap;
             c.MaxSpeed = MaxSpeed;
             c.SprintFactor = SprintFactor;
+            c.SprintStamina = SprintStamina;
+            c.StaminaRegen = StaminaRegen;
             c.WaterSpeedFactor = WaterSpeed;
             c.HitSlowFactor = ThrowSlow;
             c.LoadSlowPerLevel = LoadSlow;

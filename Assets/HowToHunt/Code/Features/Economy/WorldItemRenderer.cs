@@ -11,6 +11,7 @@ namespace HowToHunt.Economy
     /// </summary>
     public sealed class WorldItemRenderer : MonoBehaviour
     {
+        private const float SettleRate = 10f; // how fast a landed item eases into its lying pose, per second
         public static void Create(WorldItem w)
         {
             ItemShapes.Shape shape = ItemShapes.Get(w.Item);
@@ -24,7 +25,7 @@ namespace HowToHunt.Economy
                 model.transform.localScale = Vector3.one * shape.Scale;
                 model.transform.localRotation = shape.Lie;
                 // Put the model's centre on the body's centre.
-                model.transform.localPosition = -(shape.Lie * (shape.LocalBounds.center * shape.Scale));
+                model.transform.localPosition = -(shape.LieBounds.center * shape.Scale);
             }
             w.Visual = root;
             Place(w, 0f);
@@ -43,8 +44,11 @@ namespace HowToHunt.Economy
             if (w.Visual == null) return;
             Vector3 p = Vector3.LerpUnclamped(w.PreviousPosition.ToUnity(), w.Body.Position.ToUnity(), t);
             Quaternion yaw = Quaternion.Euler(0f, ItemShapes.Yaw(w.Id), 0f);
-            Quaternion rot = w.Body.Resting || w.Body.Spin == 0f ? yaw : yaw * Quaternion.Euler(w.Body.Spin, 0f, w.Body.Spin * 0.4f);
-            w.Visual.transform.SetPositionAndRotation(p, rot);
+            Quaternion target = w.Body.Resting || w.Body.Spin == 0f ? yaw : yaw * Quaternion.Euler(w.Body.Spin, 0f, w.Body.Spin * 0.4f);
+            // Settle smoothly into the lying pose (no snap from a tumble to the rest pose).
+            w.Shown = w.HasShown ? Quaternion.Slerp(w.Shown, target, 1f - Mathf.Exp(-SettleRate * Time.deltaTime)) : target;
+            w.HasShown = true;
+            w.Visual.transform.SetPositionAndRotation(p, w.Shown);
         }
     }
 }

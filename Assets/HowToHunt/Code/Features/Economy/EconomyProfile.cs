@@ -15,7 +15,7 @@ namespace HowToHunt.Economy
     /// </summary>
     public sealed class EconomyProfile
     {
-        public const int BaseSlots = 6;
+        public const int BaseSlots = 3; // Phase 3.5: three to start (net, knife, one catch); more slots come later in the game
 
         public BigDouble Coins = BigDouble.Zero;
         public double Trophies;

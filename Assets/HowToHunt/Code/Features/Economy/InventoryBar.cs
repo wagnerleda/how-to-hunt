@@ -32,7 +32,7 @@ namespace HowToHunt.Economy
         private float _nextThrow;
         private float _chargeStart = -1f;
         private Image _chargeBack, _chargeFill;
-        private const float ChargeWidth = 220f, ChargeHeight = 6f;
+        private const float ChargeRing = 64f; // px: the throw gauge circle at the screen centre
         private ItemStack _heldItem;
         private PlayerTools _tools;
 
@@ -70,10 +70,17 @@ namespace HowToHunt.Economy
             _label = Hud.Text("Held Label", new Vector2(0.5f, 0f), new Vector2(0f, SlotSize + 34f), 22f, TextAlignmentOptions.Center, Color.white);
             _label.rectTransform.sizeDelta = new Vector2(800f, 30f);
             // Throw charge: a thin bar above the slots while Throw is held.
-            _chargeBack = Hud.Rect("Throw Charge", new Vector2(0.5f, 0f), new Vector2(0f, SlotSize + 14f), new Vector2(ChargeWidth + 4f, ChargeHeight + 4f), Frame);
-            _chargeFill = Hud.Rect("Fill", new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, ChargeHeight), FrameSelected);
+            // Throw charge: a ring around the screen centre fills clockwise while Throw is held (the crosshair hides).
+            Sprite ring = RingSprite();
+            _chargeBack = Hud.Rect("Throw Charge", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(ChargeRing, ChargeRing), new Color(0f, 0f, 0f, 0.35f));
+            _chargeBack.sprite = ring;
+            _chargeFill = Hud.Rect("Fill", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(ChargeRing, ChargeRing), FrameSelected);
             _chargeFill.rectTransform.SetParent(_chargeBack.rectTransform, false);
-            _chargeFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            _chargeFill.sprite = ring;
+            _chargeFill.type = Image.Type.Filled;
+            _chargeFill.fillMethod = Image.FillMethod.Radial360;
+            _chargeFill.fillOrigin = (int)Image.Origin360.Top;
+            _chargeFill.fillClockwise = true;
             _chargeBack.raycastTarget = _chargeFill.raycastTarget = false;
             _chargeBack.gameObject.SetActive(false);
             EconomyNet.LocalChanged += OnChanged;
@@ -229,6 +236,25 @@ namespace HowToHunt.Economy
             }
         }
 
+        /// <summary>A soft-edged ring, drawn once (no asset).</summary>
+        private static Sprite RingSprite()
+        {
+            const int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "Throw Ring", wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[size * size];
+            float c = (size - 1) * 0.5f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c));
+                    float a = Mathf.Clamp01(1f - Mathf.Abs(d - 54f) / 6f);
+                    px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+                }
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+        }
+
         private void CancelCharge()
         {
             _chargeStart = -1f;
@@ -240,7 +266,7 @@ namespace HowToHunt.Economy
         {
             bool show = charge > 0f;
             if (_chargeBack.gameObject.activeSelf != show) _chargeBack.gameObject.SetActive(show);
-            if (show) _chargeFill.rectTransform.sizeDelta = new Vector2(ChargeWidth * charge, ChargeHeight);
+            if (show) _chargeFill.fillAmount = charge;
         }
     }
 }

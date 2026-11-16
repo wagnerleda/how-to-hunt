@@ -16,6 +16,8 @@ namespace HowToHunt.Editor
     {
         public const string ContentDir = GeneratedAssets.ResourcesDir + "/Content";
         private const string ModelsDir = GeneratedAssets.Root + "/Art/Models";
+        /// <summary>Use Kenney Blaster Kit models for the guns (owner trial). False: the Blender revolver.</summary>
+        private const bool KenneyGuns = true;
 
         [MenuItem("How to Hunt/Rebuild Content", priority = 2)]
         public static void Build()
@@ -67,11 +69,11 @@ namespace HowToHunt.Editor
                 p.TrophiesOnKill = 1;
                 p.Movement = PreyMovement.Ground;
                 p.WalkSpeed = 1.1f;
-                // Sprints at 8.5 m/s (faster than the 6.35 m/s run cap) for 3 s, then tires to 4.8 m/s:
+                // Sprints at 8.5 m/s (faster than the 6.35 m/s run cap and the 7.9 m/s player sprint) for 5 s, then tires to 5.4 m/s:
                 // runners lose it, bunny hoppers catch it (owner request, M3 feedback).
                 p.FleeSpeed = 8.5f;
-                p.StaminaSeconds = 3f;
-                p.TiredSpeed = 4.8f;
+                p.StaminaSeconds = 5f; // Phase 3.5: tired too soon once players could sprint
+                p.TiredSpeed = 5.4f;
                 p.FleeRadius = 8f;
                 // Bolts from players it can see within 22 m (11 m if they crouch), and from gunshots within 45 m.
                 p.SightRange = 22f;
@@ -160,7 +162,16 @@ namespace HowToHunt.Editor
                 t.Cooldown = 0.4f;
                 t.Slot = 3;
                 t.StartOwned = false;
-                t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");            });
+                // Owner trial (Phase 4): Kenney Blaster Kit pistol. Set KenneyGuns = false to go back to the Blender revolver.
+                t.Viewmodel = KenneyGuns
+                    ? AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.KenneyPistolPrefabPath)
+                    : AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");
+                if (KenneyGuns)
+                {
+                    t.SightOffset = new Vector3(0f, 0.105f, -0.13f);
+                    t.MuzzleOffset = new Vector3(0f, 0.087f, 0.196f);
+                }
+            });
 
             Asset<ToolDefinition>("Tools/Tool_Scout", "tool.scout", "Scout Rifle",
                 "Bolt-action with a scope. Stays accurate on the move; far too much gun for small prey.", t =>
@@ -192,8 +203,8 @@ namespace HowToHunt.Editor
                 t.AdsSpreadFactor = 0.5f;
                 t.AdsZoom = 3.5f;
                 t.ScopeOverlay = true;
-                t.SightOffset = new Vector3(0f, 0.09f, -0.06f);
-                t.MuzzleOffset = new Vector3(0f, 0.03f, 0.78f);
+                t.SightOffset = new Vector3(0f, 0.21f, 0.05f);
+                t.MuzzleOffset = new Vector3(0f, 0.09f, 0.69f);
                 t.Weight = 1; // a little heavy: slows you slightly while held
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ScoutPrefabPath);
             });
@@ -204,7 +215,7 @@ namespace HowToHunt.Editor
                 u.Tool = net;
                 u.Effect = UpgradeEffect.CaptureStrength;
                 u.Value = 1f;
-                u.CostCoins = 140;
+                u.CostCoins = 130;
                 u.SortOrder = 10;
                 u.Requires = null;
             });
@@ -226,7 +237,7 @@ namespace HowToHunt.Editor
                 u.Tool = net;
                 u.Effect = UpgradeEffect.Range;
                 u.Value = 0.8f;
-                u.CostCoins = 220;
+                u.CostCoins = 150;
                 u.SortOrder = 30;
                 u.Requires = sturdy;
             });
@@ -237,7 +248,7 @@ namespace HowToHunt.Editor
                 u.Tool = revolver;
                 u.Effect = UpgradeEffect.UnlockTool;
                 u.Value = 0f;
-                u.CostCoins = 340;
+                u.CostCoins = 200;
                 u.SortOrder = 40;
                 u.Requires = null;
             });
@@ -247,6 +258,7 @@ namespace HowToHunt.Editor
             {
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
+                u.Unlisted = true; // Phase 3.5: slots come later in the game (later areas, quests), not from the Plains shop
                 u.Value = 2f;
                 u.CostCoins = 180;
                 u.SortOrder = 50;
@@ -258,11 +270,23 @@ namespace HowToHunt.Editor
             {
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
+                u.Unlisted = true; // Phase 3.5: slots come later in the game (later areas, quests), not from the Plains shop
                 u.Value = 2f;
                 u.CostCoins = 360;
                 u.SortOrder = 60;
                 u.Requires = pack;
             });
+
+            // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
+            foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))
+            {
+                var tool = AssetDatabase.LoadAssetAtPath<ToolDefinition>(AssetDatabase.GUIDToAssetPath(guid));
+                if (tool == null || !ItemRestPose.Compute(tool.Viewmodel, "Hand", out Vector3 euler, out Vector3 center, out Vector3 size)) continue;
+                tool.RestEuler = euler;
+                tool.RestCenter = center;
+                tool.RestSize = size;
+                EditorUtility.SetDirty(tool);
+            }
 
             AssetDatabase.SaveAssets();
             ContentRegistry.Reset();

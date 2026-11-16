@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace HowToHunt.Tests
 {
     /// <summary>
-    /// The Plains economy must fit the M3 demo: a hunter who sells whenever the bag is full buys a first upgrade in about five minutes and everything in 20-30 (Phase 3 rebalance; was
+    /// The Plains economy must fit the M3 demo: a hunter who sells whenever the bag is full buys a first upgrade in about five minutes and everything in about 15, carrying three slots (net, knife, one catch). Phase 3.5; was 20-30, and before that
     /// three and ten in the M3 demo). Breaks when content numbers drift (docs/DESIGN.md, pacing).
     /// </summary>
     public sealed class EconomyPacingTests
@@ -25,11 +25,11 @@ namespace HowToHunt.Tests
             Assert.That(prey[1].Def, Is.Not.Null);
 
             EconomySimulator.Result r = EconomySimulator.Run(prey, Loadouts.AllTools, Loadouts.AllUpgrades,
-                catchesPerTrip: 12, secondsPerSellTrip: 20f, secondsPerSwing: 0.5f);
+                catchesPerTrip: 12, secondsPerSellTrip: 20f, secondsPerSwing: 0.5f, freeSlots: 1);
 
             Assert.That(r.AllOwned, Is.True, "Every Plains upgrade should be reachable.");
             Assert.That(r.Unlocks[0].Seconds, Is.InRange(210.0, 390.0), "First upgrade should take a few minutes of hunting (about 4-6).");
-            Assert.That(r.Seconds, Is.InRange(1200.0, 1800.0), "All Plains upgrades: 20-30 minutes, a slight grind (owner, Phase 3).");
+            Assert.That(r.Seconds, Is.InRange(780.0, 1080.0), "All Plains upgrades in about 15 minutes (owner, Phase 3.5).");
         }
 
         [Test]

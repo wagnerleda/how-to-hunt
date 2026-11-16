@@ -24,9 +24,10 @@ namespace HowToHunt.Sim.Hunting
     {
         public const float Gravity = 20f;
         private const float Restitution = 0.12f;  // carcasses thud, they don't bounce
-        private const float GroundFriction = 24f; // speed lost per second on the ground (m/s per s): no rolling away
+        private const float GroundFriction = 13f; // speed lost per second on the ground (m/s per s): rolls a little, not away (Phase 3.5)
         private const float RestSpeed = 0.9f;
-        private const float ImpactGrip = 0.7f;   // share of sliding speed lost when it lands
+        private const float ImpactGrip = 0.55f;  // share of sliding speed lost when it lands
+        private const float RollDegreesPerMetre = 140f; // cosmetic roll while sliding on the ground
 
         public static void Step(ref ItemBody b, ICollisionWorld world, Vector3 halfExtents, float dt)
         {
@@ -72,8 +73,9 @@ namespace HowToHunt.Sim.Hunting
                     b.Resting = true;
                 }
             }
-            // Tumble only in the air; on the ground it slides to a stop.
+            // Tumble in the air; on the ground it rolls a little with its speed as it slows to a stop.
             if (!b.Resting && !grounded) b.Spin += 540f * dt * MathF.Min(1f, b.Velocity.Length() / 6f);
+            else if (!b.Resting) b.Spin += RollDegreesPerMetre * dt * new Vector3(b.Velocity.X, 0f, b.Velocity.Z).Length();
         }
     }
 }

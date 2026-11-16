@@ -40,8 +40,8 @@ MonoBehaviour:
   Wariness: 1
   CalmDownSeconds: 3
   StunSeconds: 0.15
-  StaminaSeconds: 3
-  TiredSpeed: 4.8
+  StaminaSeconds: 5
+  TiredSpeed: 5.4
   HalfExtents: {x: 0.15, y: 0.15, z: 0.2}
   Visual: {fileID: 919132149155446097, guid: 0980ee2c0eb77b34e9427ab988049f77, type: 3}
   VisualScale: 1

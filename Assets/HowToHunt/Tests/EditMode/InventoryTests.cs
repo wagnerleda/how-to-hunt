@@ -135,7 +135,8 @@ namespace HowToHunt.Tests
             const string v1 = "{\"coins\":\"4.2;1\",\"trophies\":1,\"upgrades\":[],\"bagPrey\":[\"prey.butterfly\",\"prey.butterfly\",\"prey.rabbit\"],\"bagFlags\":[1,1,0]}";
             slice.Load(v1, 1);
             Assert.AreEqual(42.0, profile.Coins.ToDouble(), 1e-6);
-            Assert.AreEqual(3, profile.Inventory.PreyCount);
+            // Three slots (Phase 3.5): net, knife and the butterfly stack fit; the rabbit has no room left.
+            Assert.AreEqual(2, profile.Inventory.PreyCount);
             Assert.IsTrue(profile.Inventory.HasTool(HowToHunt.Core.ContentRegistry.Get<ToolDefinition>("tool.net").Id.Value), "old saves get the starting tools");
             Assert.IsTrue(profile.Inventory.HasTool(HowToHunt.Core.ContentRegistry.Get<ToolDefinition>("tool.knife").Id.Value));
             Assert.AreEqual(2, profile.Inventory[2].Count, "two caught butterflies share a stack");
@@ -145,7 +146,7 @@ namespace HowToHunt.Tests
             var again = new EconomyProfile();
             new EconomySaveSlice(again, null).Load(v3, 3);
             Assert.IsTrue(again.Inventory.HasTool(HowToHunt.Core.ContentRegistry.Get<ToolDefinition>("tool.net").Id.Value));
-            Assert.AreEqual(3, again.Inventory.PreyCount);
+            Assert.AreEqual(2, again.Inventory.PreyCount);
             Assert.AreEqual(profile.Inventory[3].Content, again.Inventory[3].Content);
         }
     }

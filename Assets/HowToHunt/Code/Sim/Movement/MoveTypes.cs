@@ -71,6 +71,8 @@ namespace HowToHunt.Sim.Movement
         public MoveMode Mode;
         /// <summary>Seconds left slowed by a thrown item (set by the host, reaches the owner by reconciliation).</summary>
         public float SlowTime;
+        /// <summary>Seconds of sprint used up (0 = fresh). Sprint stops at MoveConfig.SprintStamina; it recovers while not sprinting.</summary>
+        public float Fatigue;
 
         // Derived/feedback fields (not needed to resume simulation).
         /// <summary>Normal of the surface under or against the player (for surf/feel feedback).</summary>
@@ -101,6 +103,9 @@ namespace HowToHunt.Sim.Movement
         public float DuckSpeedFactor = 0.34f;
         /// <summary>Ground speed while sprinting (x MaxSpeed). Air speed is capped separately, so bhop stays faster.</summary>
         public float SprintFactor = 1.25f;
+        /// <summary>Seconds of sprint from fresh, and seconds of fatigue recovered per second while not sprinting.</summary>
+        public float SprintStamina = 3f;
+        public float StaminaRegen = 0.5f;
         /// <summary>Ground speed while wading (x MaxSpeed), and horizontal drag per second in water.</summary>
         public float WaterSpeedFactor = 0.55f;
         public float WaterDrag = 3f;

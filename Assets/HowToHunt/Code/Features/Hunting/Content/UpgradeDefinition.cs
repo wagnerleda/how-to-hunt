@@ -35,6 +35,8 @@ namespace HowToHunt.Hunting
         [Tooltip("Must own this upgrade first.")]
         public UpgradeDefinition Requires;
         public int SortOrder;
+        [Tooltip("Not sold yet: unlocked later in the game (later areas, quests). Hidden from the shop.")]
+        public bool Unlisted;
 
         public override void Validate(List<string> errors)
         {

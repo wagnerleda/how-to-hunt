@@ -78,6 +78,12 @@ namespace HowToHunt.Hunting
             AdsSpreadFactor = AdsSpreadFactor,
         };
 
+        [Header("World item (computed by the content build)")]
+        [Tooltip("How it lies when dropped: its natural resting face (lowest centre of mass), and its bounds in that pose.")]
+        public Vector3 RestEuler;
+        public Vector3 RestCenter;
+        public Vector3 RestSize;
+
         [Header("Use")]
         [Tooltip("Seconds between uses.")]
         public float Cooldown = 0.5f;

@@ -22,3 +22,4 @@ MonoBehaviour:
   CostTrophies: 0
   Requires: {fileID: 0}
   SortOrder: 50
+  Unlisted: 1

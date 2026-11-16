@@ -42,7 +42,17 @@ namespace HowToHunt.Sim.Movement
             // Wading: feet a little above the bottom of the hull are under water.
             s.InWater = world.InWater(s.Position - new Vector3(0f, cfg.Hull(s.Ducked).Y - 0.3f, 0f));
             ComputeWish(in cmd, cfg, s.Ducked && s.OnGround, out Vector3 wishDir, out float wishSpeed);
-            if (s.OnGround && !s.Ducked && cmd.Has(MoveButtons.Sprint) && cmd.Forward > 0.1f) wishSpeed *= cfg.SprintFactor;
+            // Sprint: a modest boost on the ground, limited by stamina (bunny hopping stays the skilled way to go fast).
+            bool sprinting = s.OnGround && !s.Ducked && cmd.Has(MoveButtons.Sprint) && cmd.Forward > 0.1f && s.Fatigue < cfg.SprintStamina;
+            if (sprinting)
+            {
+                wishSpeed *= cfg.SprintFactor;
+                s.Fatigue = MathF.Min(cfg.SprintStamina, s.Fatigue + dt);
+            }
+            else if (s.Fatigue > 0f && !cmd.Has(MoveButtons.Sprint))
+            {
+                s.Fatigue = MathF.Max(0f, s.Fatigue - cfg.StaminaRegen * dt);
+            }
             if (s.InWater) wishSpeed *= cfg.WaterSpeedFactor;
             if (cmd.Load > 0) wishSpeed *= MathF.Max(0f, 1f - cmd.Load * cfg.LoadSlowPerLevel); // heavy weapon in hand
             if (s.SlowTime > 0f)

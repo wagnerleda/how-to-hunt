@@ -37,8 +37,11 @@ namespace HowToHunt.Economy
         }
 
         public static Result Run(IReadOnlyList<Prey> prey, IReadOnlyList<ToolDefinition> tools, IReadOnlyList<UpgradeDefinition> upgrades,
-            int catchesPerTrip, float secondsPerSellTrip, float secondsPerSwing, double maxSeconds = 3600)
+            int catchesPerTrip, float secondsPerSellTrip, float secondsPerSwing, double maxSeconds = 3600, int freeSlots = 0)
         {
+            // freeSlots > 0: trips end when the bag is full by real slot and stack rules (tools take the other slots).
+            int listed = 0;
+            foreach (UpgradeDefinition u in upgrades) if (!u.Unlisted) listed++;
             var result = new Result();
             var profile = new EconomyProfile();
             var loadout = new Loadout();
@@ -82,12 +85,14 @@ namespace HowToHunt.Economy
                 t += bestTime;
                 for (int k = 0; k < bestCount; k++)
                 {
+                    if (freeSlots > 0 && !Fits(carried, bestItem, freeSlots)) break; // the rest of the sweep is left behind
                     carried.Add(bestItem);
                     result.Catches++;
                     if (bestItem.Captured) profile.Research[bestItem.Content] = profile.ResearchOf(bestItem.Content) + 1;
                 }
 
-                if (carried.Count >= catchesPerTrip)
+                bool full = freeSlots > 0 ? !Fits(carried, bestItem, freeSlots) : carried.Count >= catchesPerTrip;
+                if (full)
                 {
                     t += secondsPerSellTrip;
                     foreach (ItemStack c in carried) profile.Coins += profile.ValueOf(c, rules, scratch).Coins;
@@ -106,12 +111,40 @@ namespace HowToHunt.Economy
                             bought = true;
                         }
                     } while (bought);
-                    if (profile.Upgrades.Count == upgrades.Count) { result.AllOwned = true; break; }
+                    if (profile.Upgrades.Count >= listed) { result.AllOwned = true; break; }
                 }
             }
             result.Seconds = t;
             result.Coins = profile.Coins;
             return result;
+        }
+
+        /// <summary>Would one more of this item fit in the bag (stacks fill before a new slot is used)?</summary>
+        private static bool Fits(List<ItemStack> carried, in ItemStack item, int freeSlots)
+        {
+            int slots = 0, same = 0;
+            // Group by content and catch/kill (they stack separately), counting slots per group.
+            for (int i = 0; i < carried.Count; i++)
+            {
+                bool seen = false;
+                for (int j = 0; j < i; j++)
+                    if (carried[j].Content == carried[i].Content && carried[j].Captured == carried[i].Captured) { seen = true; break; }
+                if (seen) continue;
+                int n = 0;
+                for (int j = i; j < carried.Count; j++)
+                    if (carried[j].Content == carried[i].Content && carried[j].Captured == carried[i].Captured) n++;
+                int stack = StackOf(carried[i].Content);
+                slots += (n + stack - 1) / stack;
+                if (carried[i].Content == item.Content && carried[i].Captured == item.Captured) same = n;
+            }
+            int itemStack = StackOf(item.Content);
+            return same % itemStack != 0 || slots < freeSlots;
+        }
+
+        private static int StackOf(uint content)
+        {
+            PreyDefinition d = HowToHunt.Core.ContentRegistry.Get<PreyDefinition>(new HowToHunt.Foundation.ContentId(content));
+            return d != null ? Math.Max(1, d.StackSize) : 1;
         }
 
         private static bool Owns(Loadout loadout, ToolDefinition tool, IReadOnlyList<UpgradeDefinition> upgrades)

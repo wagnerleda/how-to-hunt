@@ -40,7 +40,7 @@ namespace HowToHunt.Sim.Hunting
         public const int MaxSlots = 12;
 
         private readonly ItemStack[] _slots = new ItemStack[MaxSlots];
-        private int _capacity = 6;
+        private int _capacity = 3;
 
         public int Capacity => _capacity;
         public ItemStack this[int slot] => slot >= 0 && slot < MaxSlots ? _slots[slot] : default;

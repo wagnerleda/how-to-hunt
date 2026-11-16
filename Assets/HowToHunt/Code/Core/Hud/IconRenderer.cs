@@ -64,11 +64,17 @@ namespace HowToHunt.Core
 
             var rt = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = rt;
-            // No scene fog on icons: the camera is far from the stage and fog would tint the whole item.
+            // Icons get their own lighting: no scene fog (the camera is far off and fog tints the whole item) and a
+            // flat neutral ambient instead of the scene's sky (which tinted icons green or magenta depending on state).
             bool fog = RenderSettings.fog;
+            UnityEngine.Rendering.SphericalHarmonicsL2 probe = RenderSettings.ambientProbe;
+            var flat = new UnityEngine.Rendering.SphericalHarmonicsL2();
+            flat.AddAmbientLight(new Color(0.62f, 0.62f, 0.62f));
             RenderSettings.fog = false;
+            RenderSettings.ambientProbe = flat;
             cam.Render();
             RenderSettings.fog = fog;
+            RenderSettings.ambientProbe = probe;
             RenderTexture previous = RenderTexture.active;
             RenderTexture.active = rt;
             var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false) { name = $"Icon {model.name}" };

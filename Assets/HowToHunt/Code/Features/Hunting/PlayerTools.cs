@@ -203,7 +203,7 @@ namespace HowToHunt.Hunting
             LocalMagazine = gun ? tool.MagazineSize : 0;
             LocalAmmo = gun ? AmmoOf(_equipped, tool) : 0;
             PlayerInputSampler.LoadLevel = tool != null ? tool.Weight : 0;
-            MovementHud.HideCrosshair = gun;
+            MovementHud.HideCrosshair = gun || LocalThrowCharge > 0f; // guns aim by the barrel; a charging throw shows its ring instead
             if (!gun) LocalAiming = false;
         }
 

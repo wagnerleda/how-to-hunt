@@ -134,10 +134,12 @@ namespace HowToHunt.Economy
         {
             if (_rowList.Count > 0) return;
             IReadOnlyList<UpgradeDefinition> all = Loadouts.AllUpgrades;
+            int shown = 0;
             for (int i = 0; i < all.Count; i++)
             {
                 UpgradeDefinition u = all[i];
-                float y = -i * (RowHeight + 8f);
+                if (u.Unlisted) continue; // not sold yet (later areas, quests)
+                float y = -(shown++) * (RowHeight + 8f);
                 Image bg = Hud.Rect($"Row {u.Key}", new Vector2(0.5f, 1f), Vector2.zero, new Vector2(860f, RowHeight), RowColor);
                 RectTransform rt = bg.rectTransform;
                 rt.SetParent(_rows, false);

@@ -18,7 +18,8 @@ MonoBehaviour:
   Tool: {fileID: 11400000, guid: 1b0a0891b7fae754db187a4e5eb33a70, type: 2}
   Effect: 3
   Value: 0
-  CostCoins: 340
+  CostCoins: 200
   CostTrophies: 0
   Requires: {fileID: 0}
   SortOrder: 40
+  Unlisted: 0

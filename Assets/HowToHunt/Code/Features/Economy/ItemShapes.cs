@@ -21,6 +21,7 @@ namespace HowToHunt.Economy
             public float Scale = 1f;
             public Quaternion Lie = Quaternion.identity;
             public Bounds LocalBounds;   // model space, unscaled
+            public Bounds LieBounds;     // in the lying pose (Lie applied), unscaled: the collision box and visual centre
             public bool HideHand;
         }
 
@@ -46,6 +47,17 @@ namespace HowToHunt.Economy
                 if (carcass) s.Lie = Quaternion.Euler(0f, 0f, 90f);
             }
             s.LocalBounds = Measure(s.Prefab, s.HideHand);
+            s.LieBounds = Rotated(s.LocalBounds, s.Lie);
+            if (item.Kind == ItemKind.Tool)
+            {
+                // Tools lie on their natural resting face, measured from the mesh by the content build.
+                ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(item.Content));
+                if (t != null && t.RestSize.sqrMagnitude > 1e-6f)
+                {
+                    s.Lie = Quaternion.Euler(t.RestEuler);
+                    s.LieBounds = new Bounds(t.RestCenter, t.RestSize);
+                }
+            }
             Cache[key] = s;
             return s;
         }
@@ -80,6 +92,14 @@ namespace HowToHunt.Economy
             }
         }
 
+        private static Bounds Rotated(Bounds b, Quaternion r)
+        {
+            var result = new Bounds(r * b.center, Vector3.zero);
+            for (int i = 0; i < 8; i++)
+                result.Encapsulate(r * new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z));
+            return result;
+        }
+
         /// <summary>Yaw the item lies at on the ground (from its id, so every machine agrees).</summary>
         public static float Yaw(ushort id) => (id * 137.5f) % 360f;
 
@@ -87,8 +107,8 @@ namespace HowToHunt.Economy
         public static Vec3 HalfExtents(in ItemStack item, ushort id)
         {
             Shape s = Get(item);
-            Quaternion r = Quaternion.Euler(0f, Yaw(id), 0f) * s.Lie;
-            Vector3 e = s.LocalBounds.extents * s.Scale;
+            Quaternion r = Quaternion.Euler(0f, Yaw(id), 0f);
+            Vector3 e = s.LieBounds.extents * s.Scale;
             Vector3 x = r * new Vector3(e.x, 0f, 0f), y = r * new Vector3(0f, e.y, 0f), z = r * new Vector3(0f, 0f, e.z);
             var half = new Vector3(Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x), Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y), Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z));
             return new Vec3(Mathf.Max(0.04f, half.x), Mathf.Max(0.04f, half.y), Mathf.Max(0.04f, half.z));

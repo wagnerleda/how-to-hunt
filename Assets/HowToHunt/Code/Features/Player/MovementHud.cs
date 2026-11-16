@@ -43,6 +43,7 @@ namespace HowToHunt.Player
             var go = new GameObject("MovementHud");
             DontDestroyOnLoad(go);
             Instance = go.AddComponent<MovementHud>();
+            go.AddComponent<StaminaHud>();
         }
 
         private void Awake()
