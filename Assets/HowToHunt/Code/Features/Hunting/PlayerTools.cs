@@ -63,6 +63,42 @@ namespace HowToHunt.Hunting
                 if (Loadouts.Local.Owns(tools[i])) { Equip(i); return; }
         }
 
+        /// <summary>The inventory bar selected a tool slot (null = empty hands).</summary>
+        public void SelectTool(ToolDefinition tool)
+        {
+            HeldPrey = null;
+            if (tool == null)
+            {
+                if (_equipped < 0) return;
+                _previous = _equipped;
+                _equipped = -1;
+                LocalEquipped?.Invoke(null);
+                return;
+            }
+            var tools = Loadouts.AllTools;
+            for (int i = 0; i < tools.Count; i++)
+                if (tools[i] == tool) { if (i != _equipped) Equip(i); else LocalEquipped?.Invoke(tool); return; }
+        }
+
+        /// <summary>The inventory bar selected a prey slot: hands hold it (no tool).</summary>
+        public void HoldPrey(PreyDefinition prey)
+        {
+            if (_equipped >= 0) { _previous = _equipped; _equipped = -1; }
+            HeldPrey = prey;
+            LocalHeld?.Invoke(prey);
+        }
+
+        /// <summary>What the local player holds when not holding a tool (null = nothing or a tool).</summary>
+        public static PreyDefinition HeldPrey { get; private set; }
+
+        /// <summary>Local: hands now hold this prey (null = none).</summary>
+        public static event Action<PreyDefinition> LocalHeld;
+
+        /// <summary>Local: the held prey was thrown (viewmodel animation).</summary>
+        public static event Action LocalThrow;
+
+        public static void NotifyThrow() => LocalThrow?.Invoke();
+
         private void Equip(int index)
         {
             if (index == _equipped || index < 0 || index >= Loadouts.AllTools.Count) return;
@@ -82,18 +118,7 @@ namespace HowToHunt.Hunting
             if (AutoFireShots > 0) { AutoFire(); return; }
             if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
 
-            Keyboard kb = Keyboard.current;
-            if (kb != null)
-            {
-                for (int slot = 1; slot <= 9; slot++)
-                {
-                    if (!kb[Key.Digit1 + (slot - 1)].wasPressedThisFrame) continue;
-                    var tools = Loadouts.AllTools;
-                    for (int i = 0; i < tools.Count; i++) if (tools[i].Slot == slot) Equip(i);
-                }
-                if (kb.qKey.wasPressedThisFrame && _previous >= 0) Equip(_previous);
-            }
-
+            // Slot keys belong to the inventory bar (economy feature), which calls SelectTool / HoldPrey.
             ToolDefinition tool = Equipped;
             if (tool == null) return;
             bool trigger = tool.Archetype == ToolArchetype.Firearm ? KeyBindings.WasPressedThisFrame(GameAction.Fire) : KeyBindings.IsPressed(GameAction.Fire);
@@ -213,12 +238,19 @@ namespace HowToHunt.Hunting
                 case TakedownOutcome.Killed:
                 case TakedownOutcome.Captured:
                     PreyWorld.HostRemove(prey);
+                    // A kill flings the carcass away from the hunter: harder hits fling it further.
+                    Vector3 away = target.Point - transform.position;
+                    away.y = 0f;
+                    away = away.sqrMagnitude > 1e-4f ? away.normalized : transform.forward;
+                    float force = 1.5f + Mathf.Min(r.Damage, 60f) * 0.06f;
                     EventBus.Publish(new PreyTakenDown
                     {
                         ClientId = Owner.ClientId,
                         Prey = prey.Def.Id,
                         Captured = r.Outcome == TakedownOutcome.Captured,
                         Quality = r.Quality,
+                        Position = target.Pose.Position.ToUnity() + Vector3.up * 0.15f,
+                        Fling = away * force + Vector3.up * (2f + force * 0.4f),
                     });
                     break;
             }

@@ -48,6 +48,8 @@ namespace HowToHunt.Hunting
         {
             _holder = new GameObject("Viewmodel").transform;
             PlayerTools.LocalEquipped += OnEquipped;
+            PlayerTools.LocalHeld += OnHeld;
+            PlayerTools.LocalThrow += OnThrow;
             PlayerTools.LocalUse += OnUse;
             PlayerMotor.MoveFeedback += OnMoveFeedback;
         }
@@ -55,13 +57,60 @@ namespace HowToHunt.Hunting
         private void OnDestroy()
         {
             PlayerTools.LocalEquipped -= OnEquipped;
+            PlayerTools.LocalHeld -= OnHeld;
+            PlayerTools.LocalThrow -= OnThrow;
             PlayerTools.LocalUse -= OnUse;
             PlayerMotor.MoveFeedback -= OnMoveFeedback;
             if (_holder != null) Destroy(_holder.gameObject);
         }
 
+        // --- held prey ----------------------------------------------------------------------------------------
+        private readonly Dictionary<PreyDefinition, GameObject> _preyModels = new Dictionary<PreyDefinition, GameObject>();
+        private PreyDefinition _heldPrey;
+        private float _throwTime = -10f;
+
+        private void OnHeld(PreyDefinition prey)
+        {
+            _tool = null;
+            _heldPrey = prey;
+            if (_shown != null) _shown.SetActive(false);
+            _shown = null;
+            _raise = 0f;
+            if (prey == null || prey.Visual == null) return;
+            if (!_preyModels.TryGetValue(prey, out GameObject model) || model == null)
+            {
+                model = Instantiate(prey.Visual, _holder, false);
+                // Held up in front, a bit smaller than life so it doesn't fill the screen.
+                model.transform.localScale = Vector3.one * prey.VisualScale * (prey.VisualScale > 1.2f ? 0.7f : 0.55f);
+                model.transform.localPosition = new Vector3(0.04f, -0.12f, 0.12f);
+                model.transform.localRotation = Quaternion.Euler(-10f, 235f, -12f); // held by the scruff, side-on
+                foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _preyModels[prey] = model;
+            }
+            model.SetActive(true);
+            _shown = model;
+            Sfx.Play2D("Kenney/handleSmallLeather", 0.25f, Random.Range(0.95f, 1.05f));
+        }
+
+        private void OnThrow() => _throwTime = Time.time;
+
+        /// <summary>Throw: pull back and up, then fling forward; the model is hidden at release until the bar refreshes.</summary>
+        private void ThrowPose(out Vector3 offset, out Quaternion rotation)
+        {
+            float t = (Time.time - _throwTime) / 0.32f;
+            offset = Vector3.zero;
+            rotation = Quaternion.identity;
+            if (t < 0f || t >= 1f) return;
+            float back = t < 0.35f ? Smooth(t / 0.35f) : 1f - Smooth((t - 0.35f) / 0.25f);
+            float fling = t < 0.35f ? 0f : Mathf.Sin(Mathf.Clamp01((t - 0.35f) / 0.65f) * Mathf.PI);
+            offset = new Vector3(0.04f * back, 0.08f * back - 0.04f * fling, -0.12f * back + 0.25f * fling);
+            rotation = Quaternion.Euler(-35f * back + 40f * fling, 0f, 0f);
+        }
+
         private void OnEquipped(ToolDefinition tool)
         {
+            _heldPrey = null;
             _tool = tool;
             if (_shown != null) _shown.SetActive(false);
             _shown = null;
@@ -111,7 +160,7 @@ namespace HowToHunt.Hunting
             }
             bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
-            if (!visible || _tool == null) { _hasLastVelocity = false; return; }
+            if (!visible || (_tool == null && _heldPrey == null)) { _hasLastVelocity = false; return; }
 
             float dt = Mathf.Min(Time.deltaTime, 0.05f);
             if (dt <= 0f) return;
@@ -155,7 +204,13 @@ namespace HowToHunt.Hunting
             Vector3 offset;
             Quaternion use;
             float shoulderYaw = 0f;
-            if (_tool.Archetype == ToolArchetype.Firearm)
+            if (_tool == null)
+            {
+                ThrowPose(out offset, out use);
+                float since = Time.time - _throwTime;
+                if (_shown != null) _shown.SetActive(since < 0.13f || since > 0.45f); // released mid-throw
+            }
+            else if (_tool.Archetype == ToolArchetype.Firearm)
             {
                 float t = (Time.time - _useTime) / Mathf.Max(0.12f, _tool.Cooldown * 0.75f);
                 Recoil(t >= 0f && t < 1f ? t : 1f, out offset, out use);

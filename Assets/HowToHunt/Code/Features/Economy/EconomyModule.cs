@@ -21,7 +21,9 @@ namespace HowToHunt.Economy
 
         public void Register(ModuleRegistrar r)
         {
-            r.Cvar(EconomyNet.BagCapacity);
+            r.Cvar(EconomyNet.ThrowSpeed);
+            r.Cvar(WorldItems.Lifetime);
+            r.Cvar(WorldItems.PickupReach);
             r.Cvar(EconomyNet.StationReach);
             r.SaveSlice(new EconomySaveSlice(EconomyNet.Local, EconomyNet.OnLocalLoaded));
             r.Command("econ_give", "econ_give <coins>: give every hunter in the party coins (host, sv_cheats 1).", args =>
@@ -37,7 +39,7 @@ namespace HowToHunt.Economy
             r.Command("econ_status", "Print your coins, bag, research and upgrades.", _ =>
             {
                 EconomyProfile p = EconomyNet.Local;
-                r.Console.Print($"[econ] {p.Coins.ToShortString()} coins, {p.Trophies:0} trophies, bag {p.Bag.Count}/{EconomyNet.BagCapacity.Value}, " +
+                r.Console.Print($"[econ] {p.Coins.ToShortString()} coins, {p.Trophies:0} trophies, carrying {p.Inventory.PreyCount} prey in {p.Inventory.Capacity} slots, " +
                                 $"{p.Captures} caught, {p.Kills} killed, {p.Upgrades.Count} upgrades, lifetime {p.LifetimeCoins.ToShortString()} coins");
                 foreach (var kv in p.Research)
                 {
@@ -52,6 +54,8 @@ namespace HowToHunt.Economy
             var root = Game.Root.gameObject;
             root.AddComponent<EconomyHud>();
             root.AddComponent<ShopPanel>();
+            root.AddComponent<InventoryBar>();
+            root.AddComponent<WorldItemRenderer>();
             NetSession.ManagerCreated += OnManagerCreated;
             NetSession.SessionEnded += EconomyNet.Detach;
             PlayerMotor.LocalPlayerStarted += OnLocalPlayer;

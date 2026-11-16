@@ -123,5 +123,9 @@ namespace HowToHunt.Hunting
         public ContentId Prey;
         public bool Captured;
         public CarcassQuality Quality;
+        /// <summary>Where the prey was (kills leave a carcass here).</summary>
+        public UnityEngine.Vector3 Position;
+        /// <summary>Initial velocity of the carcass (the hit flings it).</summary>
+        public UnityEngine.Vector3 Fling;
     }
 }

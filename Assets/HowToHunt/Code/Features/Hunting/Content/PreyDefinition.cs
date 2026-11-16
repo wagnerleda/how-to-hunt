@@ -50,6 +50,10 @@ namespace HowToHunt.Hunting
         public Color GibColor = new Color(0.62f, 0.5f, 0.38f);
         public int GibCount = 4;
 
+        [Header("Inventory")]
+        [Tooltip("How many fit in one inventory slot (small prey stack, big prey take a slot each).")]
+        public int StackSize = 1;
+
         public PreyStats Stats => new PreyStats
         {
             Allowed = Allowed,

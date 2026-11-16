@@ -7,8 +7,7 @@ using HowToHunt.Sim.Hunting;
 namespace HowToHunt.Economy
 {
     /// <summary>
-    /// Headless pacing check: a hunter who always takes the best-paying catch their tools allow, sells when the bag
-    /// is full and buys every upgrade they can afford. Reports when each upgrade is bought, so tuning changes can be
+    /// Headless pacing check: a hunter who always takes the best-paying catch their tools allow, sells every few catches and buys every upgrade they can afford. Reports when each upgrade is bought, so tuning changes can be
     /// judged against the target (all Plains upgrades within a few minutes for the M3 demo). Used by tests and econ_sim.
     /// </summary>
     public static class EconomySimulator
@@ -36,7 +35,7 @@ namespace HowToHunt.Economy
         }
 
         public static Result Run(IReadOnlyList<Prey> prey, IReadOnlyList<ToolDefinition> tools, IReadOnlyList<UpgradeDefinition> upgrades,
-            int bagCapacity, float secondsPerSellTrip, float secondsPerSwing, double maxSeconds = 3600)
+            int catchesPerTrip, float secondsPerSellTrip, float secondsPerSwing, double maxSeconds = 3600)
         {
             var result = new Result();
             var profile = new EconomyProfile();
@@ -44,12 +43,13 @@ namespace HowToHunt.Economy
             var scratch = new ModifierStack();
             EconomyRules rules = EconomyRules.Default;
             double t = 0;
+            var carried = new List<ItemStack>();
 
             while (t < maxSeconds)
             {
                 // Best coins per second among what this loadout can take down.
                 double bestRate = 0;
-                BagItem bestItem = default;
+                ItemStack bestItem = default;
                 double bestTime = 0;
                 foreach (Prey p in prey)
                 {
@@ -60,28 +60,29 @@ namespace HowToHunt.Economy
                         if (!TryTakeDown(p.Def, stats, out CarcassQuality quality, out int hits)) continue;
                         bool captured = tool.Mode == ToolMode.Capture;
                         CatchReward r = Rewards.Compute(p.Def.Economy, rules, captured, quality, profile.ResearchOf(p.Def.Id.Value), scratch);
-                        double seconds = p.SecondsToReach + Math.Max(tool.Cooldown, secondsPerSwing) * hits;
+                        // Kills drop a carcass that has to be fetched (owner rule): a few seconds more than a catch.
+                        double seconds = p.SecondsToReach + Math.Max(tool.Cooldown, secondsPerSwing) * hits + (captured ? 0.0 : 3.0);
                         double rate = r.Coins.ToDouble() / seconds;
                         if (rate > bestRate)
                         {
                             bestRate = rate;
                             bestTime = seconds;
-                            bestItem = new BagItem { Prey = p.Def.Id.Value, Captured = captured, Quality = quality };
+                            bestItem = ItemStack.Prey(p.Def.Id.Value, captured, quality);
                         }
                     }
                 }
                 if (bestRate <= 0) break;
 
                 t += bestTime;
-                profile.Bag.Add(bestItem);
+                carried.Add(bestItem);
                 result.Catches++;
-                if (bestItem.Captured) profile.Research[bestItem.Prey] = profile.ResearchOf(bestItem.Prey) + 1;
+                if (bestItem.Captured) profile.Research[bestItem.Content] = profile.ResearchOf(bestItem.Content) + 1;
 
-                if (profile.Bag.Count >= bagCapacity)
+                if (carried.Count >= catchesPerTrip)
                 {
                     t += secondsPerSellTrip;
-                    profile.Coins += profile.BagValue(rules, scratch).Coins;
-                    profile.Bag.Clear();
+                    foreach (ItemStack c in carried) profile.Coins += profile.ValueOf(c, rules, scratch).Coins;
+                    carried.Clear();
                     bool bought;
                     do
                     {

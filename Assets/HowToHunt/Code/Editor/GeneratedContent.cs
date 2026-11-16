@@ -45,6 +45,7 @@ namespace HowToHunt.Editor
                 p.BloodColor = new Color(0.72f, 0.82f, 0.28f);
                 p.GibColor = new Color(0.96f, 0.58f, 0.18f);
                 p.GibCount = 3;
+                p.StackSize = 10;
             });
 
             Asset<PreyDefinition>("Prey/Prey_Rabbit", "prey.rabbit", "Plains Rabbit",
@@ -80,6 +81,7 @@ namespace HowToHunt.Editor
                 p.BloodColor = new Color(0.72f, 0.07f, 0.06f);
                 p.GibColor = new Color(0.6f, 0.45f, 0.31f);
                 p.GibCount = 5;
+                p.StackSize = 1;
             });
 
             ToolDefinition net = Asset<ToolDefinition>("Tools/Tool_Net", "tool.net", "Butterfly Net",
@@ -171,6 +173,28 @@ namespace HowToHunt.Editor
                 u.CostCoins = 150;
                 u.SortOrder = 40;
                 u.Requires = null;
+            });
+
+            UpgradeDefinition pack = Asset<UpgradeDefinition>("Upgrades/Upgrade_PackSmall", "upgrade.pack_small", "Hunter's Satchel",
+                "Two more inventory slots.", u =>
+            {
+                u.Tool = null;
+                u.Effect = UpgradeEffect.InventorySlots;
+                u.Value = 2f;
+                u.CostCoins = 70;
+                u.SortOrder = 50;
+                u.Requires = null;
+            });
+
+            Asset<UpgradeDefinition>("Upgrades/Upgrade_PackLarge", "upgrade.pack_large", "Hunter's Backpack",
+                "Two more inventory slots.", u =>
+            {
+                u.Tool = null;
+                u.Effect = UpgradeEffect.InventorySlots;
+                u.Value = 2f;
+                u.CostCoins = 160;
+                u.SortOrder = 60;
+                u.Requires = pack;
             });
 
             AssetDatabase.SaveAssets();

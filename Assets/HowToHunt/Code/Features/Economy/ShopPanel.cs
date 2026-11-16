@@ -232,7 +232,8 @@ namespace HowToHunt.Economy
                 case UpgradeEffect.CaptureStrength: effect = $"{tool}: +{u.Value:0.#} strength (holds bigger prey)"; break;
                 case UpgradeEffect.DamageMultiplier: effect = $"{tool}: ×{u.Value:0.##} damage"; break;
                 case UpgradeEffect.Range: effect = $"{tool}: +{u.Value:0.#} m reach"; break;
-                case UpgradeEffect.UnlockTool: effect = $"Unlocks the {tool} (slot {(u.Tool != null ? u.Tool.Slot : 0)})"; break;
+                case UpgradeEffect.UnlockTool: effect = $"Unlocks the {tool}"; break;
+                case UpgradeEffect.InventorySlots: effect = $"+{u.Value:0} inventory slots"; break;
                 default: effect = string.Empty; break;
             }
             if (u.Requires != null) effect += $"   · needs {u.Requires.DisplayName}";

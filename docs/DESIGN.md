@@ -43,4 +43,6 @@ Numbers live in content (`GeneratedContent.cs`) and cvars; pacing is checked by 
 | Hunting Knife | 2 | 6 dmg (x2 head), reach 2 m | start |
 | Old Revolver | 3 | 25 dmg (x2 head), 150 m: ruins butterflies, a head shot ruins a rabbit | bought |
 
-Upgrades: Sturdy Net (+1 strength, 60 c), Whetstone (knife x1.6, 45 c), Wide Hoop (+0.8 m reach, 90 c, needs Sturdy Net), Old Revolver (150 c). Bag: 12 catches (`sv_bag_capacity`). Sell at the Trader, buy at the Outfitter (both at camp, Interact = E).
+Upgrades: Sturdy Net (+1 strength, 60 c), Whetstone (knife x1.6, 45 c), Wide Hoop (+0.8 m reach, 90 c, needs Sturdy Net), Old Revolver (150 c), Hunter's Satchel (+2 slots, 70 c), Hunter's Backpack (+2 slots, 160 c, needs the Satchel).
+
+Inventory: 6 slots to start (tools included), butterflies stack to 10, rabbits take a slot each. Catches go straight into the inventory; kills drop a carcass you must pick up (E). Sell everything you carry at the Trader, buy at the Outfitter (both at camp, Interact = E). Fire throws a held prey, Q drops it.

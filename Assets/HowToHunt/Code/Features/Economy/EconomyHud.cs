@@ -15,10 +15,10 @@ namespace HowToHunt.Economy
     public sealed class EconomyHud : MonoBehaviour
     {
         private TextMeshProUGUI _wallet;
-        private TextMeshProUGUI _bag;
         private TextMeshProUGUI _prompt;
         private CampStation _promptStation;
         private int _promptBag = -1;
+        private WorldItem _promptItem;
         private readonly ModifierStack _scratch = new ModifierStack();
 
         private void Awake()
@@ -28,9 +28,6 @@ namespace HowToHunt.Economy
             _wallet.rectTransform.pivot = new Vector2(1f, 1f);
             _wallet.rectTransform.sizeDelta = new Vector2(600f, 40f);
             _wallet.fontStyle = FontStyles.Bold;
-            _bag = Hud.Text("Bag", new Vector2(1f, 1f), new Vector2(-30f, -122f), 22f, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.85f));
-            _bag.rectTransform.pivot = new Vector2(1f, 1f);
-            _bag.rectTransform.sizeDelta = new Vector2(600f, 32f);
             _prompt = Hud.Text("Station Prompt", new Vector2(0.5f, 0.5f), new Vector2(0f, -170f), 28f, TextAlignmentOptions.Center, Color.white);
             _prompt.rectTransform.sizeDelta = new Vector2(1000f, 44f);
             _prompt.gameObject.SetActive(false);
@@ -44,7 +41,6 @@ namespace HowToHunt.Economy
         {
             EconomyProfile p = EconomyNet.Local;
             _wallet.SetText(p.Trophies > 0 ? $"{p.Coins.ToShortString()} coins   {p.Trophies:0} trophies" : $"{p.Coins.ToShortString()} coins");
-            _bag.SetText("Bag {0}/{1}", (float)p.Bag.Count, (float)EconomyNet.BagCapacity.Value);
             _promptBag = -1; // force the prompt to recompute its estimate
         }
 
@@ -54,17 +50,31 @@ namespace HowToHunt.Economy
             switch ((EconomyEvent)msg.Event)
             {
                 case EconomyEvent.Caught:
+                case EconomyEvent.Killed:
+                case EconomyEvent.PickedUp:
+                case EconomyEvent.InventoryFull:
                 {
                     PreyDefinition prey = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(msg.EventContent));
-                    BagItem item = EconomyNet.UnpackFlags(msg.EventContent, msg.EventFlags);
+                    var item = new ItemStack { Kind = ItemKind.Prey, Content = msg.EventContent, Flags = msg.EventFlags, Count = 1 };
+                    string name = prey?.DisplayName ?? "catch";
                     string how = item.Captured ? "caught" : item.Quality == CarcassQuality.Ruined ? "ruined" : "killed";
-                    HuntFeedback.Feed($"+ {prey?.DisplayName ?? "catch"} ({how})  ~{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins", item.Quality != CarcassQuality.Ruined);
-                    Sfx.Play2D("Kenney/handleSmallLeather", 0.35f, Random.Range(0.95f, 1.05f));
+                    var e = (EconomyEvent)msg.Event;
+                    if (e == EconomyEvent.Caught)
+                    {
+                        HuntFeedback.Feed($"+ {name} (caught)  ~{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
+                        Sfx.Play2D("Kenney/handleSmallLeather", 0.35f, Random.Range(0.95f, 1.05f));
+                    }
+                    else if (e == EconomyEvent.Killed)
+                        HuntFeedback.Feed($"{name} ({how}) dropped: go pick it up  ~{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins", item.Quality != CarcassQuality.Ruined);
+                    else if (e == EconomyEvent.PickedUp)
+                    {
+                        HuntFeedback.Feed($"+ {name} ({how})");
+                        Sfx.Play2D("Kenney/handleSmallLeather", 0.4f, Random.Range(0.9f, 1.05f));
+                    }
+                    else
+                        HuntFeedback.Message($"No room in your inventory: the {name.ToLowerInvariant()} fell at your feet. Sell at the trader.", warning: true);
                     break;
                 }
-                case EconomyEvent.BagFull:
-                    HuntFeedback.Message($"Your bag is full ({EconomyNet.BagCapacity.Value}). Sell your catch at the trader in camp.", warning: true);
-                    break;
                 case EconomyEvent.Sold:
                     HuntFeedback.Feed($"Sold {msg.EventCount} {(msg.EventCount == 1 ? "catch" : "catches")} for {BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
                     HuntFeedback.Message($"+{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
@@ -78,7 +88,8 @@ namespace HowToHunt.Economy
                     Sfx.Play2D("Kenney/confirmation_001", 0.5f);
                     Sfx.Play2D("Kenney/handleCoins", 0.4f, 0.9f);
                     if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null)
-                        HuntFeedback.Message($"{u.Tool.DisplayName} unlocked. Press {u.Tool.Slot} to equip it.");
+                        HuntFeedback.Message($"{u.Tool.DisplayName} unlocked: it's in your inventory bar.");
+                    if (u.Effect == UpgradeEffect.InventorySlots) HuntFeedback.Message($"+{u.Value:0} inventory slots.");
                     break;
                 }
                 case EconomyEvent.Refused:
@@ -92,7 +103,9 @@ namespace HowToHunt.Economy
             switch (r)
             {
                 case EconomyRefusal.NotAtStation: return "Get closer to the station.";
-                case EconomyRefusal.EmptyBag: return "Nothing to sell. Go catch something!";
+                case EconomyRefusal.NothingToSell: return "Nothing to sell. Go catch something!";
+                case EconomyRefusal.TooFar: return "Too far away to pick that up.";
+                case EconomyRefusal.InventoryFull: return "Your inventory is full. Sell at the trader, or drop something (Q).";
                 case EconomyRefusal.TooPoor: return "Not enough coins.";
                 case EconomyRefusal.AlreadyOwned: return "You already own that.";
                 case EconomyRefusal.Locked: return "Buy the previous upgrade first.";
@@ -104,26 +117,41 @@ namespace HowToHunt.Economy
         {
             PlayerMotor me = PlayerMotor.Local;
             CampStation station = null;
+            WorldItem item = null;
+            Camera cam = Camera.main;
             if (me != null && !Game.UiHasFocus)
             {
+                if (cam != null) item = WorldItems.Targeted(cam.transform.position, cam.transform.forward, WorldItems.PickupReach.Value);
                 Vector3 pos = me.transform.position;
                 station = CampStation.Nearest(pos, CampStationKind.Sell) ?? CampStation.Nearest(pos, CampStationKind.Shop);
             }
 
-            int bag = EconomyNet.Local.Bag.Count;
-            if (station != _promptStation || (station != null && bag != _promptBag))
+            int bag = EconomyNet.Local.Inventory.PreyCount;
+            if (item != _promptItem || station != _promptStation || bag != _promptBag)
             {
+                _promptItem = item;
                 _promptStation = station;
                 _promptBag = bag;
-                if (station != null) _prompt.SetText(PromptFor(station));
-                _prompt.gameObject.SetActive(station != null);
+                string text = item != null ? PromptFor(item) : station != null ? PromptFor(station) : null;
+                if (text != null) _prompt.SetText(text);
+                _prompt.gameObject.SetActive(text != null);
             }
 
-            if (station != null && KeyBindings.WasPressedThisFrame(GameAction.Interact))
+            if (!KeyBindings.WasPressedThisFrame(GameAction.Interact)) return;
+            if (item != null) EconomyNet.RequestPickUp(item.Id);
+            else if (station != null)
             {
                 if (station.Kind == CampStationKind.Sell) EconomyNet.RequestSell();
                 else ShopPanel.Open(station);
             }
+        }
+
+        private static string PromptFor(WorldItem w)
+        {
+            PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(w.Item.Content));
+            string how = w.Item.Captured ? "caught" : w.Item.Quality == CarcassQuality.Ruined ? "ruined" : "killed";
+            string count = w.Item.Count > 1 ? $" x{w.Item.Count}" : string.Empty;
+            return $"[{KeyBindings.DisplayName(GameAction.Interact)}] Pick up {p?.DisplayName ?? "item"}{count} ({how})";
         }
 
         private string PromptFor(CampStation station)
@@ -131,9 +159,10 @@ namespace HowToHunt.Economy
             string key = KeyBindings.DisplayName(GameAction.Interact);
             if (station.Kind == CampStationKind.Shop) return $"[{key}] {station.Label}: browse upgrades";
             EconomyProfile p = EconomyNet.Local;
-            if (p.Bag.Count == 0) return $"{station.Label}: nothing to sell yet";
-            CatchReward value = p.BagValue(EconomyRules.Default, _scratch);
-            return $"[{key}] Sell {p.Bag.Count} {(p.Bag.Count == 1 ? "catch" : "catches")} to the {station.Label} (~{value.Coins.ToShortString()} coins)";
+            int n = p.Inventory.PreyCount;
+            if (n == 0) return $"{station.Label}: nothing to sell yet";
+            CatchReward value = p.InventoryValue(EconomyRules.Default, _scratch);
+            return $"[{key}] Sell {n} {(n == 1 ? "catch" : "catches")} to the {station.Label} (~{value.Coins.ToShortString()} coins)";
         }
     }
 }

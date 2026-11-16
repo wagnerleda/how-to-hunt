@@ -12,12 +12,13 @@ Status: M3. Adding prey, tools and upgrades needs no code; new behaviours (a new
 - Hitboxes: capsules in model space (model faces +Z, pivot between the feet for walkers); mark the head `WeakPoint`.
 - Economy: `BaseValue`, `TrophiesOnKill`. Behaviour: `Flyer` (seeded flight, no bandwidth) or `Ground` (host AI: walk/flee speeds, flee radius, stun).
 - Presentation: `Visual` prefab or model, `VisualScale`, `Noun` ("a rabbit", used in feedback lines), `BloodColor`, `GibColor`, `GibCount`.
+- Inventory: `StackSize` (how many fit in one slot: small prey stack, big prey take a slot each).
 
 ### Tools (`ToolDefinition`, key `tool.*`)
 `Archetype` (Net, Blade, Firearm), `Mode` (Capture or Kill), `Tier`, `Damage`, `CaptureStrength`, `HeadshotMultiplier`, `Range`, `ArcDegrees` (melee cone; 0 = ray), `Cooldown`, hotbar `Slot`, `StartOwned`, `Viewmodel` (model held in first person, grip at the origin, pointing +Z).
 
 ### Upgrades (`UpgradeDefinition`, key `upgrade.*`)
-Target `Tool`, `Effect` (CaptureStrength +, DamageMultiplier x, Range +, UnlockTool), `Value`, `CostCoins`, optional `Requires`, `SortOrder` (shop order).
+Target `Tool`, `Effect` (CaptureStrength +, DamageMultiplier x, Range +, UnlockTool, InventorySlots + (no tool)), `Value`, `CostCoins`, optional `Requires`, `SortOrder` (shop order).
 
 ## Placing content in a level
 - `PreySpawner`: which prey, how many, radius, respawn seconds. Spawners are ordered by object name, so ids match on every machine; give them unique names.

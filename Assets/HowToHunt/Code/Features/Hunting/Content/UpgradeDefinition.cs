@@ -17,6 +17,8 @@ namespace HowToHunt.Hunting
         Range,
         /// <summary>Unlocks the target tool.</summary>
         UnlockTool,
+        /// <summary>+Value inventory slots (no tool).</summary>
+        InventorySlots,
     }
 
     /// <summary>Something to buy at camp. Effects stack in the order bought; the shop explains them.</summary>
@@ -37,7 +39,7 @@ namespace HowToHunt.Hunting
         public override void Validate(List<string> errors)
         {
             base.Validate(errors);
-            if (Tool == null) errors.Add("Tool missing.");
+            if (Tool == null && Effect != UpgradeEffect.InventorySlots) errors.Add("Tool missing.");
             if (CostCoins < 0 || CostTrophies < 0) errors.Add("Costs must be >= 0.");
             if (Requires == this) errors.Add("An upgrade can't require itself.");
         }

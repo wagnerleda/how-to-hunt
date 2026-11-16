@@ -8,32 +8,52 @@ using UnityEngine;
 
 namespace HowToHunt.Economy
 {
-    /// <summary>One unsold catch in the bag.</summary>
-    public struct BagItem
-    {
-        public uint Prey;
-        public bool Captured;
-        public CarcassQuality Quality;
-    }
-
     /// <summary>
-    /// A player's economy: wallet, unsold catch, research per species (Bestiary), upgrades bought, lifetime stats.
-    /// Personal and persistent (the profile), but during a party the host owns the live copy (the ledger) and sends
-    /// it back after every change.
+    /// A player's economy: wallet, inventory (tools + prey stacks), research per species (Bestiary), upgrades bought,
+    /// lifetime stats. Personal and persistent (the profile), but during a party the host owns the live copy (the
+    /// ledger) and sends it back after every change.
     /// </summary>
     public sealed class EconomyProfile
     {
+        public const int BaseSlots = 6;
+
         public BigDouble Coins = BigDouble.Zero;
         public double Trophies;
         public readonly Dictionary<uint, int> Research = new Dictionary<uint, int>();
         public readonly List<uint> Upgrades = new List<uint>();
-        public readonly List<BagItem> Bag = new List<BagItem>();
+        public readonly Inventory Inventory = new Inventory();
         public int Captures;
         public int Kills;
         public BigDouble LifetimeCoins = BigDouble.Zero;
 
         public int ResearchOf(uint prey) => Research.TryGetValue(prey, out int r) ? r : 0;
         public bool Owns(uint upgrade) => Upgrades.Contains(upgrade);
+
+        /// <summary>Slots from the base plus every InventorySlots upgrade owned.</summary>
+        public int SlotCapacity
+        {
+            get
+            {
+                int slots = BaseSlots;
+                foreach (UpgradeDefinition u in Loadouts.AllUpgrades)
+                    if (u.Effect == UpgradeEffect.InventorySlots && Owns(u.Id.Value)) slots += Mathf.RoundToInt(u.Value);
+                return Mathf.Min(slots, Inventory.MaxSlots);
+            }
+        }
+
+        /// <summary>Owned tools, in hotbar order.</summary>
+        public List<uint> OwnedTools()
+        {
+            var loadout = new Loadout();
+            loadout.SetUpgrades(Upgrades);
+            var list = new List<uint>();
+            foreach (ToolDefinition t in Loadouts.AllTools)
+                if (loadout.Owns(t)) list.Add(t.Id.Value);
+            return list;
+        }
+
+        /// <summary>Re-lays the hotbar after upgrades change; returns prey that no longer fit.</summary>
+        public List<ItemStack> RefreshInventory() => Inventory.Configure(OwnedTools(), SlotCapacity);
 
         public void CopyFrom(EconomyProfile other)
         {
@@ -43,39 +63,57 @@ namespace HowToHunt.Economy
             foreach (KeyValuePair<uint, int> kv in other.Research) Research[kv.Key] = kv.Value;
             Upgrades.Clear();
             Upgrades.AddRange(other.Upgrades);
-            Bag.Clear();
-            Bag.AddRange(other.Bag);
+            Inventory.CopyFrom(other.Inventory);
             Captures = other.Captures;
             Kills = other.Kills;
             LifetimeCoins = other.LifetimeCoins;
         }
 
-        public void Clear() => CopyFrom(new EconomyProfile());
+        public void Clear()
+        {
+            Coins = BigDouble.Zero;
+            Trophies = 0;
+            Research.Clear();
+            Upgrades.Clear();
+            Inventory.Clear();
+            Captures = 0;
+            Kills = 0;
+            LifetimeCoins = BigDouble.Zero;
+        }
 
-        /// <summary>What the whole bag sells for right now (mastery counts research at the moment of sale).</summary>
-        public CatchReward BagValue(in EconomyRules rules, ModifierStack scratch)
+        /// <summary>What all prey in the inventory sell for right now (mastery counts research at the moment of sale).</summary>
+        public CatchReward InventoryValue(in EconomyRules rules, ModifierStack scratch)
         {
             var total = new CatchReward { Coins = BigDouble.Zero };
-            for (int i = 0; i < Bag.Count; i++)
+            for (int i = 0; i < Inventory.MaxSlots; i++)
             {
-                CatchReward r = ValueOf(Bag[i], rules, scratch);
-                total.Coins += r.Coins;
-                total.Trophies += r.Trophies;
+                ItemStack s = Inventory[i];
+                if (s.Kind != ItemKind.Prey || s.Count == 0) continue;
+                CatchReward r = ValueOf(s, rules, scratch);
+                total.Coins += r.Coins * s.Count;
+                total.Trophies += r.Trophies * s.Count;
             }
             return total;
         }
 
-        public CatchReward ValueOf(in BagItem item, in EconomyRules rules, ModifierStack scratch)
+        /// <summary>The value of one item of this stack.</summary>
+        public CatchReward ValueOf(in ItemStack item, in EconomyRules rules, ModifierStack scratch)
         {
-            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(item.Prey));
+            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(item.Content));
             if (def == null) return new CatchReward { Coins = BigDouble.Zero };
-            return Rewards.Compute(def.Economy, rules, item.Captured, item.Quality, ResearchOf(item.Prey), scratch);
+            return Rewards.Compute(def.Economy, rules, item.Captured, item.Quality, ResearchOf(item.Content), scratch);
+        }
+
+        public static int StackSize(uint prey)
+        {
+            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(prey));
+            return def != null ? Mathf.Max(1, def.StackSize) : 1;
         }
     }
 
     /// <summary>
-    /// The "economy" slice of the profile file. Content is saved by key (permanent) rather than by hash, so the file
-    /// stays readable and survives renames of assets.
+    /// The "economy" slice of the profile file. Content is saved by key (permanent) rather than by hash.
+    /// v1 had an unordered "bag"; v2 stores the prey stacks of the inventory (tools are derived from upgrades).
     /// </summary>
     public sealed class EconomySaveSlice : ISaveSlice
     {
@@ -87,6 +125,11 @@ namespace HowToHunt.Economy
             public List<string> researchKeys = new List<string>();
             public List<int> researchCounts = new List<int>();
             public List<string> upgrades = new List<string>();
+            // v2: prey stacks in slot order (after the tools).
+            public List<string> stackPrey = new List<string>();
+            public List<byte> stackFlags = new List<byte>();
+            public List<int> stackCounts = new List<int>();
+            // v1 (read only): the bag.
             public List<string> bagPrey = new List<string>();
             public List<byte> bagFlags = new List<byte>();
             public int captures;
@@ -104,7 +147,7 @@ namespace HowToHunt.Economy
         }
 
         public string Key => "economy";
-        public int Version => 1;
+        public int Version => 2;
 
         public string Save()
         {
@@ -128,12 +171,15 @@ namespace HowToHunt.Economy
                 UpgradeDefinition def = ContentRegistry.Get<UpgradeDefinition>(new Foundation.ContentId(u));
                 if (def != null) d.upgrades.Add(def.Key);
             }
-            foreach (BagItem b in _profile.Bag)
+            for (int i = 0; i < Inventory.MaxSlots; i++)
             {
-                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(b.Prey));
+                ItemStack s = _profile.Inventory[i];
+                if (s.Kind != ItemKind.Prey || s.Count == 0) continue;
+                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(s.Content));
                 if (p == null) continue;
-                d.bagPrey.Add(p.Key);
-                d.bagFlags.Add(EconomyNet.PackFlags(b));
+                d.stackPrey.Add(p.Key);
+                d.stackFlags.Add(s.Flags);
+                d.stackCounts.Add(s.Count);
             }
             return JsonUtility.ToJson(d);
         }
@@ -157,10 +203,27 @@ namespace HowToHunt.Economy
                 UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(key);
                 if (u != null && !_profile.Upgrades.Contains(u.Id.Value)) _profile.Upgrades.Add(u.Id.Value);
             }
-            for (int i = 0; i < d.bagPrey.Count && i < d.bagFlags.Count; i++)
+            _profile.RefreshInventory();
+            if (savedVersion < 2)
             {
-                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(d.bagPrey[i]);
-                if (p != null) _profile.Bag.Add(EconomyNet.UnpackFlags(p.Id.Value, d.bagFlags[i]));
+                // v1 bag -> stacks. Whatever doesn't fit in the starting slots is sold to nobody: keep the first ones.
+                for (int i = 0; i < d.bagPrey.Count && i < d.bagFlags.Count; i++)
+                {
+                    PreyDefinition p = ContentRegistry.Get<PreyDefinition>(d.bagPrey[i]);
+                    if (p == null) continue;
+                    var item = new ItemStack { Kind = ItemKind.Prey, Content = p.Id.Value, Flags = d.bagFlags[i], Count = 1 };
+                    _profile.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < d.stackPrey.Count && i < d.stackFlags.Count && i < d.stackCounts.Count; i++)
+                {
+                    PreyDefinition p = ContentRegistry.Get<PreyDefinition>(d.stackPrey[i]);
+                    if (p == null || d.stackCounts[i] <= 0) continue;
+                    var item = new ItemStack { Kind = ItemKind.Prey, Content = p.Id.Value, Flags = d.stackFlags[i], Count = (ushort)d.stackCounts[i] };
+                    _profile.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content));
+                }
             }
             _changed?.Invoke();
         }
@@ -168,6 +231,7 @@ namespace HowToHunt.Economy
         public void Reset()
         {
             _profile.Clear();
+            _profile.RefreshInventory();
             _changed?.Invoke();
         }
     }

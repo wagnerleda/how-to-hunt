@@ -20,16 +20,29 @@ A bigger change to the hunting loop; designed here, built after Phase 1 is appro
 
 - **Inventory bar** at the bottom of the screen replaces the hidden "bag": a row of slots (start: 6) holding tools,
   weapons and prey. Number keys and the mouse wheel select a slot; the selected item is what you hold.
-- **Prey are items.** A caught or killed rabbit takes one slot; small prey (butterflies, later insects) stack
-  (up to 10 per slot). Full inventory: you can't pick more up (it stays on the ground for a while).
+- **Prey are items.** A rabbit takes one slot; small prey (butterflies, later insects) stack (up to 10 per slot).
+- **Catch vs kill (owner rule, 2026-11-16):** a *caught* prey goes straight into your inventory (the net's advantage
+  on top of its 1.5x value). A *killed* prey drops where it died as a carcass (flung a little by the hit, falling out
+  of the air for flyers); you have to go and pick it up (E). Carcasses lie there for 2 minutes, and anyone in the
+  party can take them. Full inventory: you can't pick more up; a catch with no free slot falls at your feet.
 - **Held prey are physical.** Holding a rabbit shows it in your hand; Fire throws it (an arc with real collision
   against the level), Q drops it. Thrown/dropped prey lie on the ground as pick-up-able items (E) for everyone in
   the party, so friends can hand catches to each other, and steal them in PvP.
 - **Selling** at the trader sells every prey in your inventory; tools stay.
 - **Shop upgrades** add slots (6, then 8, then 10) next to the tool upgrades.
-- **Tech:** inventory lives in the host ledger like coins today; world items are host-simulated projectiles using the
-  sim's brush collision (no PhysX), sent like ground prey snapshots; save migration turns the old bag into
-  inventory items.
+- **Controls:** 1-9 select a slot (tools and prey alike), Fire throws the held prey, Q drops it, E picks up items
+  (and still uses camp stations).
+- **Tech:** the inventory lives in the host ledger like coins today. World items (carcasses, drops, throws) are
+  simulated with the sim's brush collision (no PhysX); the simulation is deterministic, so only spawn, pick-up and
+  "came to rest here" messages are sent. Icons are rendered from the 3D models at startup. Save migration turns the
+  old bag into inventory items.
+
+### Phase 2 build order
+1. Inventory model (slots, stacking, capacity) in the ledger, net messages, save migration; tests.
+2. Inventory bar UI with model icons; slot selection drives the held tool or prey.
+3. World items: sim body (gravity, bounce, rest), spawn/remove messages, visuals; carcasses from kills.
+4. Pick up (E), throw (Fire), drop (Q); held prey in first person; selling from the inventory; slot upgrades.
+5. Tests (stacking, migration, item physics, allocation), bots/lag-comp/installer, checkpoint.
 
 ## Phase 3: physical catching (later, after Phase 2 is played)
 More physics in the interactions themselves, in the spirit of How to Fish: the net as a swept volume that scoops

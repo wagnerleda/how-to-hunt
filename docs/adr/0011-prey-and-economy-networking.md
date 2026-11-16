@@ -18,3 +18,8 @@ Status: accepted (M3)
 ## Alternatives rejected
 - Host-side profiles for guests: progress would depend on who hosts.
 - Client-authoritative coins: trivial to cheat even by accident, and the host could not validate purchases.
+
+## Inventory and world items (Phase 2, 2026-11-16)
+- The bag became an **inventory** (`Sim/Hunting/Inventory`): a row of slots, owned tools first, then prey stacks (butterflies stack to 10, rabbits take a slot each). It lives in the host ledger and travels in the same state message, slot by slot, so slot numbers match on both sides. Saves are v2 (stacks); v1 bags migrate.
+- **Catch vs kill:** a catch goes straight into the inventory; a kill drops a **carcass** where the prey died, flung by the hit. Anyone in the party can pick it up (E).
+- **World items** (carcasses, drops, throws) use `ItemPhysics` (gravity, bounces, friction, rest) on the shared brush world. Like the butterflies, the motion is deterministic, so the host sends a spawn message (position, velocity, tick) and clients simulate it themselves, catching up from the spawn tick; after that only "came to rest here" (a correction) and removals travel. Pick-ups, throws and drops are requests the host validates (distance, free slot, slot contents).

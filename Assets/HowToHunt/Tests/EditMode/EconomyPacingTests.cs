@@ -25,7 +25,7 @@ namespace HowToHunt.Tests
             Assert.That(prey[1].Def, Is.Not.Null);
 
             EconomySimulator.Result r = EconomySimulator.Run(prey, Loadouts.AllTools, Loadouts.AllUpgrades,
-                EconomyNet.BagCapacity.Default, secondsPerSellTrip: 20f, secondsPerSwing: 0.5f);
+                catchesPerTrip: 12, secondsPerSellTrip: 20f, secondsPerSwing: 0.5f);
 
             Assert.That(r.AllOwned, Is.True, "Every Plains upgrade should be reachable.");
             Assert.That(r.Unlocks[0].Seconds, Is.InRange(60.0, 210.0), "First upgrade too early or too late for the demo.");
