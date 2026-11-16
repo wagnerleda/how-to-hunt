@@ -21,3 +21,5 @@ Not approved for building. Each needs the owner's yes before work starts.
 - Weather and day/night affecting prey senses (fog shortens sight, night needs a light or a scope).
 - Sound of footsteps and sprinting alerting nearby prey (sprint is louder, crouching is quiet).
 - A recorded CC0 knife swish if the synthesized one never sounds right.
+- Cash burst seen by the whole party (now only the seller sees it), with a coin sound at the trader.
+- Thrown items bouncing off what they hit (now they fly on through after slowing it).
