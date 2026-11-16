@@ -223,6 +223,7 @@ namespace HowToHunt.Hunting
                     Rng = p.Seed,
                     Health = p.Def.MaxHealth,
                     Ai = PreyAiState.Idle,
+                    Stamina = p.Def.StaminaSeconds,
                     Timer = (float)Rng.NextDouble() * 2f,
                 };
             }

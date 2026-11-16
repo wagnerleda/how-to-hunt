@@ -8,92 +8,325 @@ using UnityEngine;
 namespace HowToHunt.Editor
 {
     /// <summary>
-    /// The Plains (M3 slice): a walled meadow north of the movement lab. Camp by the gate (spawns, campfire, trader,
-    /// outfitter), three flower fields with butterflies, three rabbit warrens, and Kenney Nature Kit props. Trees and
-    /// big rocks get invisible box brushes so the movement sim collides with them; grass and flowers don't.
-    /// Deterministic (seeded), so rebuilding gives the same map.
+    /// The Plains test zone (owner layout, M3 feedback): a rolling low-poly meadow (260 m square, rounded corners)
+    /// ringed by a forest you can't get through, a river, a camp by the south corridor to the movement lab, and a
+    /// clearing on the east side that will open onto the next zone (blocked for now). Dense instanced grass and
+    /// flowers, tree clusters, rocks, low-poly mountains and clouds on the horizon. Deterministic: rebuilding gives
+    /// the same map. Terrain collision is a SimTerrain heightfield; trees and big rocks get invisible box brushes.
     /// </summary>
     public static partial class GrayboxSceneBuilder
     {
-        public static readonly Vector3 CampCenter = new Vector3(-30f, 0f, 99f);
+        // Play area (inside the forest ring) and the forest band around it.
+        private const float PlayMinX = -130f, PlayMaxX = 130f, PlayMinZ = 115f, PlayMaxZ = 375f, CornerRadius = 40f;
+        private const float Band = 30f;
+        private const float TerrainCell = 5f;
         private const float GateX = -30f;
-        private const float PlainsMinZ = 80f, PlainsMaxZ = 220f, PlainsHalfWidth = 80f;
+        private const float ClearingZ = 245f;
+        public static readonly Vector3 CampCenter = new Vector3(GateX, 0f, 135f);
         private const string KenneyDir = GeneratedAssets.Root + "/Art/ThirdParty/KenneyNatureKit/";
 
-        private static readonly Vector3[] FlowerFields = { new Vector3(-32f, 0f, 130f), new Vector3(30f, 0f, 152f), new Vector3(-6f, 0f, 190f) };
-        private static readonly Vector3[] Warrens = { new Vector3(-46f, 0f, 172f), new Vector3(44f, 0f, 118f), new Vector3(30f, 0f, 200f) };
+        private static readonly Vector3[] FlowerFields = { new Vector3(-75f, 0f, 175f), new Vector3(62f, 0f, 190f), new Vector3(-30f, 0f, 320f), new Vector3(85f, 0f, 300f) };
+        private static readonly Vector3[] Warrens = { new Vector3(75f, 0f, 140f), new Vector3(-95f, 0f, 255f), new Vector3(30f, 0f, 340f), new Vector3(5f, 0f, 205f) };
+
+        private static SimTerrain _terrain;
 
         private static void BuildPlains(Transform level, Transform signs)
         {
             Transform plains = Group(level, "Plains");
             Transform props = Group(plains, "Props");
-            var rng = new System.Random(20261115);
+            var rng = new System.Random(20261116);
 
-            // Ground and walls.
-            Box(plains, "Plains Ground", new Vector3(0f, -0.5f, (PlainsMinZ + PlainsMaxZ) * 0.5f), new Vector3(162f, 1f, PlainsMaxZ - PlainsMinZ), "Grass");
-            Box(plains, "Plains Wall N", new Vector3(0f, 3f, PlainsMaxZ + 0.5f), new Vector3(162f, 8f, 1f), "Wall");
-            Box(plains, "Plains Wall E", new Vector3(PlainsHalfWidth + 0.5f, 3f, (PlainsMinZ + PlainsMaxZ) * 0.5f), new Vector3(1f, 8f, PlainsMaxZ - PlainsMinZ), "Wall");
-            Box(plains, "Plains Wall W", new Vector3(-PlainsHalfWidth - 0.5f, 3f, (PlainsMinZ + PlainsMaxZ) * 0.5f), new Vector3(1f, 8f, PlainsMaxZ - PlainsMinZ), "Wall");
-            // Gate: a lintel over the opening, one sign on each face (readable when walking through).
+            _terrain = BuildTerrain(plains);
+            BuildWater(plains);
+            BuildBoundary(plains, signs);
+            BuildCamp(plains, props, signs);
+
+            // Butterfly meadows: flowers are instanced below; a few bushes frame each field.
+            for (int f = 0; f < FlowerFields.Length; f++)
+            {
+                Vector3 c = OnGround(FlowerFields[f]);
+                for (int i = 0; i < 7; i++) Prop(props, "plant_bushLarge", c + Ring(rng, 12f, 16f), 3f, rng, collide: false);
+                Spawner(plains, $"Butterflies {f + 1}", "prey.butterfly", c + new Vector3(0f, 1.3f, 0f), 5, 9f, 15f);
+            }
+
+            // Rabbit warrens: logs and stumps to hop around.
+            for (int w = 0; w < Warrens.Length; w++)
+            {
+                Vector3 c = OnGround(Warrens[w]);
+                Prop(props, "log_large", c + Ring(rng, 4f, 7f), 3f, rng, collide: true);
+                Prop(props, "stump_round", c + Ring(rng, 5f, 9f), 3f, rng, collide: true);
+                Prop(props, "stump_old", c + Ring(rng, 6f, 10f), 3f, rng, collide: true);
+                Spawner(plains, $"Rabbits {w + 1}", "prey.rabbit", c + new Vector3(0f, 0.2f, 0f), 3, 12f, 20f);
+            }
+
+            // Tree groves and lone trees in the meadow (collide), big rocks (collide).
+            string[] trees = { "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_tall", "tree_pineRoundA", "tree_pineRoundC" };
+            for (int grove = 0; grove < 14; grove++)
+            {
+                Vector3 c = OpenPoint(rng, 14f);
+                int n = 3 + rng.Next(5);
+                for (int i = 0; i < n; i++) Prop(props, trees[rng.Next(trees.Length)], c + Disc(rng, 7f), Range(rng, 4f, 5.4f), rng, collide: true, trunkOnly: true);
+                Prop(props, rng.Next(2) == 0 ? "rock_largeA" : "rock_largeB", c + Ring(rng, 6f, 9f), Range(rng, 2.5f, 3.5f), rng, collide: true);
+            }
+            for (int i = 0; i < 25; i++) Prop(props, trees[rng.Next(trees.Length)], OpenPoint(rng, 8f), Range(rng, 4f, 5.4f), rng, collide: true, trunkOnly: true);
+            string[] rocks = { "rock_largeA", "rock_largeB", "rock_largeC", "rock_tallA", "stone_tallA" };
+            for (int i = 0; i < 40; i++) Prop(props, rocks[rng.Next(rocks.Length)], OpenPoint(rng, 5f), Range(rng, 2.5f, 4f), rng, collide: true);
+            for (int i = 0; i < 18; i++) Prop(props, rng.Next(2) == 0 ? "log" : "stump_round", OpenPoint(rng, 4f), 3f, rng, collide: true);
+
+            BuildScatter(plains, rng);
+            BuildBackdrop(plains, rng);
+        }
+
+        // --- terrain ----------------------------------------------------------------------------------------
+
+        /// <summary>Signed distance outside the rounded play rectangle (negative inside).</summary>
+        private static float OutsidePlay(float x, float z)
+        {
+            float cx = (PlayMinX + PlayMaxX) * 0.5f, cz = (PlayMinZ + PlayMaxZ) * 0.5f;
+            float hx = (PlayMaxX - PlayMinX) * 0.5f - CornerRadius, hz = (PlayMaxZ - PlayMinZ) * 0.5f - CornerRadius;
+            float dx = Mathf.Abs(x - cx) - hx, dz = Mathf.Abs(z - cz) - hz;
+            float outside = new Vector2(Mathf.Max(dx, 0f), Mathf.Max(dz, 0f)).magnitude;
+            return outside + Mathf.Min(Mathf.Max(dx, dz), 0f) - CornerRadius;
+        }
+
+        private static float RiverZ(float x) => 255f + 38f * Mathf.Sin(x / 58f + 0.6f) + 14f * Mathf.Sin(x / 21f);
+
+        private static float RiverDistance(float x, float z)
+        {
+            // The river runs roughly east-west; correct the vertical distance by the local slope of the curve.
+            float dzdx = (RiverZ(x + 0.5f) - RiverZ(x - 0.5f));
+            return Mathf.Abs(z - RiverZ(x)) / Mathf.Sqrt(1f + dzdx * dzdx);
+        }
+
+        private static float Noise(float x, float z, float scale, float seed) => Mathf.PerlinNoise(x / scale + seed, z / scale + seed * 1.7f) * 2f - 1f;
+
+        /// <summary>Terrain before the river is carved: rolling hills, rising into the forest ring.</summary>
+        private static float Hills(float x, float z)
+        {
+            float h = 3.4f * Noise(x, z, 75f, 11.3f) + 1.3f * Noise(x, z, 31f, 4.7f) + 0.35f * Noise(x, z, 12f, 8.1f);
+            float outside = OutsidePlay(x, z);
+            h += Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(outside / Band)) * (7f + 4f * Noise(x, z, 40f, 2.2f));
+            return h;
+        }
+
+        /// <summary>How much an area is flattened to height 0 (camp, corridor to the lab, bhop course, lab edge).</summary>
+        private static float FlatMask(float x, float z)
+        {
+            float camp = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(((new Vector2(x, z) - new Vector2(CampCenter.x, CampCenter.z)).magnitude - 20f) / 14f));
+            float corridor = Mathf.Abs(x - GateX) < 6f + 8f && z < CampCenter.z ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Mathf.Abs(x - GateX) - 6f) / 8f)) : 0f;
+            float bhop = Mathf.Abs(x) < 18f && z < 112f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Mathf.Abs(x) - 12f) / 6f)) : 0f;
+            float labEdge = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((z - 82f) / 10f));
+            return Mathf.Max(Mathf.Max(camp, corridor), Mathf.Max(bhop, labEdge));
+        }
+
+        private static float Height(float x, float z)
+        {
+            float h = Hills(x, z);
+            float river = RiverDistance(x, z);
+            if (river < 9f && OutsidePlay(x, z) < 10f) h -= 1.5f * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((river - 2.5f) / 6.5f)));
+            return Mathf.Lerp(h, 0f, FlatMask(x, z));
+        }
+
+        private static bool BhopHole(float x, float z) => Mathf.Abs(x) <= 5.01f && z < 107f;
+
+        private static SimTerrain BuildTerrain(Transform plains)
+        {
+            float minX = PlayMinX - Band - 5f, maxX = PlayMaxX + Band + 5f, minZ = 80f, maxZ = PlayMaxZ + Band + 5f;
+            int nx = Mathf.CeilToInt((maxX - minX) / TerrainCell) + 1, nz = Mathf.CeilToInt((maxZ - minZ) / TerrainCell) + 1;
+            var heights = new float[nx * nz];
+            for (int z = 0; z < nz; z++)
+                for (int x = 0; x < nx; x++)
+                {
+                    float wx = minX + x * TerrainCell, wz = minZ + z * TerrainCell;
+                    heights[z * nx + x] = BhopHole(wx, wz) ? float.NaN : Height(wx, wz);
+                }
+
+            var go = new GameObject("Terrain", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(plains, false);
+            SimTerrain terrain = go.AddComponent<SimTerrain>();
+            terrain.Configure(minX, minZ, TerrainCell, nx, nz, heights);
+
+            // Flat-shaded mesh, one colour per triangle (faceted low-poly look like the reference).
+            var verts = new List<Vector3>();
+            var colors = new List<Color>();
+            var tris = new List<int>();
+            var field = terrain.Field;
+            for (int z = 0; z < nz - 1; z++)
+                for (int x = 0; x < nx - 1; x++)
+                {
+                    Vector3 v00 = field.Vertex(x, z).ToUnity(), v10 = field.Vertex(x + 1, z).ToUnity();
+                    Vector3 v01 = field.Vertex(x, z + 1).ToUnity(), v11 = field.Vertex(x + 1, z + 1).ToUnity();
+                    if (float.IsNaN(v00.y) || float.IsNaN(v10.y) || float.IsNaN(v01.y) || float.IsNaN(v11.y)) continue;
+                    AddTri(verts, colors, tris, v00, v01, v11);
+                    AddTri(verts, colors, tris, v00, v11, v10);
+                }
+            var mesh = new Mesh { name = "Plains Terrain", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(verts);
+            mesh.SetColors(colors);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            SaveGeneratedMesh(mesh, "PlainsTerrain");
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            go.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Terrain.mat");
+            GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI);
+
+            // The bhop course keeps a flat brush floor where the terrain has its hole (the replay tests use it).
+            Box(plains, "Bhop Ground", new Vector3(0f, -0.5f, 93.5f), new Vector3(20f, 1f, 27f), "Grass");
+            return terrain;
+        }
+
+        private static void AddTri(List<Vector3> verts, List<Color> colors, List<int> tris, Vector3 a, Vector3 b, Vector3 c)
+        {
+            Vector3 centroid = (a + b + c) / 3f;
+            Vector3 n = Vector3.Cross(b - a, c - a).normalized;
+            Color col = GroundColor(centroid.x, centroid.z, centroid.y, n.y);
+            int i = verts.Count;
+            verts.Add(a); verts.Add(b); verts.Add(c);
+            colors.Add(col); colors.Add(col); colors.Add(col);
+            tris.Add(i); tris.Add(i + 1); tris.Add(i + 2);
+        }
+
+        private static Color GroundColor(float x, float z, float y, float up)
+        {
+            var light = new Color(0.52f, 0.76f, 0.33f);
+            var dark = new Color(0.36f, 0.6f, 0.26f);
+            var forest = new Color(0.3f, 0.46f, 0.22f);
+            var dirt = new Color(0.68f, 0.56f, 0.38f);
+            var sand = new Color(0.85f, 0.78f, 0.56f);
+            var rock = new Color(0.55f, 0.53f, 0.48f);
+            float t = Mathf.Clamp01(0.5f + 0.5f * Noise(x, z, 18f, 3.3f)) * 0.7f + Mathf.Clamp01(y / 8f) * 0.3f;
+            Color c = Color.Lerp(dark, light, t);
+            c = Color.Lerp(c, forest, Mathf.Clamp01(OutsidePlay(x, z) / 12f));
+            float flat = FlatMask(x, z);
+            if (flat > 0.55f && z > 84f) c = Color.Lerp(c, dirt, Mathf.Clamp01((flat - 0.55f) * 3f) * 0.85f);
+            float river = RiverDistance(x, z);
+            if (river < 7f) c = Color.Lerp(c, sand, 1f - Mathf.Clamp01((river - 3f) / 4f));
+            if (up < 0.8f) c = Color.Lerp(c, rock, Mathf.Clamp01((0.8f - up) * 4f));
+            // A touch of per-face variation so facets read.
+            float j = 0.04f * Noise(x * 7.3f, z * 7.3f, 1f, 5.5f);
+            return new Color(c.r + j, c.g + j, c.b + j * 0.5f);
+        }
+
+        private static void SaveGeneratedMesh(Mesh mesh, string name)
+        {
+            string path = GeneratedAssets.MeshesDir + "/" + name + ".asset";
+            GeneratedAssets.EnsureFolder(GeneratedAssets.MeshesDir);
+            AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(mesh, path);
+        }
+
+        /// <summary>Ground height under a point (from the collision heightfield, so props sit exactly on it).</summary>
+        private static float GroundY(float x, float z)
+        {
+            float h = _terrain != null ? _terrain.HeightAt(x, z) : float.NaN;
+            return float.IsNaN(h) ? 0f : h;
+        }
+
+        private static Vector3 OnGround(Vector3 p) => new Vector3(p.x, GroundY(p.x, p.z), p.z);
+
+        // --- river ------------------------------------------------------------------------------------------
+
+        private static void BuildWater(Transform plains)
+        {
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            const float halfWidth = 4.2f;
+            for (float x = PlayMinX - Band; x <= PlayMaxX + Band; x += 2.5f)
+            {
+                float z = RiverZ(x);
+                float dzdx = (RiverZ(x + 0.5f) - RiverZ(x - 0.5f));
+                Vector2 side = new Vector2(-dzdx, 1f).normalized * halfWidth;
+                // Water sits below the banks: the un-carved terrain minus a little.
+                float y = Mathf.Min(Hills(x, z + side.y), Hills(x, z - side.y)) - 0.6f;
+                int i = verts.Count;
+                verts.Add(new Vector3(x + side.x, y, z + side.y));
+                verts.Add(new Vector3(x - side.x, y, z - side.y));
+                if (i >= 2)
+                {
+                    tris.Add(i - 2); tris.Add(i); tris.Add(i - 1);
+                    tris.Add(i - 1); tris.Add(i); tris.Add(i + 1);
+                }
+            }
+            var mesh = new Mesh { name = "Plains River" };
+            mesh.SetVertices(verts);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            SaveGeneratedMesh(mesh, "PlainsRiver");
+            var go = new GameObject("River", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(plains, false);
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            go.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Water.mat");
+            go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        // --- forest ring, exits -----------------------------------------------------------------------------
+
+        private static void BuildBoundary(Transform plains, Transform signs)
+        {
+            Transform walls = Group(plains, "Forest Wall (collision)");
+            // Invisible wall a few metres into the trees all the way round, except the south corridor and the east
+            // clearing (which has its own barricade until the quest opens it).
+            const int segments = 160;
+            var ring = new List<Vector3>();
+            for (int i = 0; i < segments; i++) ring.Add(RingPoint(i / (float)segments, 4f));
+            for (int i = 0; i < segments; i++)
+            {
+                Vector3 a = ring[i], b = ring[(i + 1) % segments];
+                Vector3 mid = (a + b) * 0.5f;
+                if (Mathf.Abs(mid.x - GateX) < 7f && mid.z < PlayMinZ + 10f) continue; // corridor opening
+                float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
+                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
+                GameObject w = Box(walls, $"Wall {i}", new Vector3(mid.x, 15f, mid.z), new Vector3(1f, 40f, len), "Wall", yaw);
+                w.GetComponent<MeshRenderer>().enabled = false;
+            }
+            // Corridor sides from the lab gate to the meadow.
+            for (int s = -1; s <= 1; s += 2)
+            {
+                GameObject w = Box(walls, $"Corridor {(s < 0 ? "W" : "E")}", new Vector3(GateX + s * 6.5f, 15f, (81f + PlayMinZ + 6f) * 0.5f), new Vector3(1f, 40f, PlayMinZ + 6f - 81f), "Wall");
+                w.GetComponent<MeshRenderer>().enabled = false;
+            }
+            // Gate from the lab: a lintel and a sign on each face.
             Box(plains, "Gate Lintel", new Vector3(GateX, 6.5f, 80.5f), new Vector3(16f, 1f, 1.2f), "Wood");
             Sign(signs, "PLAINS\n<size=55%>hunt, sell at the trader, upgrade at the outfitter</size>", new Vector3(GateX, 4.9f, 79.8f), 0f, 1.4f);
             Sign(signs, "MOVEMENT LAB", new Vector3(GateX, 5.3f, 81.2f), 180f, 1.2f);
-            Visual(plains, "Gate Path", new Vector3(GateX, 0.012f, 85f), new Vector3(6f, 0.02f, 10f), "Sand");
 
             // The bhop course runs on past the old north wall: keep it in its own enclosure.
             Box(plains, "Bhop Enclosure W", new Vector3(-8.75f, 3f, 92.75f), new Vector3(0.5f, 8f, 24.5f), "Wall");
             Box(plains, "Bhop Enclosure E", new Vector3(8.75f, 3f, 92.75f), new Vector3(0.5f, 8f, 24.5f), "Wall");
             Box(plains, "Bhop Enclosure N", new Vector3(0f, 3f, 105.25f), new Vector3(18f, 8f, 0.5f), "Wall");
 
-            BuildCamp(plains, props, signs);
-
-            // Butterfly fields: dense flowers, a few bushes around.
-            string[] flowers = { "flower_purpleA", "flower_purpleB", "flower_redA", "flower_redB", "flower_yellowA", "flower_yellowB" };
-            for (int f = 0; f < FlowerFields.Length; f++)
-            {
-                Vector3 c = FlowerFields[f];
-                for (int i = 0; i < 70; i++) Prop(props, flowers[rng.Next(flowers.Length)], c + Disc(rng, 10f), 2.2f, rng, collide: false);
-                for (int i = 0; i < 6; i++) Prop(props, "plant_bush", c + Ring(rng, 11f, 14f), 3f, rng, collide: false);
-                Spawner(plains, $"Butterflies {f + 1}", "prey.butterfly", c + new Vector3(0f, 1.3f, 0f), 5, 8f, 15f);
-            }
-
-            // Rabbit warrens: low grass, logs and stumps to hop around.
-            for (int w = 0; w < Warrens.Length; w++)
-            {
-                Vector3 c = Warrens[w];
-                for (int i = 0; i < 25; i++) Prop(props, rng.Next(2) == 0 ? "grass_large" : "grass_leafsLarge", c + Disc(rng, 12f), 2.5f, rng, collide: false);
-                Prop(props, "log_large", c + Ring(rng, 4f, 7f), 3f, rng, collide: true);
-                Prop(props, "stump_round", c + Ring(rng, 5f, 9f), 3f, rng, collide: true);
-                Spawner(plains, $"Rabbits {w + 1}", "prey.rabbit", c + new Vector3(0f, 0.2f, 0f), 3, 12f, 20f);
-            }
-
-            // Tree line along the walls, a few clumps in the open, rocks and bushes, grass everywhere.
-            string[] trees = { "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_tall", "tree_pineRoundA", "tree_pineRoundC" };
-            for (int i = 0; i < 70; i++)
-            {
-                Vector3 p = EdgePoint(rng, 9f);
-                if (NearCamp(p, 18f) || Reserved(p, 2f)) continue;
-                Prop(props, trees[rng.Next(trees.Length)], p, Range(rng, 4f, 5.2f), rng, collide: true, trunkOnly: true);
-            }
-            for (int clump = 0; clump < 6; clump++)
-            {
-                Vector3 c = OpenPoint(rng, 12f);
-                for (int i = 0; i < 4; i++) Prop(props, trees[rng.Next(trees.Length)], c + Disc(rng, 5f), Range(rng, 4f, 5f), rng, collide: true, trunkOnly: true);
-                Prop(props, "rock_largeA", c + Ring(rng, 5f, 7f), 3f, rng, collide: true);
-            }
-            string[] rocks = { "rock_largeA", "rock_largeB", "rock_largeC", "rock_tallA", "stone_tallA" };
-            for (int i = 0; i < 22; i++) Prop(props, rocks[rng.Next(rocks.Length)], OpenPoint(rng, 6f), Range(rng, 2.5f, 3.5f), rng, collide: true);
-            string[] small = { "rock_smallA", "rock_smallB", "rock_smallC", "mushroom_redGroup", "mushroom_tanGroup", "plant_bushSmall", "plant_bushDetailed" };
-            for (int i = 0; i < 60; i++) Prop(props, small[rng.Next(small.Length)], OpenPoint(rng, 3f), Range(rng, 2.2f, 3f), rng, collide: false);
-            string[] grass = { "grass", "grass_large", "grass_leafs" };
-            for (int i = 0; i < 320; i++) Prop(props, grass[rng.Next(grass.Length)], OpenPoint(rng, 1f), Range(rng, 2.2f, 3f), rng, collide: false);
+            // East clearing toward the next zone: a fallen-tree barricade until the quest opens it.
+            var rng = new System.Random(7);
+            Vector3 gate = OnGround(new Vector3(PlayMaxX + 3f, 0f, ClearingZ));
+            for (int i = -2; i <= 2; i++)
+                Prop(plains, "log_large", gate + new Vector3(0f, 0.3f + (i & 1) * 0.7f, i * 2.4f), 3.5f, rng, collide: true, yaw: 0f);
+            Sign(signs, "THE WAY EAST\n<size=55%>blocked by fallen trees - a hunter at camp may know a way</size>", gate + new Vector3(-3f, 3.8f, 0f), 90f, 1.2f);
         }
+
+        /// <summary>A point on the rounded play rectangle (t = 0..1 around), pushed <paramref name="outward"/> metres out.</summary>
+        private static Vector3 RingPoint(float t, float outward)
+        {
+            float cx = (PlayMinX + PlayMaxX) * 0.5f, cz = (PlayMinZ + PlayMaxZ) * 0.5f;
+            float angle = t * Mathf.PI * 2f;
+            var dir = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle));
+            // March outward until we cross the boundary + offset (robust for rounded rectangles).
+            float lo = 0f, hi = 400f;
+            for (int k = 0; k < 40; k++)
+            {
+                float mid = (lo + hi) * 0.5f;
+                if (OutsidePlay(cx + dir.x * mid, cz + dir.y * mid) < outward) lo = mid; else hi = mid;
+            }
+            return new Vector3(cx + dir.x * lo, 0f, cz + dir.y * lo);
+        }
+
+        // --- camp ---------------------------------------------------------------------------------------------
 
         private static void BuildCamp(Transform plains, Transform props, Transform signs)
         {
             Transform camp = Group(plains, "Camp");
             Vector3 c = CampCenter;
-            Visual(camp, "Camp Ground", c + new Vector3(0f, 0.012f, 0f), new Vector3(28f, 0.02f, 18f), "Sand");
             var rng = new System.Random(96);
 
             Prop(camp, "campfire_stones", c + new Vector3(0f, 0f, 2f), 3f, rng, collide: false, yaw: 0f);
@@ -209,11 +442,17 @@ namespace HowToHunt.Editor
             return string.Empty;
         }
 
-        /// <summary>Places a Kenney prop; collide adds an invisible box brush from its bounds (trunk only for trees).</summary>
+        // --- props --------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Places a Kenney prop on the ground (its y is taken from the terrain); collide adds an invisible box brush
+        /// from its bounds (trunk only for trees).
+        /// </summary>
         private static void Prop(Transform parent, string model, Vector3 feet, float scale, System.Random rng, bool collide, bool trunkOnly = false, float yaw = float.NaN)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(KenneyDir + model + ".fbx");
             if (asset == null) { Debug.LogWarning($"[HowToHunt] Missing Kenney model {model}"); return; }
+            feet.y += GroundY(feet.x, feet.z);
             var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, parent);
             float y = float.IsNaN(yaw) ? (float)rng.NextDouble() * 360f : yaw;
             go.transform.SetPositionAndRotation(feet, Quaternion.Euler(0f, y, 0f));
@@ -236,6 +475,236 @@ namespace HowToHunt.Editor
             brush.GetComponent<MeshRenderer>().enabled = false;
         }
 
+        // --- instanced scatter (grass, flowers, bushes, forest ring) ------------------------------------------
+
+        private static void BuildScatter(Transform plains, System.Random rng)
+        {
+            var go = new GameObject("Scatter (instanced)");
+            go.transform.SetParent(plains, false);
+            ScatterRenderer scatter = go.AddComponent<ScatterRenderer>();
+
+            // Forest ring: dense trees through the whole band (no per-tree collision: the invisible wall stops players).
+            string[] ringTrees = { "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_tall", "tree_pineRoundA", "tree_pineRoundC", "tree_simple" };
+            var ringPoints = new List<(Vector3 p, float s)>();
+            for (float x = PlayMinX - Band; x <= PlayMaxX + Band; x += 5.2f)
+                for (float z = 82f; z <= PlayMaxZ + Band; z += 5.2f)
+                {
+                    float px = x + Range(rng, -2.2f, 2.2f), pz = z + Range(rng, -2.2f, 2.2f);
+                    float outside = OutsidePlay(px, pz);
+                    if (outside < -1f + Range(rng, 0f, 3f)) continue;               // ragged inner edge
+                    if (Mathf.Abs(px - GateX) < 6f && pz < PlayMinZ + 4f) continue;  // corridor to the lab
+                    if (Mathf.Abs(px) < 11f && pz < 108f) continue;                  // bhop enclosure
+                    if (px > PlayMaxX - 6f && Mathf.Abs(pz - ClearingZ) < 9f) continue; // east clearing
+                    if (pz < 84f) continue;
+                    ringPoints.Add((new Vector3(px, 0f, pz), Range(rng, 4.2f, 6f)));
+                }
+            for (int k = 0; k < ringTrees.Length; k++)
+            {
+                var list = new List<Matrix4x4>();
+                for (int i = k; i < ringPoints.Count; i += ringTrees.Length)
+                    list.Add(Instance(ringPoints[i].p, ringPoints[i].s, rng));
+                AddLayer(scatter, ringTrees[k], list, 40f, 420f, true);
+            }
+
+            // Grass everywhere in the meadow, thicker in hollows; none on paths, camp and water.
+            string[] grass = { "grass", "grass_large", "grass_leafs", "grass_leafsLarge" };
+            var grassLists = new List<Matrix4x4>[grass.Length];
+            for (int k = 0; k < grass.Length; k++) grassLists[k] = new List<Matrix4x4>();
+            for (int i = 0; i < 26000; i++)
+            {
+                var p = new Vector3(Range(rng, PlayMinX - 6f, PlayMaxX + 6f), 0f, Range(rng, PlayMinZ - 6f, PlayMaxZ + 6f));
+                if (OutsidePlay(p.x, p.z) > 6f || FlatMask(p.x, p.z) > 0.6f || RiverDistance(p.x, p.z) < 3.5f) continue;
+                if (Noise(p.x, p.z, 22f, 9.9f) < -0.45f && rng.NextDouble() < 0.6) continue; // open patches
+                int k = rng.Next(grass.Length);
+                grassLists[k].Add(Instance(p, Range(rng, 2f, 3.2f), rng));
+            }
+            for (int k = 0; k < grass.Length; k++) AddLayer(scatter, grass[k], grassLists[k], 24f, 85f, false);
+
+            // Flowers: thick in the butterfly meadows, sprinkled elsewhere.
+            string[] flowers = { "flower_purpleA", "flower_purpleB", "flower_redA", "flower_redB", "flower_yellowA", "flower_yellowB" };
+            var flowerLists = new List<Matrix4x4>[flowers.Length];
+            for (int k = 0; k < flowers.Length; k++) flowerLists[k] = new List<Matrix4x4>();
+            foreach (Vector3 field in FlowerFields)
+                for (int i = 0; i < 420; i++) flowerLists[rng.Next(flowers.Length)].Add(Instance(field + Disc(rng, 14f), Range(rng, 1.8f, 2.6f), rng));
+            for (int i = 0; i < 2600; i++)
+            {
+                var p = new Vector3(Range(rng, PlayMinX, PlayMaxX), 0f, Range(rng, PlayMinZ, PlayMaxZ));
+                if (OutsidePlay(p.x, p.z) > 0f || FlatMask(p.x, p.z) > 0.5f || RiverDistance(p.x, p.z) < 4f) continue;
+                flowerLists[rng.Next(flowers.Length)].Add(Instance(p, Range(rng, 1.8f, 2.6f), rng));
+            }
+            for (int k = 0; k < flowers.Length; k++) AddLayer(scatter, flowers[k], flowerLists[k], 24f, 110f, false);
+
+            // Bushes, small rocks and mushrooms; reeds by the river.
+            string[] small = { "plant_bush", "plant_bushSmall", "plant_bushDetailed", "rock_smallA", "rock_smallB", "rock_smallC", "mushroom_redGroup", "mushroom_tanGroup" };
+            var smallLists = new List<Matrix4x4>[small.Length];
+            for (int k = 0; k < small.Length; k++) smallLists[k] = new List<Matrix4x4>();
+            for (int i = 0; i < 1600; i++)
+            {
+                var p = new Vector3(Range(rng, PlayMinX - 10f, PlayMaxX + 10f), 0f, Range(rng, PlayMinZ - 10f, PlayMaxZ + 10f));
+                if (OutsidePlay(p.x, p.z) > 8f || FlatMask(p.x, p.z) > 0.5f || RiverDistance(p.x, p.z) < 3f) continue;
+                int k = rng.Next(small.Length);
+                smallLists[k].Add(Instance(p, Range(rng, 2.2f, 3.4f), rng));
+            }
+            for (int k = 0; k < small.Length; k++) AddLayer(scatter, small[k], smallLists[k], 32f, 140f, k < 3);
+            var reeds = new List<Matrix4x4>();
+            for (float x = PlayMinX; x <= PlayMaxX; x += 1.1f)
+            {
+                float z = RiverZ(x) + (rng.Next(2) == 0 ? -1f : 1f) * Range(rng, 3.2f, 5f);
+                reeds.Add(Instance(new Vector3(x, 0f, z), Range(rng, 2.4f, 3.4f), rng));
+            }
+            AddLayer(scatter, "plant_flatTall", reeds, 24f, 100f, false);
+        }
+
+        private static Matrix4x4 Instance(Vector3 p, float scale, System.Random rng)
+        {
+            p.y = GroundY(p.x, p.z) - 0.03f;
+            return Matrix4x4.TRS(p, Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f), Vector3.one * scale);
+        }
+
+        /// <summary>Adds an instanced layer from a Kenney model (its first mesh, with that mesh's own transform baked in).</summary>
+        private static void AddLayer(ScatterRenderer scatter, string model, List<Matrix4x4> instances, float chunk, float distance, bool shadows)
+        {
+            if (instances.Count == 0) return;
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(KenneyDir + model + ".fbx");
+            MeshFilter mf = asset != null ? asset.GetComponentInChildren<MeshFilter>() : null;
+            if (mf == null) { Debug.LogWarning($"[HowToHunt] No mesh in {model}"); return; }
+            Matrix4x4 local = asset.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+            for (int i = 0; i < instances.Count; i++) instances[i] = instances[i] * local;
+            scatter.SetLayer(mf.sharedMesh, mf.GetComponent<MeshRenderer>().sharedMaterials, instances, chunk, distance, shadows);
+        }
+
+        // --- horizon ------------------------------------------------------------------------------------------
+
+        private static void BuildBackdrop(Transform plains, System.Random rng)
+        {
+            Transform sky = Group(plains, "Horizon");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Terrain.mat");
+            var center = new Vector3(0f, 0f, (PlayMinZ + PlayMaxZ) * 0.5f);
+            // Mountains in a broken ring beyond the forest (purely visual, past where anyone can go).
+            for (int i = 0; i < 13; i++)
+            {
+                float angle = i / 13f * Mathf.PI * 2f + Range(rng, -0.15f, 0.15f);
+                if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 180f)) < 30f) continue; // keep the lab side open
+                float dist = Range(rng, 290f, 360f);
+                var pos = center + new Vector3(Mathf.Sin(angle) * dist, -4f, Mathf.Cos(angle) * dist);
+                Mesh m = Mountain(rng, Range(rng, 55f, 110f), Range(rng, 70f, 120f), i);
+                var go = new GameObject($"Mountain {i}", typeof(MeshFilter), typeof(MeshRenderer));
+                go.transform.SetParent(sky, false);
+                go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, Range(rng, 0f, 360f), 0f));
+                go.GetComponent<MeshFilter>().sharedMesh = m;
+                go.GetComponent<MeshRenderer>().sharedMaterial = material;
+                go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            // Puffy low-poly clouds that drift slowly.
+            var cloudMat = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Cloud.mat");
+            Mesh cloud = CloudMesh(rng);
+            for (int i = 0; i < 16; i++)
+            {
+                var go = new GameObject($"Cloud {i}", typeof(MeshFilter), typeof(MeshRenderer));
+                go.transform.SetParent(sky, false);
+                go.transform.position = center + new Vector3(Range(rng, -260f, 260f), Range(rng, 55f, 85f), Range(rng, -260f, 260f));
+                go.transform.localScale = Vector3.one * Range(rng, 6f, 12f);
+                go.GetComponent<MeshFilter>().sharedMesh = cloud;
+                go.GetComponent<MeshRenderer>().sharedMaterial = cloudMat;
+                go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                go.AddComponent<CloudDrift>().Configure(new Vector3(1.2f, 0f, 0.4f) * Range(rng, 0.6f, 1.4f), center, 300f);
+            }
+        }
+
+        private static Mesh Mountain(System.Random rng, float height, float radius, int index)
+        {
+            const int sides = 9, rings = 4;
+            var verts = new List<Vector3>();
+            var colors = new List<Color>();
+            var tris = new List<int>();
+            var grid = new Vector3[rings + 1, sides];
+            for (int r = 0; r <= rings; r++)
+                for (int s = 0; s < sides; s++)
+                {
+                    float t = r / (float)rings;
+                    float a = s / (float)sides * Mathf.PI * 2f + (r % 2) * 0.3f;
+                    float rad = radius * (1f - t) * Range(rng, 0.8f, 1.15f);
+                    float y = height * Mathf.Pow(t, 0.85f) * (r == rings ? 1f : Range(rng, 0.9f, 1.05f));
+                    grid[r, s] = new Vector3(Mathf.Sin(a) * rad, y, Mathf.Cos(a) * rad);
+                }
+            var peak = new Vector3(Range(rng, -4f, 4f), height * 1.08f, Range(rng, -4f, 4f));
+            void Tri(Vector3 a, Vector3 b, Vector3 c)
+            {
+                float y = (a.y + b.y + c.y) / 3f / height;
+                Color col = y > 0.72f ? new Color(0.95f, 0.96f, 0.98f) : y > 0.25f ? Color.Lerp(new Color(0.5f, 0.45f, 0.4f), new Color(0.62f, 0.58f, 0.52f), Range(rng, 0f, 1f)) : new Color(0.42f, 0.6f, 0.32f);
+                int i = verts.Count;
+                verts.Add(a); verts.Add(b); verts.Add(c);
+                colors.Add(col); colors.Add(col); colors.Add(col);
+                tris.Add(i); tris.Add(i + 1); tris.Add(i + 2);
+            }
+            for (int r = 0; r < rings; r++)
+                for (int s = 0; s < sides; s++)
+                {
+                    int s1 = (s + 1) % sides;
+                    Tri(grid[r, s], grid[r + 1, s], grid[r + 1, s1]);
+                    Tri(grid[r, s], grid[r + 1, s1], grid[r, s1]);
+                }
+            for (int s = 0; s < sides; s++) Tri(grid[rings, s], peak, grid[rings, (s + 1) % sides]);
+            var mesh = new Mesh { name = $"Mountain {index}" };
+            mesh.SetVertices(verts);
+            mesh.SetColors(colors);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            SaveGeneratedMesh(mesh, $"Mountain{index}");
+            return mesh;
+        }
+
+        private static Mesh CloudMesh(System.Random rng)
+        {
+            var combine = new List<CombineInstance>();
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Mesh lowSphere = LowPolySphere();
+            Object.DestroyImmediate(sphere);
+            for (int i = 0; i < 5; i++)
+            {
+                var pos = new Vector3(Range(rng, -1.6f, 1.6f), Range(rng, 0f, 0.4f), Range(rng, -0.6f, 0.6f));
+                float s = Range(rng, 0.9f, 1.5f);
+                combine.Add(new CombineInstance { mesh = lowSphere, transform = Matrix4x4.TRS(pos, Quaternion.Euler(0f, Range(rng, 0f, 360f), 0f), new Vector3(s, s * 0.7f, s)) });
+            }
+            var mesh = new Mesh { name = "Cloud" };
+            mesh.CombineMeshes(combine.ToArray(), true, true);
+            mesh.RecalculateNormals();
+            SaveGeneratedMesh(mesh, "Cloud");
+            return mesh;
+        }
+
+        /// <summary>An icosahedron with flat faces (one vertex per face corner).</summary>
+        private static Mesh LowPolySphere()
+        {
+            float t = (1f + Mathf.Sqrt(5f)) / 2f;
+            var p = new[]
+            {
+                new Vector3(-1, t, 0), new Vector3(1, t, 0), new Vector3(-1, -t, 0), new Vector3(1, -t, 0),
+                new Vector3(0, -1, t), new Vector3(0, 1, t), new Vector3(0, -1, -t), new Vector3(0, 1, -t),
+                new Vector3(t, 0, -1), new Vector3(t, 0, 1), new Vector3(-t, 0, -1), new Vector3(-t, 0, 1),
+            };
+            int[] f =
+            {
+                0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+                3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9, 4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1,
+            };
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            for (int i = 0; i < f.Length; i++)
+            {
+                verts.Add(p[f[i]].normalized * 0.5f);
+                tris.Add(i);
+            }
+            var mesh = new Mesh();
+            mesh.SetVertices(verts);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            return mesh;
+        }
+
+        // --- helpers ------------------------------------------------------------------------------------------
+
         private static Vector3 Disc(System.Random rng, float radius)
         {
             double a = rng.NextDouble() * Mathf.PI * 2.0, d = System.Math.Sqrt(rng.NextDouble()) * radius;
@@ -250,41 +719,21 @@ namespace HowToHunt.Editor
 
         private static float Range(System.Random rng, float min, float max) => min + (float)rng.NextDouble() * (max - min);
 
-        /// <summary>A point within <paramref name="band"/> metres of the Plains walls.</summary>
-        private static Vector3 EdgePoint(System.Random rng, float band)
-        {
-            int side = rng.Next(4);
-            float along = (float)rng.NextDouble();
-            float inset = 2f + (float)rng.NextDouble() * band;
-            switch (side)
-            {
-                case 0: return new Vector3(-PlainsHalfWidth + inset, 0f, Mathf.Lerp(PlainsMinZ + 4f, PlainsMaxZ - 2f, along));
-                case 1: return new Vector3(PlainsHalfWidth - inset, 0f, Mathf.Lerp(PlainsMinZ + 4f, PlainsMaxZ - 2f, along));
-                case 2: return new Vector3(Mathf.Lerp(-PlainsHalfWidth + 2f, PlainsHalfWidth - 2f, along), 0f, PlainsMaxZ - inset);
-                default: return new Vector3(Mathf.Lerp(-PlainsHalfWidth + 2f, PlainsHalfWidth - 2f, along), 0f, PlainsMinZ + 1.5f + inset * 0.5f);
-            }
-        }
-
-        /// <summary>A point in the open meadow, away from camp, the gate path and the hunting grounds' centres.</summary>
+        /// <summary>A point in the open meadow, away from camp, the river and the hunting grounds' centres.</summary>
         private static Vector3 OpenPoint(System.Random rng, float clearance)
         {
-            for (int attempt = 0; attempt < 40; attempt++)
+            for (int attempt = 0; attempt < 60; attempt++)
             {
-                var p = new Vector3(Range(rng, -PlainsHalfWidth + 4f, PlainsHalfWidth - 4f), 0f, Range(rng, PlainsMinZ + 6f, PlainsMaxZ - 4f));
-                if (NearCamp(p, 16f + clearance)) continue;
-                if (Reserved(p, clearance)) continue;
+                var p = new Vector3(Range(rng, PlayMinX, PlayMaxX), 0f, Range(rng, PlayMinZ, PlayMaxZ));
+                if (OutsidePlay(p.x, p.z) > -clearance) continue;
+                if (FlatMask(p.x, p.z) > 0.05f || (new Vector3(p.x, 0f, p.z) - CampCenter).magnitude < 25f + clearance) continue;
+                if (RiverDistance(p.x, p.z) < 7f + clearance) continue;
                 bool blocked = false;
-                foreach (Vector3 f in FlowerFields) if ((p - f).sqrMagnitude < (6f + clearance) * (6f + clearance)) blocked = true;
-                foreach (Vector3 w in Warrens) if ((p - w).sqrMagnitude < (4f + clearance) * (4f + clearance)) blocked = true;
+                foreach (Vector3 f in FlowerFields) if ((p - f).sqrMagnitude < (10f + clearance) * (10f + clearance)) blocked = true;
+                foreach (Vector3 w in Warrens) if ((p - w).sqrMagnitude < (6f + clearance) * (6f + clearance)) blocked = true;
                 if (!blocked) return p;
             }
-            return new Vector3(Range(rng, -60f, 60f), 0f, Range(rng, 160f, 210f));
+            return new Vector3(Range(rng, -60f, 60f), 0f, Range(rng, 280f, 340f));
         }
-
-        private static bool NearCamp(Vector3 p, float radius) => (new Vector3(p.x, 0f, p.z) - CampCenter).sqrMagnitude < radius * radius;
-
-        /// <summary>The gate path and the bhop enclosure.</summary>
-        private static bool Reserved(Vector3 p, float clearance)
-            => (Mathf.Abs(p.x - GateX) < 4f + clearance && p.z < 90f) || (Mathf.Abs(p.x) < 10f + clearance && p.z < 107f + clearance);
     }
 }

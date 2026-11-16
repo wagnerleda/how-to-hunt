@@ -35,6 +35,9 @@ namespace HowToHunt.Hunting
         public float FleeRadius = 7f;
         public float CalmDownSeconds = 2.5f;
         public float StunSeconds = 0.6f;
+        [Tooltip("Seconds of full-speed flight before it tires (0 = never). Sprint above run speed, tire below it.")]
+        public float StaminaSeconds;
+        public float TiredSpeed = 4f;
         public Vector3 HalfExtents = new Vector3(0.2f, 0.18f, 0.25f);
 
         [Header("Presentation")]
@@ -67,6 +70,8 @@ namespace HowToHunt.Hunting
             HomeRadius = 18f,
             StunSeconds = StunSeconds,
             HalfExtents = HalfExtents.ToSim(),
+            StaminaSeconds = StaminaSeconds,
+            TiredSpeed = TiredSpeed,
         };
 
         private HitCapsule[] _capsules;

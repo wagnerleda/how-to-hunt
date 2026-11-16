@@ -53,6 +53,7 @@ namespace HowToHunt.Economy
             EnsureEventSystem();
             if (!Hud.Root.TryGetComponent(out GraphicRaycaster _)) Hud.Root.gameObject.AddComponent<GraphicRaycaster>();
             _panel = Hud.Rect("Shop Panel", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 620f), PanelColor).rectTransform;
+            _panel.GetComponent<Image>().raycastTarget = true; // clicks on the panel don't fall through
             _title = Child(Hud.Text("Shop Title", new Vector2(0.5f, 1f), new Vector2(0f, -40f), 36f, TextAlignmentOptions.Center, new Color(1f, 0.9f, 0.65f)));
             _title.rectTransform.sizeDelta = new Vector2(860f, 50f);
             _title.fontStyle = FontStyles.Bold;
@@ -88,6 +89,7 @@ namespace HowToHunt.Economy
         {
             if (EventSystem.current != null || FindAnyObjectByType<EventSystem>() != null) return;
             var go = new GameObject("[EventSystem]", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            go.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
             DontDestroyOnLoad(go);
         }
 
@@ -143,6 +145,7 @@ namespace HowToHunt.Economy
                 brt.anchorMin = brt.anchorMax = new Vector2(0f, 1f);
                 brt.pivot = new Vector2(0f, 1f);
                 brt.anchoredPosition = new Vector2(715f, -14f);
+                row.ButtonImage.raycastTarget = true; // HUD rects default to non-clickable
                 row.Button = row.ButtonImage.gameObject.AddComponent<Button>();
                 row.Button.targetGraphic = row.ButtonImage;
                 UpgradeDefinition captured = u;

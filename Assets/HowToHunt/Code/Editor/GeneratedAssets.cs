@@ -76,6 +76,10 @@ namespace HowToHunt.Editor
             LitFx("M_Gore", "Universal Render Pipeline/Particles/Lit", Color.white, 0.5f);
             LitFx("M_Gib", "Universal Render Pipeline/Lit", Color.white, 0.45f);
             LitFx("M_Flame", "Universal Render Pipeline/Particles/Unlit", Color.white, 0f);
+            // Terrain and mountains: lit, colour from the mesh's vertex colours (one colour per face).
+            LitFx("M_Terrain", "Universal Render Pipeline/Particles/Lit", Color.white, 0.05f);
+            LitFx("M_Water", "Universal Render Pipeline/Lit", new Color(0.27f, 0.62f, 0.86f), 0.85f);
+            LitFx("M_Cloud", "Universal Render Pipeline/Lit", new Color(0.98f, 0.98f, 1f), 0f);
         }
 
         private static void LitFx(string name, string shader, Color color, float smoothness)

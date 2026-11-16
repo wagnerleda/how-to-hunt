@@ -65,10 +65,14 @@ namespace HowToHunt.Editor
                 p.TrophiesOnKill = 1;
                 p.Movement = PreyMovement.Ground;
                 p.WalkSpeed = 1.1f;
-                p.FleeSpeed = 6.5f;
-                p.FleeRadius = 7f;
-                p.CalmDownSeconds = 2.5f;
-                p.StunSeconds = 0.6f;
+                // Sprints at 8.5 m/s (faster than the 6.35 m/s run cap) for 3 s, then tires to 4.8 m/s:
+                // runners lose it, bunny hoppers catch it (owner request, M3 feedback).
+                p.FleeSpeed = 8.5f;
+                p.StaminaSeconds = 3f;
+                p.TiredSpeed = 4.8f;
+                p.FleeRadius = 8f;
+                p.CalmDownSeconds = 3f;
+                p.StunSeconds = 0.15f;
                 p.HalfExtents = new Vector3(0.15f, 0.15f, 0.2f);
                 p.Visual = rabbitModel;
                 p.VisualScale = 1f;
@@ -123,8 +127,7 @@ namespace HowToHunt.Editor
                 t.Cooldown = 0.4f;
                 t.Slot = 3;
                 t.StartOwned = false;
-                t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");
-            });
+                t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");            });
 
             UpgradeDefinition sturdy = Asset<UpgradeDefinition>("Upgrades/Upgrade_SturdyNet", "upgrade.net_sturdy", "Sturdy Net",
                 "Strong enough to hold a rabbit.", u =>

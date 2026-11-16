@@ -32,11 +32,19 @@ namespace HowToHunt.Core
         public static void Rebuild()
         {
             World.Clear();
+            AddBrushes(World);
+            foreach (SimTerrain t in Object.FindObjectsByType<SimTerrain>(FindObjectsInactive.Exclude))
+                t.Field?.AddBrushes(World);
+        }
+
+        /// <summary>Only the SimBrush geometry (no terrain): what the movement-lab replay tests run against.</summary>
+        public static void AddBrushes(BrushWorld world)
+        {
             SimBrush[] brushes = Object.FindObjectsByType<SimBrush>(FindObjectsInactive.Exclude);
             foreach (SimBrush b in brushes)
             {
                 Brush brush = b.BuildBrush();
-                if (brush != null) World.Add(brush);
+                if (brush != null) world.Add(brush);
             }
         }
     }

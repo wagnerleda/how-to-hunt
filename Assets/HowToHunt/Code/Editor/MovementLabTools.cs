@@ -24,13 +24,15 @@ namespace HowToHunt.Editor
         [MenuItem("How to Hunt/Movement/Export Collision World", priority = 30)]
         public static void ExportWorld()
         {
-            SimWorld.Rebuild();
+            // Brushes only: terrain (thousands of prisms) stays out of the test data; the lab courses don't touch it.
+            var world = new BrushWorld();
+            SimWorld.AddBrushes(world);
             string name = SceneManager.GetActiveScene().name;
             string path = Path.Combine(ProjectRoot, WorldsFolder, name + BrushWorldCodec.Extension);
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, BrushWorldCodec.Write(SimWorld.Brushes.Brushes));
+            File.WriteAllText(path, BrushWorldCodec.Write(world.Brushes));
             AssetDatabase.Refresh();
-            Debug.Log($"[MovementLab] Exported {SimWorld.BrushCount} brushes to {path}");
+            Debug.Log($"[MovementLab] Exported {world.BrushCount} brushes to {path}");
         }
 
         [MenuItem("How to Hunt/Movement/Regenerate Scripted Demos", priority = 31)]

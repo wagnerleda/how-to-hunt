@@ -29,6 +29,7 @@ namespace HowToHunt.Hunting
         public int Slot = 1;
         [Tooltip("Owned from the start (otherwise bought as an upgrade).")]
         public bool StartOwned = true;
+        [Tooltip("First-person model: the tool and the hand holding it, grip at the origin, pointing +Z.")]
         public GameObject Viewmodel;
 
         public override void Validate(List<string> errors)

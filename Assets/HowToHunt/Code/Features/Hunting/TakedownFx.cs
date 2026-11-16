@@ -158,6 +158,7 @@ namespace HowToHunt.Hunting
                     break;
                 case TakedownOutcome.Damaged:
                     _instance.Gore(prey, point, direction, 0.35f);
+                    PreyVisual.FlashNear(prey, point);
                     break;
                 case TakedownOutcome.Killed:
                     bool ruined = quality == CarcassQuality.Ruined;

@@ -117,6 +117,35 @@ namespace HowToHunt.Sim.Collision
             return new Brush(planes, center - ext, center + ext, surface);
         }
 
+        /// <summary>
+        /// One terrain triangle as a solid prism: the triangle on top, vertical sides through its edges, flat bottom.
+        /// Neighbouring prisms share side planes, so walking across the seams is smooth.
+        /// </summary>
+        public static Brush TerrainPrism(Vector3 a, Vector3 b, Vector3 c, float bottomY, SurfaceFlags surface = SurfaceFlags.None)
+        {
+            Vector3 top = Vector3.Normalize(Vector3.Cross(b - a, c - a));
+            if (top.Y < 0f) top = -top;
+            var centroid = new Vector3((a.X + b.X + c.X) / 3f, 0f, (a.Z + b.Z + c.Z) / 3f);
+            var planes = new Plane3[5];
+            planes[0] = new Plane3(top, Vector3.Dot(top, a));
+            planes[1] = new Plane3(-Vector3.UnitY, -bottomY);
+            planes[2] = Side(a, b, centroid);
+            planes[3] = Side(b, c, centroid);
+            planes[4] = Side(c, a, centroid);
+            Vector3 min = Vector3.Min(Vector3.Min(a, b), c), max = Vector3.Max(Vector3.Max(a, b), c);
+            min.Y = bottomY;
+            return new Brush(planes, min, max, surface);
+        }
+
+        private static Plane3 Side(Vector3 p, Vector3 q, Vector3 centroid)
+        {
+            var edge = new Vector3(q.X - p.X, 0f, q.Z - p.Z);
+            var n = Vector3.Normalize(new Vector3(edge.Z, 0f, -edge.X));
+            var flatP = new Vector3(p.X, 0f, p.Z);
+            if (Vector3.Dot(n, centroid - flatP) > 0f) n = -n;
+            return new Plane3(n, Vector3.Dot(n, flatP));
+        }
+
         /// <summary>Builds a convex brush from the triangles of a convex mesh (world space). Coplanar faces are merged.</summary>
         public static Brush FromConvexMesh(IReadOnlyList<Vector3> vertices, IReadOnlyList<int> triangles, SurfaceFlags surface = SurfaceFlags.None)
         {
@@ -157,6 +186,17 @@ namespace HowToHunt.Sim.Collision
         private Brush[] _brushes = Array.Empty<Brush>();
         private int _count;
 
+        // Broadphase: a uniform XZ grid (CSR layout) built lazily after brushes change. Traces only test brushes in the
+        // cells their sweep touches; a per-brush stamp skips brushes listed in several cells. No allocations per trace.
+        private const float CellSize = 8f;
+        private bool _gridDirty = true;
+        private float _gridMinX, _gridMinZ;
+        private int _gridW, _gridH;
+        private int[] _cellStart = Array.Empty<int>();
+        private int[] _cellItems = Array.Empty<int>();
+        private int[] _stamp = Array.Empty<int>();
+        private int _query;
+
         public int BrushCount => _count;
 
         public IEnumerable<Brush> Brushes
@@ -164,12 +204,66 @@ namespace HowToHunt.Sim.Collision
             get { for (int i = 0; i < _count; i++) yield return _brushes[i]; }
         }
 
-        public void Clear() => _count = 0;
+        public void Clear()
+        {
+            _count = 0;
+            _gridDirty = true;
+        }
 
         public void Add(Brush brush)
         {
             if (_count == _brushes.Length) Array.Resize(ref _brushes, Math.Max(16, _brushes.Length * 2));
             _brushes[_count++] = brush;
+            _gridDirty = true;
+        }
+
+        private void Cell(float x, float z, out int cx, out int cz)
+        {
+            cx = Math.Clamp((int)MathF.Floor((x - _gridMinX) / CellSize), 0, _gridW - 1);
+            cz = Math.Clamp((int)MathF.Floor((z - _gridMinZ) / CellSize), 0, _gridH - 1);
+        }
+
+        private void BuildGrid()
+        {
+            _gridDirty = false;
+            if (_count == 0) { _gridW = _gridH = 0; return; }
+            float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
+            for (int i = 0; i < _count; i++)
+            {
+                Brush b = _brushes[i];
+                minX = MathF.Min(minX, b.Min.X); minZ = MathF.Min(minZ, b.Min.Z);
+                maxX = MathF.Max(maxX, b.Max.X); maxZ = MathF.Max(maxZ, b.Max.Z);
+            }
+            _gridMinX = minX; _gridMinZ = minZ;
+            _gridW = Math.Max(1, (int)MathF.Ceiling((maxX - minX) / CellSize) + 1);
+            _gridH = Math.Max(1, (int)MathF.Ceiling((maxZ - minZ) / CellSize) + 1);
+            int cells = _gridW * _gridH;
+            var counts = new int[cells + 1];
+            for (int pass = 0; pass < 2; pass++)
+            {
+                if (pass == 1)
+                {
+                    _cellStart = new int[cells + 1];
+                    for (int c = 0; c < cells; c++) _cellStart[c + 1] = _cellStart[c] + counts[c];
+                    _cellItems = new int[_cellStart[cells]];
+                    Array.Clear(counts, 0, counts.Length);
+                }
+                for (int i = 0; i < _count; i++)
+                {
+                    Brush b = _brushes[i];
+                    Cell(b.Min.X, b.Min.Z, out int x0, out int z0);
+                    Cell(b.Max.X, b.Max.Z, out int x1, out int z1);
+                    for (int z = z0; z <= z1; z++)
+                        for (int x = x0; x <= x1; x++)
+                        {
+                            int c = z * _gridW + x;
+                            if (pass == 1) _cellItems[_cellStart[c] + counts[c]] = i;
+                            counts[c]++;
+                        }
+                }
+            }
+            _stamp = new int[_count];
+            _query = 0;
         }
 
         public TraceResult TraceBox(Vector3 start, Vector3 end, Vector3 halfExtents)
@@ -178,14 +272,31 @@ namespace HowToHunt.Sim.Collision
             Vector3 sweepMin = Vector3.Min(start, end) - halfExtents;
             Vector3 sweepMax = Vector3.Max(start, end) + halfExtents;
 
-            for (int i = 0; i < _count; i++)
+            if (_gridDirty) BuildGrid();
+            if (_count > 0)
             {
-                Brush b = _brushes[i];
-                if (b.Max.X < sweepMin.X || b.Min.X > sweepMax.X ||
-                    b.Max.Y < sweepMin.Y || b.Min.Y > sweepMax.Y ||
-                    b.Max.Z < sweepMin.Z || b.Min.Z > sweepMax.Z) continue;
-                ClipBoxToBrush(start, end, halfExtents, b, ref trace);
-                if (trace.AllSolid) break;
+                if (++_query == int.MaxValue) { Array.Clear(_stamp, 0, _stamp.Length); _query = 1; }
+                Cell(sweepMin.X, sweepMin.Z, out int x0, out int z0);
+                Cell(sweepMax.X, sweepMax.Z, out int x1, out int z1);
+                for (int z = z0; z <= z1 && !trace.AllSolid; z++)
+                {
+                    for (int x = x0; x <= x1 && !trace.AllSolid; x++)
+                    {
+                        int c = z * _gridW + x;
+                        for (int k = _cellStart[c], end2 = _cellStart[c + 1]; k < end2; k++)
+                        {
+                            int i = _cellItems[k];
+                            if (_stamp[i] == _query) continue;
+                            _stamp[i] = _query;
+                            Brush b = _brushes[i];
+                            if (b.Max.X < sweepMin.X || b.Min.X > sweepMax.X ||
+                                b.Max.Y < sweepMin.Y || b.Min.Y > sweepMax.Y ||
+                                b.Max.Z < sweepMin.Z || b.Min.Z > sweepMax.Z) continue;
+                            ClipBoxToBrush(start, end, halfExtents, b, ref trace);
+                            if (trace.AllSolid) break;
+                        }
+                    }
+                }
             }
 
             trace.EndPosition = trace.Fraction >= 1f ? end : start + (end - start) * trace.Fraction;

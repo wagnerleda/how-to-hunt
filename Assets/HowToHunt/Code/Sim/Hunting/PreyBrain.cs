@@ -17,6 +17,10 @@ namespace HowToHunt.Sim.Hunting
         public float HomeRadius;
         public float StunSeconds;
         public Vector3 HalfExtents;
+        /// <summary>Seconds of full-speed flight before tiring (0 = never tires).</summary>
+        public float StaminaSeconds;
+        /// <summary>Flee speed once tired: below a running player, so a chase pays off.</summary>
+        public float TiredSpeed;
     }
 
     /// <summary>Everything the host simulates for one ground prey. Small, copyable, deterministic.</summary>
@@ -32,6 +36,8 @@ namespace HowToHunt.Sim.Hunting
         public Vector3 MoveDir;
         public float LastThreatTime;
         public float Speed;        // current horizontal speed (animation)
+        public float Stamina;      // seconds of sprint left
+        public float JinkTimer;    // seconds until the next sharp turn while fleeing
     }
 
     /// <summary>
@@ -41,6 +47,7 @@ namespace HowToHunt.Sim.Hunting
     public static class PreyBrain
     {
         private const float Gravity = 20f;
+        private const float StepHeight = 0.45f;
 
         public static void Step(ref PreyState s, in PreyBehavior b, Vector3 nearestThreat, bool hasThreat, ICollisionWorld world, float time, float dt)
         {
@@ -57,11 +64,13 @@ namespace HowToHunt.Sim.Hunting
                 s.LastThreatTime = time;
                 if (s.Ai != PreyAiState.Flee) Enter(ref s, PreyAiState.Flee, b.CalmDownSeconds);
                 Vector3 away = Horizontal(s.Position - nearestThreat);
-                if (away.LengthSquared() > 1e-4f)
+                s.JinkTimer -= dt;
+                if (away.LengthSquared() > 1e-4f && s.JinkTimer <= 0f)
                 {
-                    // Zig-zag a little so fleeing prey are fun to chase.
-                    float jitter = (Rand01(ref s.Rng) - 0.5f) * 0.6f;
-                    s.MoveDir = Rotate(Vector3.Normalize(away), jitter);
+                    // Jink: a sharp turn every second or so (left or right of straight away), so chases need aim and speed.
+                    float side = Rand01(ref s.Rng) < 0.5f ? -1f : 1f;
+                    s.MoveDir = Rotate(Vector3.Normalize(away), side * (0.35f + Rand01(ref s.Rng) * 0.45f));
+                    s.JinkTimer = 0.7f + Rand01(ref s.Rng) * 0.6f;
                 }
             }
 
@@ -85,13 +94,17 @@ namespace HowToHunt.Sim.Hunting
                     if (s.Timer <= 0f) Enter(ref s, PreyAiState.Idle, 1f + Rand01(ref s.Rng) * 2.5f);
                     break;
                 case PreyAiState.Flee:
-                    s.Speed = b.FleeSpeed;
+                    // Sprint faster than anyone can run, then tire: runners lose them, bunny hoppers catch them.
+                    if (b.StaminaSeconds > 0f) s.Stamina -= dt;
+                    s.Speed = b.StaminaSeconds <= 0f || s.Stamina > 0f ? b.FleeSpeed : b.TiredSpeed;
                     if (time - s.LastThreatTime > b.CalmDownSeconds) Enter(ref s, PreyAiState.Idle, 0.5f);
                     break;
                 case PreyAiState.Stunned:
                     s.Speed = 0f;
                     break;
             }
+
+            if (s.Ai != PreyAiState.Flee && b.StaminaSeconds > 0f) s.Stamina = MathF.Min(b.StaminaSeconds, s.Stamina + dt * 0.5f);
 
             Move(ref s, b, world, dt);
         }
@@ -104,6 +117,9 @@ namespace HowToHunt.Sim.Hunting
             Vector3 center = s.Position + new Vector3(0f, ext.Y + 0.02f, 0f);
             if (s.Speed > 0f && s.MoveDir.LengthSquared() > 1e-4f)
             {
+                // Step up first (hills, small ledges), move, then drop back onto the ground below.
+                TraceResult up = world.TraceBox(center, center + new Vector3(0f, StepHeight, 0f), ext);
+                center = up.EndPosition;
                 Vector3 delta = s.MoveDir * (s.Speed * dt);
                 TraceResult tr = world.TraceBox(center, center + delta, ext);
                 if (tr.Hit)
@@ -116,7 +132,7 @@ namespace HowToHunt.Sim.Hunting
                 s.Yaw = LerpAngle(s.Yaw, targetYaw, Math.Min(1f, dt * 10f));
             }
             // Ground snap / fall.
-            TraceResult down = world.TraceBox(center, center - new Vector3(0f, 2f + Gravity * dt, 0f), ext);
+            TraceResult down = world.TraceBox(center, center - new Vector3(0f, 2f + StepHeight + Gravity * dt, 0f), ext);
             if (down.Hit && !down.StartSolid) center = down.EndPosition;
             s.Position = center - new Vector3(0f, ext.Y + 0.02f, 0f);
         }

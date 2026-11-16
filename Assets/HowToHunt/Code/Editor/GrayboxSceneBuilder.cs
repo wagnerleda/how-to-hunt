@@ -101,14 +101,14 @@ namespace HowToHunt.Editor
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = new Color(0.74f, 0.84f, 0.93f);
-            RenderSettings.fogStartDistance = 70f;
-            RenderSettings.fogEndDistance = 260f;
+            RenderSettings.fogStartDistance = 110f;
+            RenderSettings.fogEndDistance = 620f; // far enough to see the horizon mountains
 
             var camGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener)) { tag = "MainCamera" };
             camGo.transform.SetPositionAndRotation(new Vector3(0, 14, -26), Quaternion.Euler(25, 0, 0));
             Camera cam = camGo.GetComponent<Camera>();
             cam.nearClipPlane = 0.05f;
-            cam.farClipPlane = 400f;
+            cam.farClipPlane = 900f;
             cam.clearFlags = CameraClearFlags.Skybox;
             UniversalAdditionalCameraData camData = camGo.AddComponent<UniversalAdditionalCameraData>();
             camData.renderPostProcessing = true;

@@ -50,7 +50,7 @@ namespace HowToHunt.Hunting
             if (tool == null || tool.Viewmodel == null) return;
             if (!_models.TryGetValue(tool, out GameObject model) || model == null)
             {
-                model = Instantiate(tool.Viewmodel, _holder, false);
+                model = Instantiate(tool.Viewmodel, _holder, false); // tool + gloved hand, posed in Blender
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 _models[tool] = model;
@@ -63,6 +63,7 @@ namespace HowToHunt.Hunting
         private void OnUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
             _useTime = Time.time;
+            if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
             else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(ProceduralSwoosh, 0.25f, Random.Range(0.9f, 1.1f));
         }
@@ -104,50 +105,81 @@ namespace HowToHunt.Hunting
             _lag = Quaternion.Slerp(_lag * delta, Quaternion.identity, dt * 12f);
             _lag = Quaternion.RotateTowards(Quaternion.identity, _lag, 6f);
 
-            Vector3 rest = new Vector3(0.22f, -0.2f, 0.42f);
-            Vector3 offset = Vector3.zero;
-            Quaternion use = Quaternion.identity;
-            float t = (Time.time - _useTime) / Mathf.Max(0.12f, _tool.Cooldown * 0.75f);
-            if (t >= 0f && t < 1f) Animate(_tool.Archetype, t, ref offset, ref use);
+            Vector3 rest = new Vector3(0.18f, -0.17f, 0.40f);
+            Vector3 offset;
+            Quaternion use;
+            if (_tool.Archetype == ToolArchetype.Firearm)
+            {
+                float t = (Time.time - _useTime) / Mathf.Max(0.12f, _tool.Cooldown * 0.75f);
+                Recoil(t >= 0f && t < 1f ? t : 1f, out offset, out use);
+            }
+            else
+            {
+                Sweep(dt, out offset, out use);
+            }
 
             _holder.localPosition = rest + bob + offset + new Vector3(0f, -0.25f * (1f - raise), 0f);
             _holder.localRotation = _lag * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
         }
 
-        /// <summary>Procedural use animation, t = 0..1 over the tool's cooldown.</summary>
-        private static void Animate(ToolArchetype archetype, float t, ref Vector3 offset, ref Quaternion rotation)
+        // --- melee sweeps -----------------------------------------------------------------------------------
+        // A continuous "side" value: +1 = tool held to the right, -1 = to the left, 0 = centred rest. Each use sweeps
+        // from the current side to the other one, so spamming alternates right->left, left->right with no snapping.
+        private float _side;
+        private float _sweepFrom, _sweepTo;
+        private float _sweepStart = -10f, _sweepSeconds = 0.3f;
+
+        private void StartSweep()
         {
-            switch (archetype)
+            float from = Mathf.Abs(_side) < 0.3f ? 1f : Mathf.Sign(_side);
+            _sweepFrom = _side;
+            _sweepTo = -from;
+            _sweepStart = Time.time;
+            bool net = _tool != null && _tool.Archetype == ToolArchetype.Net;
+            _sweepSeconds = Mathf.Clamp((_tool != null ? _tool.Cooldown : 0.5f) * (net ? 0.85f : 0.7f), 0.18f, 0.6f);
+        }
+
+        private void Sweep(float dt, out Vector3 offset, out Quaternion rotation)
+        {
+            bool net = _tool.Archetype == ToolArchetype.Net;
+            float t = (Time.time - _sweepStart) / _sweepSeconds;
+            float dip = 0f;
+            if (t >= 0f && t < 1f)
             {
-                case ToolArchetype.Net:
-                {
-                    // Scoop: quick forward-down sweep, slow return.
-                    float k = t < 0.3f ? t / 0.3f : 1f - (t - 0.3f) / 0.7f;
-                    k = Mathf.SmoothStep(0f, 1f, k);
-                    offset = new Vector3(-0.12f * k, -0.05f * k, 0.22f * k);
-                    rotation = Quaternion.Euler(55f * k, -20f * k, 10f * k);
-                    break;
-                }
-                case ToolArchetype.Blade:
-                {
-                    // Slash: wind-up to the right, fast diagonal cut to the left, recover.
-                    float k;
-                    if (t < 0.15f) k = -t / 0.15f * 0.3f;
-                    else if (t < 0.4f) k = Mathf.Lerp(-0.3f, 1f, (t - 0.15f) / 0.25f);
-                    else k = 1f - (t - 0.4f) / 0.6f;
-                    offset = new Vector3(-0.2f * k, -0.04f * Mathf.Abs(k), 0.12f * Mathf.Abs(k));
-                    rotation = Quaternion.Euler(35f * k, -55f * k, -30f * k);
-                    break;
-                }
-                default:
-                {
-                    // Recoil: instant kick back and up, springy return.
-                    float k = Mathf.Exp(-t * 6f) * (1f - t);
-                    offset = new Vector3(0f, 0.015f * k, -0.07f * k);
-                    rotation = Quaternion.Euler(-14f * k, 0f, 0f);
-                    break;
-                }
+                // Knife: a short wind-up past the start side, then a fast cut. Net: one smooth scoop.
+                float u;
+                if (!net && t < 0.2f) u = -0.25f * Mathf.Sin(t / 0.2f * Mathf.PI * 0.5f);
+                else u = Mathf.SmoothStep(net ? 0f : -0.25f, 1f, net ? t : (t - 0.2f) / 0.8f);
+                _side = Mathf.LerpUnclamped(_sweepFrom, _sweepTo, u);
+                dip = Mathf.Sin(Mathf.Clamp01(net ? t : (t - 0.2f) / 0.8f) * Mathf.PI);
             }
+            else if (Time.time - _sweepStart > _sweepSeconds + 0.6f)
+            {
+                _side = Mathf.MoveTowards(_side, 0f, dt * 2.5f); // drift back to rest when idle
+            }
+
+            float s = _side;
+            if (net)
+            {
+                // The hoop crosses the screen low and forward, tilted into the sweep.
+                offset = new Vector3(s * 0.2f - 0.04f, 0.05f - 0.09f * dip, 0.12f * dip);
+                rotation = Quaternion.Euler(-14f + 40f * dip, s * 38f, -s * 18f);
+            }
+            else
+            {
+                // Diagonal slashes: high on the right, low on the left; blade edge leads.
+                // Held blade-up (so it reads at rest), then cut down through the diagonal.
+                offset = new Vector3(s * 0.16f - 0.03f, s * 0.05f - 0.03f * dip + 0.02f, 0.1f * dip);
+                rotation = Quaternion.Euler(-38f + 55f * dip - s * 10f, s * 32f - 8f, -s * 45f + 12f);
+            }
+        }
+
+        private static void Recoil(float t, out Vector3 offset, out Quaternion rotation)
+        {
+            // Instant kick back and up, springy return.
+            float k = Mathf.Exp(-t * 6f) * (1f - t);
+            offset = new Vector3(0f, 0.015f * k, -0.07f * k);
+            rotation = Quaternion.Euler(-14f * k, 0f, 0f);
         }
     }
 }

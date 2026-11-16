@@ -22,6 +22,7 @@ namespace HowToHunt.Core
             console.Register(FpsMax);
             console.Register(VSync);
             console.Register(PlayerName);
+            console.Register(ScatterRenderer.Density);
 
             Volume.Changed += _ => UnityEngine.AudioListener.volume = Volume.Value;
             FpsMax.Changed += _ => ApplyFrameRate();
