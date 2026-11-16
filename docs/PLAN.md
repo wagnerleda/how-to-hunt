@@ -38,6 +38,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 ## Phase 4: gun overhaul
 - **Physical recoil** (replaces the instant camera kick): each shot kicks the gun in the hand first; the camera follows loosely with spring lag, so a fast-firing SMG climbs on screen and the view trails it.
 - **Physical aim, like How to Fish**: bullets leave along the barrel, not the crosshair; no crosshair (the weapon itself aims). Hit registration and lag compensation use the barrel ray the client sends.
+- **Inspect key** (F by default, rebindable): the hands bring the held weapon or tool up and turn it to show it off, like a CS-style inspect. Any action (fire, switch, throw) cancels it.
 - Visible bullets: fast tracer rounds that fly (no laser lines); hits checked along the bullet's path with lag compensation.
 - Every gun has a magazine and reloads (ammo is infinite).
 - Damage falls off with range.
