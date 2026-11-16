@@ -110,6 +110,9 @@ namespace HowToHunt.Hunting
 
         public static void NotifyThrow() => LocalThrow?.Invoke();
 
+        /// <summary>Local: how charged the throw being held is (0 = not charging, up to 1). The viewmodel winds up.</summary>
+        public static float LocalThrowCharge { get; set; }
+
         private void Equip(int index)
         {
             if (index == _equipped || index < 0 || index >= Loadouts.AllTools.Count) return;

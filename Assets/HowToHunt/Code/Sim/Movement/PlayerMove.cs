@@ -44,6 +44,12 @@ namespace HowToHunt.Sim.Movement
             ComputeWish(in cmd, cfg, s.Ducked && s.OnGround, out Vector3 wishDir, out float wishSpeed);
             if (s.OnGround && !s.Ducked && cmd.Has(MoveButtons.Sprint) && cmd.Forward > 0.1f) wishSpeed *= cfg.SprintFactor;
             if (s.InWater) wishSpeed *= cfg.WaterSpeedFactor;
+            if (s.SlowTime > 0f)
+            {
+                // Hit by a thrown item: a little slower for a moment (never a stun).
+                wishSpeed *= cfg.HitSlowFactor;
+                s.SlowTime = MathF.Max(0f, s.SlowTime - dt);
+            }
 
             bool jumpDown = cmd.Has(MoveButtons.Jump);
             bool autoHop = cfg.AutoHop || cmd.Has(MoveButtons.AutoHop);

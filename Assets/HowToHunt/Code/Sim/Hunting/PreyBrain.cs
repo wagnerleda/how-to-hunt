@@ -43,6 +43,8 @@ namespace HowToHunt.Sim.Hunting
         public float Stamina;      // seconds of sprint left
         public float JinkTimer;    // seconds until the next sharp turn while fleeing
         public Vector3 Knock;      // horizontal shove from a hit, m/s, fades quickly
+        public float SlowTime;     // seconds left slowed by a thrown item
+        public float SlowFactor;   // speed multiplier meanwhile
     }
 
     /// <summary>
@@ -115,6 +117,12 @@ namespace HowToHunt.Sim.Hunting
                     break;
             }
 
+            if (s.SlowTime > 0f)
+            {
+                s.Speed *= s.SlowFactor;
+                s.SlowTime = MathF.Max(0f, s.SlowTime - dt);
+            }
+
             if (s.Ai != PreyAiState.Flee && b.StaminaSeconds > 0f) s.Stamina = MathF.Min(b.StaminaSeconds, s.Stamina + dt * 0.5f);
 
             Move(ref s, b, world, dt);
@@ -124,6 +132,14 @@ namespace HowToHunt.Sim.Hunting
 
         /// <summary>A hit shoves the prey along the ground (m/s, horizontal); it slides to a stop within half a second.</summary>
         public static void Knock(ref PreyState s, Vector3 velocity) => s.Knock += Horizontal(velocity);
+
+        /// <summary>Hit by a thrown item: runs at <paramref name="factor"/> speed for a moment. Never a stun.</summary>
+        public static void Slow(ref PreyState s, float factor, float seconds)
+        {
+            if (s.Ai == PreyAiState.Dead || s.Ai == PreyAiState.Captured) return;
+            s.SlowFactor = factor;
+            s.SlowTime = MathF.Max(s.SlowTime, seconds);
+        }
 
         /// <summary>Eye height above the feet.</summary>
         public static float EyeHeight(in PreyBehavior b) => b.HalfExtents.Y * 2f + 0.05f;

@@ -204,7 +204,15 @@ namespace HowToHunt.Hunting
             Vector3 offset;
             Quaternion use;
             float shoulderYaw = 0f;
-            if (_tool == null)
+            float charge = PlayerTools.LocalThrowCharge;
+            if (charge > 0f)
+            {
+                // Winding up a throw (any held item): pulled back and up, more the longer it's held.
+                float c = Smooth(charge);
+                offset = new Vector3(0.04f * c, 0.08f * c, -0.14f * c);
+                use = Quaternion.Euler(-38f * c, 0f, 0f);
+            }
+            else if (_tool == null || Time.time - _throwTime < 0.32f)
             {
                 ThrowPose(out offset, out use);
                 float since = Time.time - _throwTime;

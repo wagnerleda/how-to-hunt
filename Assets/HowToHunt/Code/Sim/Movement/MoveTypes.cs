@@ -61,6 +61,8 @@ namespace HowToHunt.Sim.Movement
         public bool JumpHeld;
         public bool Ducked;
         public MoveMode Mode;
+        /// <summary>Seconds left slowed by a thrown item (set by the host, reaches the owner by reconciliation).</summary>
+        public float SlowTime;
 
         // Derived/feedback fields (not needed to resume simulation).
         /// <summary>Normal of the surface under or against the player (for surf/feel feedback).</summary>
@@ -94,6 +96,8 @@ namespace HowToHunt.Sim.Movement
         /// <summary>Ground speed while wading (x MaxSpeed), and horizontal drag per second in water.</summary>
         public float WaterSpeedFactor = 0.55f;
         public float WaterDrag = 3f;
+        /// <summary>Speed multiplier while slowed by a thrown item (MoveState.SlowTime).</summary>
+        public float HitSlowFactor = 0.9f;
         public float JumpSpeed = 7.67f;           // 301.99 u/s
         public float MaxVelocity = 88.9f;         // sv_maxvelocity 3500
         /// <summary>Surfaces with normal.y below this are too steep to stand on: you slide (surf).</summary>

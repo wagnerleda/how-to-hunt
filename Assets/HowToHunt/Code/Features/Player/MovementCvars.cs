@@ -25,6 +25,7 @@ namespace HowToHunt.Player
         public static readonly FloatCvar MaxSpeed = new FloatCvar("sv_maxspeed", D.MaxSpeed, "Ground run speed, m/s (Source 250 u/s).", Sv, 0f, 50f);
         public static readonly FloatCvar SprintFactor = new FloatCvar("sv_sprint_factor", D.SprintFactor, "Ground speed while sprinting, x sv_maxspeed.", Sv, 1f, 3f);
         public static readonly FloatCvar WaterSpeed = new FloatCvar("sv_water_speed", D.WaterSpeedFactor, "Ground speed while wading, x sv_maxspeed.", Sv, 0.1f, 1f);
+        public static readonly FloatCvar ThrowSlow = new FloatCvar("sv_throw_slow", D.HitSlowFactor, "Speed multiplier for a moment after being hit by a thrown item (never a stun).", Sv, 0.1f, 1f);
         public static readonly FloatCvar RecoilSettleSpeed = new FloatCvar("sv_recoil_settle", 9f, "How fast the part of a weapon kick that recovers settles back, per second.", Sv, 0.5f, 60f);
         public static readonly FloatCvar JumpSpeed = new FloatCvar("sv_jump_impulse", D.JumpSpeed, "Jump vertical speed, m/s (Source 301.99 u/s).", Sv, 0f, 50f);
         public static readonly FloatCvar MaxVelocity = new FloatCvar("sv_maxvelocity", D.MaxVelocity, "Per-axis speed limit, m/s.", Sv, 1f, 500f);
@@ -42,7 +43,7 @@ namespace HowToHunt.Player
 
         public static void Register(ConsoleSystem console)
         {
-            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, SprintFactor, WaterSpeed, JumpSpeed, MaxVelocity, Standable, StepHeight })
+            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, SprintFactor, WaterSpeed, ThrowSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
             {
                 console.Register(c);
                 c.Changed += _ => Apply();
@@ -50,6 +51,7 @@ namespace HowToHunt.Player
             console.Register(ServerAutoHop).Changed += _ => Apply();
             console.Register(ClientAutoHop);
             console.Register(ReconcileInterval);
+            console.Register(RecoilSettleSpeed);
             console.Register(BotForward);
             console.Register(BotSide);
             console.Register(BotYawSpeed);
@@ -69,6 +71,7 @@ namespace HowToHunt.Player
             c.MaxSpeed = MaxSpeed;
             c.SprintFactor = SprintFactor;
             c.WaterSpeedFactor = WaterSpeed;
+            c.HitSlowFactor = ThrowSlow;
             c.JumpSpeed = JumpSpeed;
             c.MaxVelocity = MaxVelocity;
             c.StandableNormalY = Standable;

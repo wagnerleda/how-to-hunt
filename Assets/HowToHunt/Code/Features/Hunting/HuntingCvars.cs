@@ -26,6 +26,8 @@ namespace HowToHunt.Hunting
             c.Register(MaxUnlag);
             c.Register(InterpTicks);
             c.Register(ShowHits);
+            c.Register(CrouchSight);
+            c.Register(RecoilScale);
         }
     }
 }

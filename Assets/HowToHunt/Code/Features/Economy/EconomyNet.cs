@@ -72,6 +72,8 @@ namespace HowToHunt.Economy
         public byte Slot;
         public Vector3 Origin;
         public Vector3 Direction;
+        /// <summary>Throw charge, 0..255.</summary>
+        public byte Power;
     }
 
     /// <summary>
@@ -84,7 +86,11 @@ namespace HowToHunt.Economy
     public static class EconomyNet
     {
         public static readonly FloatCvar StationReach = new FloatCvar("sv_station_reach", 3.5f, "Extra distance (m) beyond a camp station's radius at which the host still accepts its use.", CvarFlags.Replicated | CvarFlags.Cheat, 0f, 50f);
-        public static readonly FloatCvar ThrowSpeed = new FloatCvar("sv_throw_speed", 13f, "How fast a thrown prey leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 1f, 60f);
+        public static readonly FloatCvar ThrowSpeed = new FloatCvar("sv_throw_speed", 13f, "How fast a fully charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 1f, 60f);
+        public static readonly FloatCvar ThrowTapTime = new FloatCvar("cl_throw_tap", 0.18f, "Holding Throw shorter than this (s) drops instead of throwing.", CvarFlags.Archive, 0.02f, 1f);
+        public static readonly FloatCvar ThrowSpeedMin = new FloatCvar("sv_throw_speed_min", 4f, "How fast a barely charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 0.5f, 60f);
+        public static readonly FloatCvar ThrowChargeTime = new FloatCvar("sv_throw_charge", 0.9f, "Seconds of holding Throw to reach full power (the cap).", CvarFlags.Replicated | CvarFlags.Cheat, 0.05f, 5f);
+        public static readonly FloatCvar ThrowSlowTime = new FloatCvar("sv_throw_slow_time", 0.75f, "Seconds a prey or player hit by a thrown item stays slowed (sv_throw_slow).", CvarFlags.Replicated | CvarFlags.Cheat, 0f, 5f);
 
         /// <summary>The local player's profile (persistent, mirrored from the host during a party).</summary>
         public static readonly EconomyProfile Local = new EconomyProfile();
@@ -149,8 +155,9 @@ namespace HowToHunt.Economy
 
         public static void RequestPickUp(ushort item) => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.PickUp, Item = item });
 
-        public static void RequestThrow(int slot, Vector3 origin, Vector3 direction)
-            => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.Throw, Slot = (byte)slot, Origin = origin, Direction = direction });
+        /// <param name="power">Charge 0..1 (how long Throw was held, capped).</param>
+        public static void RequestThrow(int slot, Vector3 origin, Vector3 direction, float power)
+            => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.Throw, Slot = (byte)slot, Origin = origin, Direction = direction, Power = (byte)Mathf.RoundToInt(Mathf.Clamp01(power) * 255f) });
 
         public static void RequestDrop(int slot, Vector3 origin, Vector3 direction)
             => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.Drop, Slot = (byte)slot, Origin = origin, Direction = direction });
@@ -246,6 +253,24 @@ namespace HowToHunt.Economy
             Send(conn, p, EconomyEvent.Sold, coins: total.Coins, count: count);
         }
 
+        /// <summary>Host: a prey this client threw reached the trader. Sold, as if handed over. Tools aren't bought.</summary>
+        public static bool HostSellThrown(int clientId, in ItemStack item)
+        {
+            if (item.Kind != ItemKind.Prey || !Ledger.TryGetValue(clientId, out EconomyProfile p)) return false;
+            NetworkConnection conn = Connection(clientId);
+            if (conn == null) return false;
+            CatchReward each = p.ValueOf(item, EconomyRules.Default, Scratch);
+            int count = Math.Max(1, (int)item.Count);
+            BigDouble coins = BigDouble.Zero;
+            double trophies = 0;
+            for (int i = 0; i < count; i++) { coins += each.Coins; trophies += each.Trophies; }
+            p.Coins += coins;
+            p.LifetimeCoins += coins;
+            p.Trophies += trophies;
+            Send(conn, p, EconomyEvent.Sold, coins: coins, count: count);
+            return true;
+        }
+
         private static void Buy(NetworkConnection conn, EconomyProfile p, uint upgradeId)
         {
             UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(new ContentId(upgradeId));
@@ -301,14 +326,15 @@ namespace HowToHunt.Economy
             Vector3 dir = req.Direction.sqrMagnitude > 0.5f && !float.IsNaN(req.Direction.x) ? req.Direction.normalized : motor.transform.forward;
             Vector3 origin = (req.Origin - eye).sqrMagnitude <= 2.5f * 2.5f ? req.Origin : eye;
             Vector3 playerVelocity = motor.State.Velocity.ToUnity();
+            float speed = Mathf.Lerp(ThrowSpeedMin.Value, ThrowSpeed.Value, req.Power / 255f);
             Vector3 velocity = thrown
-                ? dir * ThrowSpeed.Value + Vector3.up * 1.5f + playerVelocity * 0.6f
+                ? dir * speed + Vector3.up * (0.8f + speed * 0.06f) + playerVelocity * 0.6f
                 : dir * 1.5f + playerVelocity * 0.5f;
             Vector3 start = origin + dir * 0.45f + (thrown ? Vector3.zero : Vector3.down * 0.5f);
             // Don't start inside a wall: pull the start back toward the eye if the path is blocked.
             var tr = SimWorld.Current.TraceBox(eye.ToSim(), start.ToSim(), new System.Numerics.Vector3(0.1f, 0.1f, 0.1f));
             if (tr.Hit) start = tr.EndPosition.ToUnity();
-            WorldItems.HostSpawn(item, start, velocity);
+            WorldItems.HostSpawn(item, start, velocity, thrown ? conn.ClientId : -1);
             Send(conn, p, EconomyEvent.Synced);
         }
 

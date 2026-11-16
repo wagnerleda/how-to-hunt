@@ -22,6 +22,10 @@ namespace HowToHunt.Economy
         public void Register(ModuleRegistrar r)
         {
             r.Cvar(EconomyNet.ThrowSpeed);
+            r.Cvar(EconomyNet.ThrowSpeedMin);
+            r.Cvar(EconomyNet.ThrowChargeTime);
+            r.Cvar(EconomyNet.ThrowSlowTime);
+            r.Cvar(EconomyNet.ThrowTapTime);
             r.Cvar(WorldItems.Lifetime);
             r.Cvar(WorldItems.PickupReach);
             r.Cvar(EconomyNet.StationReach);

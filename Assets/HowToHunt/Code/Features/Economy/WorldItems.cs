@@ -7,6 +7,7 @@ using FishNet.Transporting;
 using HowToHunt.Core;
 using HowToHunt.Foundation;
 using HowToHunt.Hunting;
+using HowToHunt.Player;
 using HowToHunt.Sim.Hunting;
 using UnityEngine;
 using Vec3 = System.Numerics.Vector3;
@@ -50,6 +51,8 @@ namespace HowToHunt.Economy
         public float ExpireAt;
         public Vec3 HalfExtents;
         public GameObject Visual;
+        /// <summary>Host: client id of the thrower while a throw is in flight (-1 = not a throw, or already landed/hit).</summary>
+        public int ThrownBy = -1;
     }
 
     /// <summary>
@@ -62,6 +65,7 @@ namespace HowToHunt.Economy
         public static readonly FloatCvar Lifetime = new FloatCvar("sv_item_lifetime", 120f, "Seconds a dropped item or carcass stays before it disappears.", CvarFlags.Replicated | CvarFlags.Cheat, 5f, 3600f);
         public static readonly FloatCvar PickupReach = new FloatCvar("sv_pickup_reach", 2.6f, "How close (m) a player must be to pick an item up.", CvarFlags.Replicated | CvarFlags.Cheat, 0.5f, 10f);
         private const int MaxItems = 256;
+        private const float MinHitSpeed = 3f; // m/s: a throw slower than this just lands on them
 
         private static readonly List<WorldItem> Items = new List<WorldItem>(64);
         private static NetworkManager _manager;
@@ -106,7 +110,7 @@ namespace HowToHunt.Economy
         // --- host -------------------------------------------------------------------------------------------
 
         /// <summary>Host: put an item into the world.</summary>
-        public static void HostSpawn(in ItemStack item, Vector3 position, Vector3 velocity)
+        public static void HostSpawn(in ItemStack item, Vector3 position, Vector3 velocity, int thrownBy = -1)
         {
             if (!IsHost || item.IsEmpty) return;
             if (Items.Count >= MaxItems) HostRemove(Items[0]); // oldest goes first
@@ -116,6 +120,7 @@ namespace HowToHunt.Economy
                 Item = item,
                 Body = new ItemBody { Position = position.ToSim(), Velocity = velocity.ToSim() },
                 ExpireAt = Time.time + Lifetime.Value,
+                ThrownBy = thrownBy,
             };
             if (_nextId == 0) _nextId = 1;
             w.HalfExtents = HalfExtentsFor(item, w.Id);
@@ -123,6 +128,53 @@ namespace HowToHunt.Economy
             Items.Add(w);
             WorldItemRenderer.Create(w);
             SendToReady(SpawnMessage(w));
+        }
+
+        /// <summary>
+        /// Host: a throw in flight. Prey thrown into the trader are sold. A throw that strikes a prey or another player
+        /// slows them a little for a moment (never a stun); the item flies on. Returns true if the item was removed.
+        /// </summary>
+        private static bool HostThrownContact(WorldItem w)
+        {
+            Vec3 pos = w.Body.Position;
+            Vector3 upos = pos.ToUnity();
+            if (w.Item.Kind == ItemKind.Prey && CampStation.Nearest(upos, CampStationKind.Sell) != null
+                && EconomyNet.HostSellThrown(w.ThrownBy, w.Item))
+            {
+                HostRemove(w);
+                return true;
+            }
+            if (w.Body.Velocity.LengthSquared() < MinHitSpeed * MinHitSpeed) return false;
+            float itemR = MathF.Max(w.HalfExtents.X, MathF.Max(w.HalfExtents.Y, w.HalfExtents.Z));
+            float factor = MovementCvars.Config.HitSlowFactor, seconds = EconomyNet.ThrowSlowTime.Value;
+
+            var prey = PreyWorld.All;
+            for (int i = 0; i < prey.Count; i++)
+            {
+                PreyInstance p = prey[i];
+                if (!p.Alive || p.IsFlyer) continue;
+                Vec3 ext = p.Def.Behavior.HalfExtents;
+                Vec3 center = p.State.Position + new Vec3(0f, ext.Y, 0f);
+                float r = MathF.Max(ext.X, MathF.Max(ext.Y, ext.Z)) + itemR + 0.05f;
+                if (Vec3.DistanceSquared(center, pos) > r * r) continue;
+                PreyBrain.Slow(ref p.State, factor, seconds);
+                w.ThrownBy = -1;
+                return false;
+            }
+
+            var players = PlayerMotor.All;
+            for (int i = 0; i < players.Count; i++)
+            {
+                PlayerMotor m = players[i];
+                if (m.Owner != null && m.Owner.ClientId == w.ThrownBy) continue;
+                Vec3 half = MovementCvars.Config.Hull(m.State.Ducked);
+                Vec3 d = Vec3.Abs(m.State.Position - pos);
+                if (d.X > half.X + itemR || d.Z > half.Z + itemR || d.Y > half.Y + itemR) continue;
+                m.HostSlow(seconds);
+                w.ThrownBy = -1;
+                return false;
+            }
+            return false;
         }
 
         /// <summary>Host: shove an item (a hit, a blast). Everyone re-simulates it from the new motion.</summary>
@@ -216,6 +268,11 @@ namespace HowToHunt.Economy
                 bool wasResting = w.Body.Resting;
                 w.PreviousPosition = w.Body.Position;
                 ItemPhysics.Step(ref w.Body, SimWorld.Current, w.HalfExtents, dt);
+                if (IsHost && w.ThrownBy >= 0)
+                {
+                    if (w.Body.Resting) w.ThrownBy = -1;
+                    else if (HostThrownContact(w)) continue; // sold: removed
+                }
                 if (IsHost && !wasResting && w.Body.Resting)
                     SendToReady(new WorldItemUpdateBroadcast { Id = w.Id, Position = w.Body.Position.ToUnity() });
             }

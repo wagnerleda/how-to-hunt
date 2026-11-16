@@ -45,4 +45,4 @@ Numbers live in content (`GeneratedContent.cs`) and cvars; pacing is checked by 
 
 Upgrades: Sturdy Net (+1 strength, 60 c), Whetstone (knife x1.6, 45 c), Wide Hoop (+0.8 m reach, 90 c, needs Sturdy Net), Old Revolver (150 c), Hunter's Satchel (+2 slots, 70 c), Hunter's Backpack (+2 slots, 160 c, needs the Satchel).
 
-Inventory: 6 slots to start (tools included), butterflies stack to 10, rabbits take a slot each. Catches go straight into the inventory; kills drop a carcass you must pick up (E). Sell everything you carry at the Trader, buy at the Outfitter (both at camp, Interact = E). Fire throws a held prey, Q drops it.
+Inventory: 6 slots to start (tools included), butterflies stack to 10, rabbits take a slot each. Catches go straight into the inventory; kills drop a carcass you must pick up (E). Sell everything you carry at the Trader, buy at the Outfitter (both at camp, Interact = E). Throw (Q) drops what you hold on a tap and throws it when held: the longer you hold, the further (capped). Throwing a prey into the Trader sells it; a throw that hits a prey or a player slows them 10 % for 0.75 s (never a stun).

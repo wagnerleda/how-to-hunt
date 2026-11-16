@@ -82,6 +82,22 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void AThrowSlowsAFleeingPrey_ButNeverStunsIt()
+        {
+            BrushWorld world = Flat();
+            PreyBehavior b = Rabbit();
+            var s = new PreyState { Rng = 4, Stamina = 3f };
+            var threat = new Vector3(0f, 0f, -3f);
+            for (int i = 0; i < 8; i++) PreyBrain.Step(ref s, in b, threat, true, world, i * Dt, Dt);
+            PreyBrain.Slow(ref s, 0.9f, 0.75f);
+            PreyBrain.Step(ref s, in b, threat, true, world, 8 * Dt, Dt);
+            Assert.AreEqual(PreyAiState.Flee, s.Ai, "still running");
+            Assert.AreEqual(b.FleeSpeed * 0.9f, s.Speed, 0.01f);
+            for (int i = 9; i < 64; i++) PreyBrain.Step(ref s, in b, threat, true, world, i * Dt, Dt);
+            Assert.AreEqual(b.FleeSpeed, s.Speed, 0.01f, "recovered after 0.75 s");
+        }
+
+        [Test]
         public void GunshotsStartleHarmlessPrey_NotDeafOnes()
         {
             BrushWorld world = Flat();

@@ -99,6 +99,23 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void HitByAThrow_RunsTenPercentSlower_ThenRecovers()
+        {
+            var cfg = new MoveConfig();
+            var world = new BrushWorld();
+            world.Add(Brush.Box(new Vector3(0, -0.5f, 0), new Vector3(200, 0.5f, 200)));
+            var s = new MoveState { Position = new Vector3(0, cfg.HullHalfExtents.Y + 0.01f, 0) };
+            var cmd = new MoveCmd { Forward = 1f, Yaw = 0f };
+            for (int i = 0; i < 64 * 2; i++) PlayerMove.Step(ref s, in cmd, cfg, world, Dt);
+            s.SlowTime = 0.75f;
+            for (int i = 0; i < 40; i++) PlayerMove.Step(ref s, in cmd, cfg, world, Dt);
+            Assert.AreEqual(cfg.MaxSpeed * cfg.HitSlowFactor, PlayerMove.HorizontalSpeed(s.Velocity), 0.15f, "10 % slower, still running");
+            for (int i = 0; i < 64; i++) PlayerMove.Step(ref s, in cmd, cfg, world, Dt);
+            Assert.AreEqual(0f, s.SlowTime);
+            Assert.AreEqual(cfg.MaxSpeed, PlayerMove.HorizontalSpeed(s.Velocity), 0.1f, "back to full speed");
+        }
+
+        [Test]
         public void Rabbit_SprintsFasterThanRunning_ThenTires()
         {
             var world = new BrushWorld();

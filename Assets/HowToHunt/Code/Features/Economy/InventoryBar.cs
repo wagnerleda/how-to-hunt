@@ -12,7 +12,8 @@ namespace HowToHunt.Economy
 {
     /// <summary>
     /// The inventory bar at the bottom of the screen: tools first, then prey stacks. Number keys select a slot; the
-    /// selected tool is held (PlayerTools), or the selected prey is held in hand: Fire throws it, Q drops it.
+    /// selected tool is held (PlayerTools), or the selected prey is held in hand. Throw (Q) drops what you hold on a
+    /// tap and throws it when held (the longer, the further, capped).
     /// E picks up the item you look at (carcasses, drops). Text and icons change only when the inventory does.
     /// </summary>
     public sealed class InventoryBar : MonoBehaviour
@@ -29,6 +30,9 @@ namespace HowToHunt.Economy
         private int _selected;
         private int _shownCapacity = -1;
         private float _nextThrow;
+        private float _chargeStart = -1f;
+        private Image _chargeBack, _chargeFill;
+        private const float ChargeWidth = 220f, ChargeHeight = 6f;
         private ItemStack _heldItem;
         private PlayerTools _tools;
 
@@ -65,6 +69,13 @@ namespace HowToHunt.Economy
             }
             _label = Hud.Text("Held Label", new Vector2(0.5f, 0f), new Vector2(0f, SlotSize + 34f), 22f, TextAlignmentOptions.Center, Color.white);
             _label.rectTransform.sizeDelta = new Vector2(800f, 30f);
+            // Throw charge: a thin bar above the slots while Throw is held.
+            _chargeBack = Hud.Rect("Throw Charge", new Vector2(0.5f, 0f), new Vector2(0f, SlotSize + 14f), new Vector2(ChargeWidth + 4f, ChargeHeight + 4f), Frame);
+            _chargeFill = Hud.Rect("Fill", new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(0f, ChargeHeight), FrameSelected);
+            _chargeFill.rectTransform.SetParent(_chargeBack.rectTransform, false);
+            _chargeFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            _chargeBack.raycastTarget = _chargeFill.raycastTarget = false;
+            _chargeBack.gameObject.SetActive(false);
             EconomyNet.LocalChanged += OnChanged;
             Refresh();
         }
@@ -133,14 +144,14 @@ namespace HowToHunt.Economy
             {
                 ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(s.Content));
                 if (t != tools.Equipped || PlayerTools.HeldPrey != null) tools.SelectTool(t);
-                label = t != null ? $"{t.DisplayName}  ·  Q drop" : string.Empty;
+                label = t != null ? $"{t.DisplayName}  ·  {KeyBindings.DisplayName(GameAction.Throw)} tap drop, hold throw" : string.Empty;
             }
             else if (s.Kind == ItemKind.Prey)
             {
                 PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new ContentId(s.Content));
                 if (PlayerTools.HeldPrey != p) tools.HoldPrey(p);
                 string how = s.Captured ? "caught" : s.Quality == CarcassQuality.Ruined ? "ruined" : "killed";
-                label = p != null ? $"{p.DisplayName} ({how})  ·  {KeyBindings.DisplayName(GameAction.Fire)} throw  ·  Q drop" : string.Empty;
+                label = p != null ? $"{p.DisplayName} ({how})  ·  {KeyBindings.DisplayName(GameAction.Throw)} tap drop, hold throw" : string.Empty;
             }
             else
             {
@@ -174,7 +185,7 @@ namespace HowToHunt.Economy
                 _heldItem = default;
                 if (_tools != null) Select(_selected);
             }
-            if (PlayerTools.Local == null || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
+            if (PlayerTools.Local == null || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) { if (_chargeStart >= 0f) CancelCharge(); return; }
             Keyboard kb = Keyboard.current;
             Inventory inv = EconomyNet.Local.Inventory;
             if (kb != null)
@@ -184,26 +195,52 @@ namespace HowToHunt.Economy
             }
 
             ItemStack held = inv[_selected];
-            if (held.IsEmpty) return;
             Camera cam = Camera.main;
-            if (cam == null || Time.time < _nextThrow) return;
-            // Anything can be dropped (Q); prey can also be thrown (Fire). Tools use Fire themselves.
-            bool drop = kb != null && kb.qKey.wasPressedThisFrame;
-            bool throwIt = held.Kind == ItemKind.Prey && KeyBindings.WasPressedThisFrame(GameAction.Fire);
-            if (!drop && !throwIt) return;
+            if (held.IsEmpty || cam == null) { CancelCharge(); return; }
+
+            // One key for everything you hold (prey, tools): tap to drop, hold to charge a throw. The charge caps at
+            // sv_throw_charge seconds. Fire stays with the tool.
+            bool down = KeyBindings.IsPressed(GameAction.Throw);
+            if (_chargeStart < 0f)
+            {
+                if (down && KeyBindings.WasPressedThisFrame(GameAction.Throw) && Time.time >= _nextThrow) _chargeStart = Time.time;
+                return;
+            }
+            float heldFor = Time.time - _chargeStart;
+            float tap = EconomyNet.ThrowTapTime.Value;
+            float power = Mathf.Clamp01((heldFor - tap) / EconomyNet.ThrowChargeTime.Value);
+            PlayerTools.LocalThrowCharge = heldFor > tap ? Mathf.Max(power, 0.02f) : 0f;
+            ShowCharge(PlayerTools.LocalThrowCharge);
+            if (down) return;
+
+            CancelCharge();
             _nextThrow = Time.time + ThrowCooldown;
             Transform ct = cam.transform;
-            if (throwIt)
+            if (heldFor > tap)
             {
-                EconomyNet.RequestThrow(_selected, ct.position, ct.forward);
+                EconomyNet.RequestThrow(_selected, ct.position, ct.forward, power);
                 PlayerTools.NotifyThrow();
-                Sfx.Play2D("Kenney/cloth", 0.4f, Random.Range(1.1f, 1.25f));
+                Sfx.Play2D("Kenney/cloth", 0.3f + 0.2f * power, Random.Range(1.1f, 1.25f));
             }
             else
             {
                 EconomyNet.RequestDrop(_selected, ct.position, ct.forward);
                 Sfx.Play2D("Kenney/cloth", 0.3f, 0.9f);
             }
+        }
+
+        private void CancelCharge()
+        {
+            _chargeStart = -1f;
+            PlayerTools.LocalThrowCharge = 0f;
+            ShowCharge(0f);
+        }
+
+        private void ShowCharge(float charge)
+        {
+            bool show = charge > 0f;
+            if (_chargeBack.gameObject.activeSelf != show) _chargeBack.gameObject.SetActive(show);
+            if (show) _chargeFill.rectTransform.sizeDelta = new Vector2(ChargeWidth * charge, ChargeHeight);
         }
     }
 }

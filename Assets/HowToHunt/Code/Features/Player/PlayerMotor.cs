@@ -58,6 +58,7 @@ namespace HowToHunt.Player
             public bool JumpHeld;
             public bool Ducked;
             public byte Mode;
+            public float SlowTime;
             public Vector3 CheckpointFeet;
             public float CheckpointYaw;
             private uint _tick;
@@ -72,6 +73,7 @@ namespace HowToHunt.Player
                 JumpHeld = s.JumpHeld;
                 Ducked = s.Ducked;
                 Mode = (byte)s.Mode;
+                SlowTime = s.SlowTime;
                 _tick = 0;
             }
 
@@ -218,9 +220,19 @@ namespace HowToHunt.Player
             _state.JumpHeld = rd.JumpHeld;
             _state.Ducked = rd.Ducked;
             _state.Mode = (MoveMode)rd.Mode;
+            _state.SlowTime = rd.SlowTime;
             _checkpointFeet = rd.CheckpointFeet;
             _checkpointYaw = rd.CheckpointYaw;
             transform.position = rd.Position;
+        }
+
+        /// <summary>Host: hit by a thrown item. A little slower for a moment (sv_throw_slow), never stunned.</summary>
+        public void HostSlow(float seconds)
+        {
+            if (!IsServerStarted) return;
+            _state.SlowTime = Mathf.Max(_state.SlowTime, seconds);
+            float k = MovementCvars.Config.HitSlowFactor;
+            _state.Velocity = new System.Numerics.Vector3(_state.Velocity.X * k, _state.Velocity.Y, _state.Velocity.Z * k);
         }
 
         /// <summary>Cheat: toggle noclip. Validated on the host (sv_cheats).</summary>

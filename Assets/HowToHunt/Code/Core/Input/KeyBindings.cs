@@ -17,6 +17,7 @@ namespace HowToHunt.Core
         Scoreboard,
         Interact,
         Sprint,
+        Throw,
     }
 
     /// <summary>
@@ -38,6 +39,7 @@ namespace HowToHunt.Core
             new StringCvar("bind_scoreboard", nameof(Key.Tab), "Show the party scoreboard while held.", CvarFlags.Archive),
             new StringCvar("bind_interact", nameof(Key.E), "Use a camp station (sell, shop).", CvarFlags.Archive),
             new StringCvar("bind_sprint", nameof(Key.LeftShift), "Sprint (a modest boost; bunny hopping is faster).", CvarFlags.Archive),
+            new StringCvar("bind_throw", nameof(Key.Q), "Tap to drop what you hold; hold to charge a throw (further the longer you hold).", CvarFlags.Archive),
         };
 
         private static readonly Key[] Resolved = new Key[Cvars.Length];
