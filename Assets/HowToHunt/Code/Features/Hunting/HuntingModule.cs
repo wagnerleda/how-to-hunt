@@ -46,6 +46,8 @@ namespace HowToHunt.Hunting
         {
             GameObject root = Game.Root.gameObject;
             root.AddComponent<HitFeedback>();
+            root.AddComponent<BulletFx>();
+            root.AddComponent<AmmoHud>();
             root.AddComponent<HuntFeedback>();
             root.AddComponent<TakedownFx>();
             root.AddComponent<ViewmodelController>();

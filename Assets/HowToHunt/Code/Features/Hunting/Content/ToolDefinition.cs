@@ -33,6 +33,50 @@ namespace HowToHunt.Hunting
         public float RecoilSide;
         [Tooltip("Firearms: fraction of the kick that comes back down by itself (the rest you pull down).")]
         [Range(0f, 1f)] public float RecoilRecover = 0.5f;
+        [Header("Firearm")]
+        [Tooltip("Rounds per magazine. Ammo is infinite; magazines are not (reload with R).")]
+        public int MagazineSize = 6;
+        public float ReloadSeconds = 2f;
+        [Tooltip("Holds the trigger to keep firing (SMGs, rifles); otherwise one shot per click.")]
+        public bool Automatic;
+        [Tooltip("Muzzle speed, m/s. Bullets fly (tracers), they are not instant.")]
+        public float BulletSpeed = 380f;
+        [Tooltip("Bullet drop, m/s².")]
+        public float BulletGravity = 4f;
+        [Tooltip("Full damage up to this distance (m), falling to MinDamageFraction at FalloffEnd.")]
+        public float FalloffStart = 25f;
+        public float FalloffEnd = 70f;
+        [Range(0f, 1f)] public float MinDamageFraction = 0.5f;
+        [Tooltip("Hip-fire cone half-angle at rest, degrees.")]
+        public float SpreadDegrees = 1f;
+        [Tooltip("Extra cone per m/s of your speed. 0 for a scout rifle that stays accurate on the move.")]
+        public float MoveSpreadPerMps = 0.35f;
+        public float MaxSpreadDegrees = 6f;
+        [Tooltip("Cone multiplier while aiming down sights.")]
+        [Range(0f, 1f)] public float AdsSpreadFactor = 0.3f;
+        [Tooltip("Optical zoom while aiming down sights (1 = iron sights, no zoom).")]
+        public float AdsZoom = 1.2f;
+        [Tooltip("Model space: the sight point that lines up with your eye when aiming down sights.")]
+        public Vector3 SightOffset = new Vector3(0f, 0.09f, 0.05f);
+        [Tooltip("Model space: where bullets leave (end of the barrel). They fly along the model's +Z.")]
+        public Vector3 MuzzleOffset = new Vector3(0f, 0.07f, 0.26f);
+        [Tooltip("Weight class 0-3: heavy weapons slow you while held (sv_load_slow per class). Light tools are 0.")]
+        [Range(0, 3)] public int Weight;
+
+        public GunBallistics Ballistics => new GunBallistics
+        {
+            BulletSpeed = BulletSpeed,
+            BulletGravity = BulletGravity,
+            FalloffStart = FalloffStart,
+            FalloffEnd = FalloffEnd,
+            MinDamageFraction = MinDamageFraction,
+            SpreadDegrees = SpreadDegrees,
+            MoveSpreadPerMps = MoveSpreadPerMps,
+            MaxSpreadDegrees = MaxSpreadDegrees,
+            AdsSpreadFactor = AdsSpreadFactor,
+        };
+
+        [Header("Use")]
         [Tooltip("Seconds between uses.")]
         public float Cooldown = 0.5f;
         [Tooltip("Hotbar slot 1-9.")]
@@ -49,6 +93,8 @@ namespace HowToHunt.Hunting
             if (Mode == ToolMode.Kill && Damage <= 0) errors.Add("Kill tools need Damage > 0.");
             if (Range <= 0 || Cooldown <= 0) errors.Add("Range and Cooldown must be > 0.");
             if (Slot < 1 || Slot > 9) errors.Add("Slot must be 1-9.");
+            if (Archetype == ToolArchetype.Firearm && (MagazineSize <= 0 || ReloadSeconds <= 0 || BulletSpeed <= 0))
+                errors.Add("Firearms need MagazineSize, ReloadSeconds and BulletSpeed > 0.");
         }
     }
 

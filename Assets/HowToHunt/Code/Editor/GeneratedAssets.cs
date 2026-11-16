@@ -38,6 +38,7 @@ namespace HowToHunt.Editor
             BuildPlayerPrefab();
             BuildNetworkManagerPrefab();
             BuildButterflyPrefab();
+            BuildScoutPrefab();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
@@ -193,6 +194,50 @@ namespace HowToHunt.Editor
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        public const string ScoutPrefabPath = Root + "/Prefabs/Weapons/ScoutRifle.prefab";
+
+        /// <summary>
+        /// Stand-in scout rifle built from primitives (grip at the origin, barrel along +Z, scope on top), until real
+        /// weapon models land (PLAN Phase 4: owner-approved source). Ball hands, as agreed for the graybox.
+        /// </summary>
+        private static void BuildScoutPrefab()
+        {
+            EnsureFolder(Path.GetDirectoryName(ScoutPrefabPath)!.Replace('\\', '/'));
+            var root = new GameObject("ScoutRifle");
+            try
+            {
+                Part(root, "Stock", PrimitiveType.Cube, new Vector3(0f, -0.035f, -0.24f), new Vector3(0.045f, 0.1f, 0.3f), Vector3.zero, "Wood");
+                Part(root, "Receiver", PrimitiveType.Cube, new Vector3(0f, 0.02f, 0.06f), new Vector3(0.04f, 0.06f, 0.3f), Vector3.zero, "Gunmetal");
+                Part(root, "Fore-end", PrimitiveType.Cube, new Vector3(0f, -0.002f, 0.33f), new Vector3(0.046f, 0.045f, 0.28f), Vector3.zero, "Wood");
+                Part(root, "Barrel", PrimitiveType.Cylinder, new Vector3(0f, 0.03f, 0.53f), new Vector3(0.022f, 0.25f, 0.022f), new Vector3(90f, 0f, 0f), "Gunmetal");
+                Part(root, "Scope", PrimitiveType.Cylinder, new Vector3(0f, 0.09f, 0.07f), new Vector3(0.036f, 0.13f, 0.036f), new Vector3(90f, 0f, 0f), "Gunmetal");
+                Part(root, "Scope Mount", PrimitiveType.Cube, new Vector3(0f, 0.062f, 0.07f), new Vector3(0.02f, 0.03f, 0.1f), Vector3.zero, "Gunmetal");
+                Part(root, "Bolt", PrimitiveType.Cube, new Vector3(0.035f, 0.035f, -0.02f), new Vector3(0.05f, 0.018f, 0.018f), Vector3.zero, "Gunmetal");
+                Part(root, "Grip", PrimitiveType.Cube, new Vector3(0f, -0.05f, -0.03f), new Vector3(0.035f, 0.09f, 0.04f), new Vector3(-15f, 0f, 0f), "Wood");
+                Part(root, "Hand", PrimitiveType.Sphere, new Vector3(0.01f, -0.075f, -0.03f), Vector3.one * 0.095f, Vector3.zero, "PlayerSuit");
+                Part(root, "FrontHand", PrimitiveType.Sphere, new Vector3(-0.005f, -0.045f, 0.34f), Vector3.one * 0.085f, Vector3.zero, "PlayerSuit");
+                PrefabUtility.SaveAsPrefabAsset(root, ScoutPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void Part(GameObject root, string name, PrimitiveType type, Vector3 position, Vector3 scale, Vector3 euler, string material)
+        {
+            GameObject g = GameObject.CreatePrimitive(type);
+            g.name = name;
+            UnityEngine.Object.DestroyImmediate(g.GetComponent<Collider>());
+            g.transform.SetParent(root.transform, false);
+            g.transform.localPosition = position;
+            g.transform.localRotation = Quaternion.Euler(euler);
+            g.transform.localScale = scale;
+            var r = g.GetComponent<MeshRenderer>();
+            r.sharedMaterial = Palette.Get(material);
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         public const string ButterflyModelPath = Root + "/Art/Models/Butterfly/Butterfly.fbx";

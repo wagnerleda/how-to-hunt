@@ -27,6 +27,7 @@ namespace HowToHunt.Editor
             { "Hazard", (Hex("C8553D"), 0.3f) },
             { "Pad", (Hex("6C63FF"), 0.4f) },
             { "Stripe", (Hex("CDB98A"), 0.05f) },
+            { "Gunmetal", (Hex("33383D"), 0.45f) },
         };
 
         public static Material Get(string name)

@@ -8,21 +8,17 @@ using UnityEngine.UI;
 namespace HowToHunt.Hunting
 {
     /// <summary>
-    /// Shot and hit feedback: tracer, recoil, shot sound, hit marker (red for headshots and kills), floating damage
+    /// Shot and hit feedback: shot sound (tracers and impacts: BulletFx), hit marker (red for headshots and kills), floating damage
     /// numbers, kill thunk, and the cl_showhits debug view (blue = where you saw the target, green = where the host
     /// checked it after rewinding; they should overlap). Everything pooled.
     /// </summary>
     public sealed class HitFeedback : MonoBehaviour
     {
-        private const int TracerCount = 16;
         private const int NumberCount = 12;
 
         private static HitFeedback _instance;
         private static double _lastSeenTick;
 
-        private LineRenderer[] _tracers;
-        private float[] _tracerLife;
-        private int _nextTracer;
         private TextMeshPro[] _numbers;
         private float[] _numberLife;
         private int _nextNumber;
@@ -37,23 +33,6 @@ namespace HowToHunt.Hunting
         private void Awake()
         {
             _instance = this;
-            Material tracerMat = Resources.Load<Material>("FX/M_Tracer");
-            _tracers = new LineRenderer[TracerCount];
-            _tracerLife = new float[TracerCount];
-            for (int i = 0; i < TracerCount; i++)
-            {
-                var go = new GameObject($"Tracer {i}");
-                go.transform.SetParent(transform, false);
-                LineRenderer lr = go.AddComponent<LineRenderer>();
-                lr.positionCount = 2;
-                lr.startWidth = 0.025f;
-                lr.endWidth = 0.01f;
-                lr.sharedMaterial = tracerMat;
-                lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                lr.enabled = false;
-                _tracers[i] = lr;
-            }
-
             _numbers = new TextMeshPro[NumberCount];
             _numberLife = new float[NumberCount];
             for (int i = 0; i < NumberCount; i++)
@@ -131,21 +110,16 @@ namespace HowToHunt.Hunting
         private void OnLocalUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
             if (tool.Archetype != Sim.Hunting.ToolArchetype.Firearm) return;
-            Vector3 muzzle = origin + dir * 0.6f + Camera.main.transform.right * 0.18f - Camera.main.transform.up * 0.12f;
-            // Cosmetic tracer end: stop at level geometry (the host decides what was really hit).
-            Vector3 end = origin + dir * tool.Range;
-            var tr = SimWorld.Current.TraceBox(origin.ToSim(), end.ToSim(), System.Numerics.Vector3.Zero);
-            if (tr.Hit) end = tr.EndPosition.ToUnity();
-            Tracer(muzzle, end);
+            // The bullet leaves the barrel (origin is the muzzle) and flies; its tracer and any impact are drawn by BulletFx.
+            BulletFx.Fire(tool, origin, dir);
             _audio.pitch = Random.Range(0.96f, 1.04f);
             _audio.PlayOneShot(_shot, 0.35f);
-            if (PlayerCamera.Instance != null) PlayerCamera.Instance.Kick(1.2f);
         }
 
-        public static void RemoteShot(Vector3 shooter, Vector3 origin, Vector3 end)
+        public static void RemoteShot(Vector3 shooter, ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
             if (_instance == null) return;
-            _instance.Tracer(origin, end);
+            BulletFx.Fire(tool, origin, dir);
             _instance._remoteAudio.transform.position = shooter;
             _instance._remoteAudio.PlayOneShot(_instance._shot, 0.4f);
         }
@@ -182,16 +156,6 @@ namespace HowToHunt.Hunting
             _instance._markerLife = seconds;
         }
 
-        private void Tracer(Vector3 from, Vector3 to)
-        {
-            LineRenderer lr = _tracers[_nextTracer];
-            _tracerLife[_nextTracer] = 0.07f;
-            _nextTracer = (_nextTracer + 1) % TracerCount;
-            lr.SetPosition(0, from);
-            lr.SetPosition(1, to);
-            lr.enabled = true;
-        }
-
         private void ShowNumber(Vector3 point, float damage, bool strong)
         {
             TextMeshPro t = _numbers[_nextNumber];
@@ -206,13 +170,6 @@ namespace HowToHunt.Hunting
         private void LateUpdate()
         {
             float dt = Time.deltaTime;
-            for (int i = 0; i < TracerCount; i++)
-            {
-                if (_tracerLife[i] <= 0f) continue;
-                _tracerLife[i] -= dt;
-                if (_tracerLife[i] <= 0f) _tracers[i].enabled = false;
-            }
-
             Camera cam = Camera.main;
             for (int i = 0; i < NumberCount; i++)
             {

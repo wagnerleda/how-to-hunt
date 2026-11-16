@@ -28,6 +28,22 @@ MonoBehaviour:
   RecoilUp: 0
   RecoilSide: 0
   RecoilRecover: 0.5
+  MagazineSize: 6
+  ReloadSeconds: 2
+  Automatic: 0
+  BulletSpeed: 380
+  BulletGravity: 4
+  FalloffStart: 25
+  FalloffEnd: 70
+  MinDamageFraction: 0.5
+  SpreadDegrees: 1
+  MoveSpreadPerMps: 0.35
+  MaxSpreadDegrees: 6
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.2
+  SightOffset: {x: 0, y: 0.09, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.07, z: 0.26}
+  Weight: 0
   Cooldown: 0.55
   Slot: 1
   StartOwned: 1

@@ -18,6 +18,9 @@ namespace HowToHunt.Core
         Interact,
         Sprint,
         Throw,
+        Aim,
+        Reload,
+        Inspect,
     }
 
     /// <summary>
@@ -40,6 +43,9 @@ namespace HowToHunt.Core
             new StringCvar("bind_interact", nameof(Key.E), "Use a camp station (sell, shop).", CvarFlags.Archive),
             new StringCvar("bind_sprint", nameof(Key.LeftShift), "Sprint (a modest boost; bunny hopping is faster).", CvarFlags.Archive),
             new StringCvar("bind_throw", nameof(Key.Q), "Tap to drop what you hold; hold to charge a throw (further the longer you hold).", CvarFlags.Archive),
+            new StringCvar("bind_aim", "Mouse1", "Aim down sights while held (Mouse1 = right button, or a key name).", CvarFlags.Archive),
+            new StringCvar("bind_reload", nameof(Key.R), "Reload the held gun.", CvarFlags.Archive),
+            new StringCvar("bind_inspect", nameof(Key.F), "Inspect what you hold (any action cancels it).", CvarFlags.Archive),
         };
 
         private static readonly Key[] Resolved = new Key[Cvars.Length];
@@ -61,6 +67,8 @@ namespace HowToHunt.Core
         {
             string value = Cvars[(int)action].Value;
             if (value == "Mouse0") return "Left mouse";
+            if (value == "Mouse1") return "Right mouse";
+            if (value == "Mouse2") return "Middle mouse";
             Key key = Resolved[(int)action];
             if (key == Key.None) return value;
             Keyboard kb = Keyboard.current;
@@ -75,7 +83,9 @@ namespace HowToHunt.Core
         public static bool IsPressed(GameAction action)
         {
             int i = (int)action;
-            if (Cvars[i].Value == "Mouse0") return Mouse.current != null && Mouse.current.leftButton.isPressed;
+            ButtonControl mb = MouseButton(Cvars[i].Value);
+            if (mb != null) return mb.isPressed;
+            if (Cvars[i].Value.StartsWith("Mouse", StringComparison.Ordinal)) return false;
             Keyboard kb = Keyboard.current;
             return kb != null && Resolved[i] != Key.None && kb[Resolved[i]].isPressed;
         }
@@ -83,7 +93,9 @@ namespace HowToHunt.Core
         public static bool WasPressedThisFrame(GameAction action)
         {
             int i = (int)action;
-            if (Cvars[i].Value == "Mouse0") return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+            ButtonControl mb = MouseButton(Cvars[i].Value);
+            if (mb != null) return mb.wasPressedThisFrame;
+            if (Cvars[i].Value.StartsWith("Mouse", StringComparison.Ordinal)) return false;
             Keyboard kb = Keyboard.current;
             return kb != null && Resolved[i] != Key.None && kb[Resolved[i]].wasPressedThisFrame;
         }
@@ -100,6 +112,19 @@ namespace HowToHunt.Core
                 if (k.wasPressedThisFrame) return k.keyCode;
             }
             return Key.None;
+        }
+
+        private static ButtonControl MouseButton(string value)
+        {
+            Mouse m = Mouse.current;
+            if (m == null) return null;
+            switch (value)
+            {
+                case "Mouse0": return m.leftButton;
+                case "Mouse1": return m.rightButton;
+                case "Mouse2": return m.middleButton;
+                default: return null;
+            }
         }
 
         private static void Resolve(int i)

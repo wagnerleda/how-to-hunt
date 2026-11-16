@@ -44,6 +44,13 @@ namespace HowToHunt.Hunting
         private Vector3 _springPos, _springVel;
         private Vector3 _tilt, _tiltVel;
 
+        // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
+        private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
+        private const float AdsSeconds = 0.16f, AdsForward = 0.2f, InspectSeconds = 2.6f;
+        private Vector3 _kick, _kickVel;
+        private float _ads;
+        private float _inspectStart = -10f;
+
         private void Awake()
         {
             _holder = new GameObject("Viewmodel").transform;
@@ -52,6 +59,9 @@ namespace HowToHunt.Hunting
             PlayerTools.LocalThrow += OnThrow;
             PlayerTools.LocalUse += OnUse;
             PlayerMotor.MoveFeedback += OnMoveFeedback;
+            PlayerTools.LocalInspect += OnInspect;
+            PlayerTools.LocalReloadStarted += OnReload;
+            PlayerTools.Muzzle = TryMuzzle;
         }
 
         private void OnDestroy()
@@ -61,6 +71,11 @@ namespace HowToHunt.Hunting
             PlayerTools.LocalThrow -= OnThrow;
             PlayerTools.LocalUse -= OnUse;
             PlayerMotor.MoveFeedback -= OnMoveFeedback;
+            PlayerTools.LocalInspect -= OnInspect;
+            PlayerTools.LocalReloadStarted -= OnReload;
+            if (PlayerTools.Muzzle == TryMuzzle) PlayerTools.Muzzle = null;
+            PlayerCamera.Zoom = 1f;
+            PlayerInputSampler.SensitivityScale = 1f;
             if (_holder != null) Destroy(_holder.gameObject);
         }
 
@@ -108,8 +123,28 @@ namespace HowToHunt.Hunting
             rotation = Quaternion.Euler(-35f * back + 40f * fling, 0f, 0f);
         }
 
+        private void OnInspect() => _inspectStart = Time.time;
+
+        private void OnReload(ToolDefinition tool) => _inspectStart = -10f;
+
+        /// <summary>Where the held gun's barrel points, for PlayerTools: bullets leave along it (the weapon aims, not the camera).</summary>
+        private bool TryMuzzle(ToolDefinition tool, out Vector3 origin, out Vector3 direction)
+        {
+            origin = direction = Vector3.zero;
+            if (tool != _tool || _camera == null || !_holder.gameObject.activeInHierarchy) return false;
+            origin = _holder.TransformPoint(tool.MuzzleOffset);
+            direction = _holder.forward;
+            // Never shoot from the far side of a wall the barrel pokes into: start at the wall instead.
+            Vector3 eye = _camera.transform.position;
+            var tr = SimWorld.Current.TraceBox(eye.ToSim(), origin.ToSim(), System.Numerics.Vector3.Zero);
+            if (tr.Hit || tr.StartSolid) origin = eye + (origin - eye) * Mathf.Max(0f, tr.Fraction - 0.05f);
+            return true;
+        }
+
         private void OnEquipped(ToolDefinition tool)
         {
+            _inspectStart = -10f;
+            _kick = _kickVel = Vector3.zero;
             _heldPrey = null;
             _tool = tool;
             if (_shown != null) _shown.SetActive(false);
@@ -133,6 +168,15 @@ namespace HowToHunt.Hunting
         private void OnUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
             _useTime = Time.time;
+            _inspectStart = -10f;
+            if (tool.Archetype == ToolArchetype.Firearm)
+            {
+                // The gun jumps in the hand first (the view follows loosely, see PlayerInputSampler.Kick).
+                float scale = HuntingCvars.RecoilScale.Value * (PlayerTools.LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
+                _kickVel.x += tool.RecoilUp * KickImpulse * scale;
+                _kickVel.y += Random.Range(-0.5f, 1f) * tool.RecoilSide * KickImpulse * scale;
+                _kickVel.z += KickBackImpulse * scale;
+            }
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
             else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.28f, Random.Range(0.9f, 1.12f));
@@ -220,8 +264,7 @@ namespace HowToHunt.Hunting
             }
             else if (_tool.Archetype == ToolArchetype.Firearm)
             {
-                float t = (Time.time - _useTime) / Mathf.Max(0.12f, _tool.Cooldown * 0.75f);
-                Recoil(t >= 0f && t < 1f ? t : 1f, out offset, out use);
+                GunPose(dt, out offset, out use);
             }
             else if (_tool.Archetype == ToolArchetype.Net)
             {
@@ -235,8 +278,54 @@ namespace HowToHunt.Hunting
             // Big sweeps turn the whole arm around the shoulder (below-right of the eye) like a real arm, not around the grip.
             Quaternion shoulder = Quaternion.Euler(0f, shoulderYaw, 0f);
             Vector3 grip = Shoulder + shoulder * (Rest + offset - Shoulder);
-            _holder.localPosition = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
-            _holder.localRotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
+            Vector3 position = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
+            Quaternion rotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
+
+            // Inspect: bring it up and turn it over to show it off (any action cancels it).
+            float it = (Time.time - _inspectStart) / InspectSeconds;
+            if (it >= 0f && it < 1f && _ads < 0.01f)
+            {
+                float e = Smooth(Mathf.Clamp01(it * 5f)) * Smooth(Mathf.Clamp01((1f - it) * 5f));
+                float turn = Mathf.Sin(it * Mathf.PI);
+                position += new Vector3(-0.13f, 0.06f, -0.06f) * e;
+                rotation *= Quaternion.Euler(-12f * e, 75f * turn * e, -35f * e + 25f * Mathf.Sin(it * Mathf.PI * 2f) * e);
+            }
+
+            // Aim down sights: the sight comes to the eye on the view axis; sway and bob mostly settle.
+            bool gun = _tool != null && _tool.Archetype == ToolArchetype.Firearm;
+            _ads = Mathf.MoveTowards(_ads, gun && PlayerTools.LocalAiming ? 1f : 0f, dt / AdsSeconds);
+            float a = Smooth(_ads);
+            if (a > 0f)
+            {
+                Quaternion adsRot = Quaternion.Slerp(Quaternion.identity, _lag, 0.25f) * use;
+                Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * _tool.SightOffset + (bob + _springPos) * 0.2f;
+                position = Vector3.Lerp(position, adsPos, a);
+                rotation = Quaternion.Slerp(rotation, adsRot, a);
+            }
+            float zoom = gun ? Mathf.Lerp(1f, Mathf.Max(1f, _tool.AdsZoom), a) : 1f;
+            PlayerCamera.Zoom = zoom;
+            PlayerInputSampler.SensitivityScale = 1f / zoom;
+            _holder.localPosition = position;
+            _holder.localRotation = rotation;
+        }
+
+        /// <summary>
+        /// Gun in hand: the kick spring (shots push it up, aside and back; it springs home with a little overshoot), a
+        /// reload dip (tilted down and in while PlayerTools.LocalReload runs).
+        /// </summary>
+        private void GunPose(float dt, out Vector3 offset, out Quaternion rotation)
+        {
+            _kickVel += (-_kick * KickStiffness - _kickVel * KickDamping) * dt;
+            _kick += _kickVel * dt;
+            offset = new Vector3(0f, 0.004f * _kick.x, -_kick.z);
+            rotation = Quaternion.Euler(-_kick.x, _kick.y, 0f);
+            float r = PlayerTools.LocalReload;
+            if (r >= 0f)
+            {
+                float w = Smooth(Mathf.Clamp01(r * 5f)) * Smooth(Mathf.Clamp01((1f - r) * 5f));
+                offset += new Vector3(-0.06f, -0.1f, -0.04f) * w;
+                rotation *= Quaternion.Euler(30f * w, -25f * w, 45f * w + 8f * Mathf.Sin(r * Mathf.PI * 6f) * w);
+            }
         }
 
         // --- melee sweeps -----------------------------------------------------------------------------------
@@ -385,12 +474,5 @@ namespace HowToHunt.Hunting
             }
         }
 
-        private static void Recoil(float t, out Vector3 offset, out Quaternion rotation)
-        {
-            // Instant kick back and up, springy return.
-            float k = Mathf.Exp(-t * 6f) * (1f - t);
-            offset = new Vector3(0f, 0.015f * k, -0.07f * k);
-            rotation = Quaternion.Euler(-14f * k, 0f, 0f);
-        }
     }
 }

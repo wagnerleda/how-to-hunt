@@ -14,6 +14,9 @@ namespace HowToHunt.Sim.Movement
         Sprint = 1 << 2,
         /// <summary>Per-player accessibility option: holding jump keeps hopping. Sent with every cmd so host and client agree.</summary>
         AutoHop = 1 << 3,
+        /// <summary>Two bits: how heavy the held weapon is (0 light .. 3 very heavy). Heavy weapons slow you down.</summary>
+        LoadLow = 1 << 4,
+        LoadHigh = 1 << 5,
     }
 
     public enum MoveMode : byte
@@ -48,6 +51,11 @@ namespace HowToHunt.Sim.Movement
         public MoveButtons Buttons;
 
         public bool Has(MoveButtons b) => (Buttons & b) != 0;
+
+        /// <summary>Held weapon weight class 0..3 (MoveButtons.LoadLow/LoadHigh).</summary>
+        public int Load => ((int)Buttons >> 4) & 3;
+
+        public static MoveButtons LoadButtons(int level) => (MoveButtons)((Math.Clamp(level, 0, 3) & 3) << 4);
     }
 
     /// <summary>Complete movement state of one player. Everything prediction must restore on reconcile.</summary>
@@ -98,6 +106,8 @@ namespace HowToHunt.Sim.Movement
         public float WaterDrag = 3f;
         /// <summary>Speed multiplier while slowed by a thrown item (MoveState.SlowTime).</summary>
         public float HitSlowFactor = 0.9f;
+        /// <summary>Ground speed lost per weapon weight class (MoveCmd.Load), as a fraction.</summary>
+        public float LoadSlowPerLevel = 0.06f;
         public float JumpSpeed = 7.67f;           // 301.99 u/s
         public float MaxVelocity = 88.9f;         // sv_maxvelocity 3500
         /// <summary>Surfaces with normal.y below this are too steep to stand on: you slide (surf).</summary>

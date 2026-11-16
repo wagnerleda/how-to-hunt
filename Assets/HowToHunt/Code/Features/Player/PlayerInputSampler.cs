@@ -31,31 +31,40 @@ namespace HowToHunt.Player
         public float Yaw { get; set; }
         public float Pitch { get; set; }
 
-        // Recoil still to settle back by itself, degrees.
-        private float _settlePitch, _settleYaw;
+        // Recoil the view still has to follow, degrees.
+        private float _followPitch, _followYaw;
 
-        /// <summary>Weapon kick: the aim jumps up (and sideways) now; <paramref name="recover"/> of it settles back over a moment.</summary>
+        /// <summary>Held weapon weight class 0..3, set by the tools feature (heavy weapons slow you down).</summary>
+        public static int LoadLevel { get; set; }
+
+        /// <summary>Mouse sensitivity multiplier (aiming down a zoomed sight turns slower).</summary>
+        public static float SensitivityScale { get; set; } = 1f;
+
+        /// <summary>
+        /// Weapon kick, physical style: the gun jumps in the hand (the viewmodel does that) and the view follows
+        /// loosely. Only the part that doesn't recover (1 - <paramref name="recover"/>) moves the view, eased in over a
+        /// moment, so fast fire climbs smoothly instead of snapping the camera.
+        /// </summary>
         public void Kick(float up, float side, float recover)
         {
-            Pitch = Mathf.Clamp(Pitch - up, -89f, 89f);
-            Yaw = Mathf.Repeat(Yaw + side, 360f);
-            _settlePitch += up * recover;
-            _settleYaw += side * recover;
+            float keep = 1f - Mathf.Clamp01(recover);
+            _followPitch += up * keep;
+            _followYaw += side * keep;
         }
 
         /// <summary>Call every frame.</summary>
         public void UpdateFrame()
         {
             if (Playback != null) return;
-            if (_settlePitch != 0f || _settleYaw != 0f)
+            if (_followPitch != 0f || _followYaw != 0f)
             {
                 float k = 1f - Mathf.Exp(-MovementCvars.RecoilSettleSpeed.Value * Time.deltaTime);
-                float p = _settlePitch * k, y = _settleYaw * k;
-                Pitch = Mathf.Clamp(Pitch + p, -89f, 89f);
-                Yaw = Mathf.Repeat(Yaw - y, 360f);
-                _settlePitch -= p;
-                _settleYaw -= y;
-                if (Mathf.Abs(_settlePitch) < 0.01f && Mathf.Abs(_settleYaw) < 0.01f) _settlePitch = _settleYaw = 0f;
+                float p = _followPitch * k, y = _followYaw * k;
+                Pitch = Mathf.Clamp(Pitch - p, -89f, 89f);
+                Yaw = Mathf.Repeat(Yaw + y, 360f);
+                _followPitch -= p;
+                _followYaw -= y;
+                if (Mathf.Abs(_followPitch) < 0.01f && Mathf.Abs(_followYaw) < 0.01f) _followPitch = _followYaw = 0f;
             }
             if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
             Mouse mouse = Mouse.current;
@@ -63,7 +72,7 @@ namespace HowToHunt.Player
             if (mouse != null)
             {
                 Vector2 delta = mouse.delta.ReadValue();
-                float k = DegreesPerCount * CoreCvars.Sensitivity.Value;
+                float k = DegreesPerCount * CoreCvars.Sensitivity.Value * SensitivityScale;
                 Yaw = Mathf.Repeat(Yaw + delta.x * k, 360f);
                 float dy = delta.y * k * (CoreCvars.InvertY.Value ? 1f : -1f);
                 Pitch = Mathf.Clamp(Pitch + dy, -89f, 89f);
@@ -105,6 +114,7 @@ namespace HowToHunt.Player
             if (KeyBindings.IsPressed(GameAction.Jump) || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
             if (KeyBindings.IsPressed(GameAction.Crouch)) cmd.Buttons |= MoveButtons.Duck;
             if (KeyBindings.IsPressed(GameAction.Sprint)) cmd.Buttons |= MoveButtons.Sprint;
+            cmd.Buttons |= MoveCmd.LoadButtons(LoadLevel);
             if (MovementCvars.ClientAutoHop.Value) cmd.Buttons |= MoveButtons.AutoHop;
             _jumpLatched = false;
             return cmd;

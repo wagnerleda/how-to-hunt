@@ -136,6 +136,24 @@ namespace HowToHunt.Editor
                 t.RecoilUp = 7f;
                 t.RecoilSide = 2.2f;
                 t.RecoilRecover = 0.5f;
+                // Phase 4: a real six-shooter. Bullets fly at 360 m/s with a little drop, lose damage past 25 m, and
+                // spray when you shoot on the run; aim down the sights to tighten it.
+                t.MagazineSize = 6;
+                t.ReloadSeconds = 2.2f;
+                t.Automatic = false;
+                t.BulletSpeed = 360f;
+                t.BulletGravity = 4f;
+                t.FalloffStart = 25f;
+                t.FalloffEnd = 70f;
+                t.MinDamageFraction = 0.55f;
+                t.SpreadDegrees = 1.2f;
+                t.MoveSpreadPerMps = 0.4f;
+                t.MaxSpreadDegrees = 7f;
+                t.AdsSpreadFactor = 0.25f;
+                t.AdsZoom = 1.15f;
+                t.SightOffset = new Vector3(0f, 0.07f, 0f);
+                t.MuzzleOffset = new Vector3(0f, 0.04f, 0.29f);
+                t.Weight = 0;
                 t.HeadshotMultiplier = 2f;
                 t.Range = 150f;
                 t.ArcDegrees = 0f;
@@ -143,6 +161,41 @@ namespace HowToHunt.Editor
                 t.Slot = 3;
                 t.StartOwned = false;
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");            });
+
+            Asset<ToolDefinition>("Tools/Tool_Scout", "tool.scout", "Scout Rifle",
+                "Bolt-action with a scope. Stays accurate on the move; far too much gun for small prey.", t =>
+            {
+                t.Archetype = ToolArchetype.Firearm;
+                t.Mode = ToolMode.Kill;
+                t.Tier = 3;
+                t.Damage = 55f;
+                t.HeadshotMultiplier = 2f;
+                t.Range = 300f;
+                t.ArcDegrees = 0f;
+                t.Cooldown = 1.1f;
+                t.Slot = 4;
+                t.StartOwned = false; // no shop yet: sv_alltools 1 (cheats) until the workshop and later areas (Phase 5)
+                t.Knockback = 9f;
+                t.RecoilUp = 10f;
+                t.RecoilSide = 1.2f;
+                t.RecoilRecover = 0.65f;
+                t.MagazineSize = 5;
+                t.ReloadSeconds = 2.8f;
+                t.BulletSpeed = 820f;
+                t.BulletGravity = 6f;
+                t.FalloffStart = 120f;
+                t.FalloffEnd = 300f;
+                t.MinDamageFraction = 0.75f;
+                t.SpreadDegrees = 0.15f;
+                t.MoveSpreadPerMps = 0f; // the scout exception: moving doesn't spoil the shot
+                t.MaxSpreadDegrees = 0.15f;
+                t.AdsSpreadFactor = 0.5f;
+                t.AdsZoom = 3.5f;
+                t.SightOffset = new Vector3(0f, 0.09f, -0.06f);
+                t.MuzzleOffset = new Vector3(0f, 0.03f, 0.78f);
+                t.Weight = 1; // a little heavy: slows you slightly while held
+                t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ScoutPrefabPath);
+            });
 
             UpgradeDefinition sturdy = Asset<UpgradeDefinition>("Upgrades/Upgrade_SturdyNet", "upgrade.net_sturdy", "Sturdy Net",
                 "Strong enough to hold a rabbit.", u =>

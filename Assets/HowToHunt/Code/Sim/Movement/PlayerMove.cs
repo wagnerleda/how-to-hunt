@@ -44,6 +44,7 @@ namespace HowToHunt.Sim.Movement
             ComputeWish(in cmd, cfg, s.Ducked && s.OnGround, out Vector3 wishDir, out float wishSpeed);
             if (s.OnGround && !s.Ducked && cmd.Has(MoveButtons.Sprint) && cmd.Forward > 0.1f) wishSpeed *= cfg.SprintFactor;
             if (s.InWater) wishSpeed *= cfg.WaterSpeedFactor;
+            if (cmd.Load > 0) wishSpeed *= MathF.Max(0f, 1f - cmd.Load * cfg.LoadSlowPerLevel); // heavy weapon in hand
             if (s.SlowTime > 0f)
             {
                 // Hit by a thrown item: a little slower for a moment (never a stun).

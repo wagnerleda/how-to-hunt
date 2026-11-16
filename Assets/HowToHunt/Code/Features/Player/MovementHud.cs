@@ -16,6 +16,9 @@ namespace HowToHunt.Player
         public static readonly IntCvar ShowSpeed = new IntCvar("cl_showspeed", 1, "Speedometer: 0 off, 1 Source units/s, 2 m/s.", CvarFlags.Archive, 0, 2);
         public static readonly BoolCvar Crosshair = new BoolCvar("cl_crosshair", true, "Show the crosshair.", CvarFlags.Archive);
 
+        /// <summary>Set while holding a firearm: the gun itself aims (bullets leave along the barrel), so no crosshair.</summary>
+        public static bool HideCrosshair { get; set; }
+
         private const float UnitsPerMeter = 1f / 0.0254f;
         private static readonly Color Neutral = new Color(1f, 0.97f, 0.9f);
         private static readonly Color Gain = new Color(0.45f, 1f, 0.5f);
@@ -101,7 +104,7 @@ namespace HowToHunt.Player
             bool visible = m != null && !Game.UiHasFocus;
             SetActive(_speed.gameObject, visible && ShowSpeed.Value != 0);
             SetActive(_status.gameObject, visible && ShowSpeed.Value != 0);
-            foreach (Image i in _crosshair) SetActive(i.gameObject, visible && Crosshair.Value);
+            foreach (Image i in _crosshair) SetActive(i.gameObject, visible && Crosshair.Value && !HideCrosshair);
             SetActive(_message.gameObject, visible && Time.unscaledTime < _messageUntil);
             if (!visible) return;
 
