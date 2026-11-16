@@ -67,7 +67,7 @@ if (-not $SkipSmokeTest) {
     $log = Join-Path $root 'Logs/smoke.log'
     if (Test-Path $log) { Remove-Item $log }
     Write-Host "Smoke test: launching the build headless for a few seconds..."
-    $p = Start-Process -FilePath $exe -ArgumentList @('-batchmode', '-nographics', '-logFile', $log, '+smoke_quit', '4') -PassThru
+    $p = Start-Process -FilePath $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', $log, '+smoke_quit', '4') -PassThru
     if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "Smoke test timed out." }
     $text = if (Test-Path $log) { Get-Content $log -Raw } else { '' }
     if ($text -notmatch 'SMOKE OK') { throw "Smoke test failed: the game did not boot cleanly. See $log" }

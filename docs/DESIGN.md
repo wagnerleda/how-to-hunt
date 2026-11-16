@@ -28,3 +28,19 @@ No room codes. The host creates a friends-only Steam lobby and invites friends f
 
 ## Other defaults
 Personal progress per player; join-in-progress unless the host locks; each player crosses traversal courses alone; auto-hop is an accessibility option (`cl_autohop`); Windows only; Steam client required online, solo works offline; dev app id 480.
+
+## Plains economy (M3 slice)
+Numbers live in content (`GeneratedContent.cs`) and cvars; pacing is checked by `EconomyPacingTests` (first upgrade within 1 to 3.5 minutes, all four within 10, for a hunter who sells only when the bag is full).
+
+| Prey | HP | Net strength needed | Kill tier | Overkill above | Base value | Trophies (kill) |
+|---|---|---|---|---|---|---|
+| Meadow Butterfly (flyer) | 4 | 1 (starter net) | any | 10 dmg | 4 | 0 |
+| Plains Rabbit (flees within 7 m) | 10 | 2 (Sturdy Net) | 1 (knife) | 30 dmg | 12 | 1 |
+
+| Tool | Slot | Numbers | Owned |
+|---|---|---|---|
+| Butterfly Net | 1 | strength 1, reach 2.4 m, 70° arc | start |
+| Hunting Knife | 2 | 6 dmg (x2 head), reach 2 m | start |
+| Old Revolver | 3 | 25 dmg (x2 head), 150 m: ruins butterflies, a head shot ruins a rabbit | bought |
+
+Upgrades: Sturdy Net (+1 strength, 60 c), Whetstone (knife x1.6, 45 c), Wide Hoop (+0.8 m reach, 90 c, needs Sturdy Net), Old Revolver (150 c). Bag: 12 catches (`sv_bag_capacity`). Sell at the Trader, buy at the Outfitter (both at camp, Interact = E).

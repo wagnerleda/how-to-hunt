@@ -9,6 +9,7 @@ namespace HowToHunt.Hunting
 
         public static readonly BoolCvar AllTools = new BoolCvar("sv_alltools", false, "Everyone owns every tool (tests, sv_cheats 1).", Sv);
         public static readonly FloatCvar DamageScale = new FloatCvar("sv_damage_scale", 1f, "Multiplies all tool damage (tests, sv_cheats 1).", Sv, 0f, 100f);
+        public static readonly BoolCvar HitDebug = new BoolCvar("sv_hitdebug", false, "Host: log every tool use (dropped, missed, what it hit).", CvarFlags.None);
         public static readonly BoolCvar LagComp = new BoolCvar("sv_lagcomp", true, "Rewind targets to what the shooter saw (lag compensation).", Sv);
         public static readonly FloatCvar MaxUnlag = new FloatCvar("sv_maxunlag", 0.25f, "Max rewind for lag compensation, seconds.", Sv, 0f, 1f);
         public static readonly IntCvar InterpTicks = new IntCvar("cl_interp_ticks", 2, "How far behind the latest server state clients draw shared objects, in ticks.", CvarFlags.Archive, 0, 8);
@@ -18,6 +19,7 @@ namespace HowToHunt.Hunting
         {
             c.Register(AllTools);
             c.Register(DamageScale);
+            c.Register(HitDebug);
             c.Register(LagComp);
             c.Register(MaxUnlag);
             c.Register(InterpTicks);

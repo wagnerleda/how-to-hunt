@@ -24,8 +24,13 @@ Every asset and third-party package is listed here with its source and license. 
 ## Art and audio
 | Asset | Source | License | Notes |
 |---|---|---|---|
-| Butterfly model + rig + Flap clip | Hand-made in Blender via MCP (`Art/Source/Butterfly.blend`) | Ours | M0 pipeline proof; final look in M3 |
+| Butterfly model + rig + Flap clip | Hand-made in Blender via MCP (`Art/Source/Butterfly.blend`) | Ours | Meadow Butterfly prey (faces -Y: turned in its prefab) |
+| Rabbit model | Hand-made in Blender via MCP (`Art/Source/Rabbit.blend`) | Ours | Plains Rabbit prey; static mesh, hop is procedural |
+| Net, Knife, Revolver viewmodels | Hand-made in Blender via MCP (`Art/Source/{Net,Knife,Revolver}.blend`) | Ours | First-person tools; swing/scoop/recoil are procedural |
+| Nature Kit (53 models used) | Kenney, kenney.nl/assets/nature-kit | CC0 1.0 (License.txt kept) | `Art/ThirdParty/KenneyNatureKit`; colours remapped to the palette on import |
+| Impact Sounds, Interface Sounds, RPG Audio (selected clips) | Kenney, kenney.nl | CC0 1.0 (license files kept) | `Resources/Audio/Kenney`: footsteps, cloth, impacts, coins, UI |
+| Gore, flame, tracer, dust materials | Generated (`GeneratedAssets.cs`) | Ours | Cube particles, pooled gibs and splats |
 | Wedge / SurfPrism meshes | Procedural (`ProceduralMeshes.cs`) | Ours | Level brushes |
 | Palette materials `M_*` | Generated (`Palette.cs`) | Ours | Art direction A |
 
-Planned sources (to log here when used): Kenney (CC0), Quaternius (CC0), PolyHaven (CC0), jsfxr-generated sounds (ours).
+Still approved for later use: Quaternius (CC0), PolyHaven (CC0). Procedural sounds (`ProceduralSounds.cs`) are ours.

@@ -13,3 +13,7 @@ Not approved for building. Each needs the owner's yes before work starts.
 - Apex prey requiring coordinated takedowns (post-M5).
 - PvP economy (coin stealing, kill rewards) — design seed only.
 - Jungle and Mountains biomes (post v1).
+- Plains ambience: birdsong, insects and a campfire crackle (needs CC0 recordings; Kenney packs have none).
+- Trader and outfitter characters behind the counters (low-poly NPCs with an idle animation).
+- Rabbit idle animation (ear twitch, sniff) from a rig instead of the procedural hop only.
+- Trophy wall at camp showing trophies earned.

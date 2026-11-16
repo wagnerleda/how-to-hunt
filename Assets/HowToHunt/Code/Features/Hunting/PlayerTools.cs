@@ -114,7 +114,11 @@ namespace HowToHunt.Hunting
             AutoFireShots--;
             EntityPose pose = TargetDummy.All[AutoFireTarget].Path.PoseAt(HitClock.ViewTick(), HitClock.TickRate);
             Vector3 target = pose.Position.ToUnity() + new Vector3(0f, 0.8f, 0f);
-            Use(cam.transform.position, (target - cam.transform.position).normalized);
+            // Aim from the simulated eye (what the host checks against), not the camera, which may still be easing after a teleport.
+            var s = _motor.State;
+            Vector3 eye = s.Position.ToUnity() + new Vector3(0f, MovementCvars.Config.EyeOffset(s.Ducked), 0f);
+            HitLog($"autofire: view tick {HitClock.ViewTick():0.0} rate {HitClock.TickRate} dummy {AutoFireTarget} ({TargetDummy.All[AutoFireTarget].name}) aim {target} from {eye}");
+            Use(eye, (target - eye).normalized);
         }
 
         private void Use(Vector3 origin, Vector3 dir)
@@ -132,11 +136,11 @@ namespace HowToHunt.Hunting
         private void CmdUse(byte toolIndex, Vector3 origin, Vector3 dir, double viewTick)
         {
             var tools = Loadouts.AllTools;
-            if (toolIndex >= tools.Count || toolIndex >= MaxTools) return;
+            if (toolIndex >= tools.Count || toolIndex >= MaxTools) { HitLog("bad tool index"); return; }
             ToolDefinition tool = tools[toolIndex];
             Loadout loadout = Loadouts.ForClient(Owner.ClientId);
-            if (!loadout.Owns(tool)) return;
-            if (Time.time < _serverCooldownUntil[toolIndex]) return;
+            if (!loadout.Owns(tool)) { HitLog("tool not owned"); return; }
+            if (Time.time < _serverCooldownUntil[toolIndex]) { HitLog("cooldown"); return; }
             _serverCooldownUntil[toolIndex] = Time.time + tool.Cooldown * 0.8f;
             if (dir.sqrMagnitude < 0.5f || float.IsNaN(dir.x)) return;
             dir.Normalize();
@@ -155,6 +159,21 @@ namespace HowToHunt.Hunting
             ToolStats stats = loadout.StatsFor(tool, out float range);
             ToolResolver.Target target = ToolResolver.Find(tool, range, origin, dir, t);
             Vector3 end = target.Kind == ToolResolver.TargetKind.None ? origin + dir * range : target.Point;
+            if (HuntingCvars.HitDebug.Value)
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.Append($"{tool.Key} -> {target.Kind} {target.Index}/{target.PreyId} at {(target.Point - origin).magnitude:0.0} m, rewound {now - t:0.0} ticks; origin {origin}, eye {eye}");
+                for (int i = 0; i < TargetDummy.All.Count; i++)
+                {
+                    TargetDummy dm = TargetDummy.All[i];
+                    bool sampled = dm.History.TrySample(t, out EntityPose p);
+                    if (!sampled) p = dm.Path.PoseAt(t, HitClock.TickRate);
+                    Vector3 c = p.Position.ToUnity() + Vector3.up * 0.8f;
+                    float miss = Vector3.Cross(dir, c - origin).magnitude;
+                    sb.Append($"; dummy {i} {(sampled ? "hist" : "path")} {c} ray passes {miss:0.00} m");
+                }
+                HitLog(sb.ToString());
+            }
 
             switch (target.Kind)
             {
@@ -173,6 +192,11 @@ namespace HowToHunt.Hunting
                     break;
             }
             if (tool.Archetype == ToolArchetype.Firearm) RpcShotFx(origin, end);
+        }
+
+        private static void HitLog(string line)
+        {
+            if (HuntingCvars.HitDebug.Value) Game.Console.Print("[hitdebug] " + line);
         }
 
         private void ResolvePrey(ToolDefinition tool, ToolStats stats, ToolResolver.Target target, float rewound)

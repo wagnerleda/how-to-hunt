@@ -309,6 +309,18 @@ namespace HowToHunt.Player
             _state.Position = hullCenter.ToSim();
             _state.Velocity = System.Numerics.Vector3.Zero;
             transform.position = hullCenter;
+            // Tell a remote owner directly: its prediction would otherwise keep simulating from the old spot
+            // (a reconcile alone did not move it in the M3 lag-compensation test).
+            if (IsServerStarted && Owner.IsValid && !Owner.IsLocalClient) RpcTeleported(Owner, hullCenter);
+        }
+
+        [FishNet.Object.TargetRpc]
+        private void RpcTeleported(FishNet.Connection.NetworkConnection conn, Vector3 hullCenter)
+        {
+            _state.Position = hullCenter.ToSim();
+            _state.Velocity = System.Numerics.Vector3.Zero;
+            _state.OnGround = false;
+            transform.position = hullCenter;
         }
     }
 }

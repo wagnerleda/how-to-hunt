@@ -3,7 +3,7 @@
   One command: release build + Windows installer (Inno Setup) => Builds/Installer/HowToHunt-Setup-<version>.exe
 
 .DESCRIPTION
-  1. tools/build-windows.ps1 -Release (versioned build + headless launch smoke test)
+  1. tools/build-windows.ps1 -Release -Il2cpp (versioned IL2CPP build + headless launch smoke test, ADR 0012)
   2. ISCC compiles tools/installer/HowToHunt.iss
   3. -TestInstall: silent per-user install into a temp folder, launch the installed game and join a local host,
      then uninstall and check the folder is gone.
@@ -20,7 +20,7 @@ $buildDir = Join-Path $root 'Builds/Release'
 $outDir = Join-Path $root 'Builds/Installer'
 
 if (-not $SkipBuild) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'build-windows.ps1') -Release -Output 'Builds/Release'
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'build-windows.ps1') -Release -Il2cpp -Output 'Builds/Release'
     if ($LASTEXITCODE -ne 0) { throw "Release build failed." }
 }
 $version = (Get-Content (Join-Path $buildDir 'version.txt') -Raw).Trim()
