@@ -1,0 +1,14 @@
+{
+    "name": "HowToHunt.Economy",
+    "rootNamespace": "HowToHunt.Economy",
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "HowToHunt.Player", "HowToHunt.Hunting", "FishNet.Runtime", "Unity.InputSystem", "Unity.TextMeshPro", "UnityEngine.UI"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -62,7 +62,7 @@ namespace HowToHunt.UI
             else
             {
                 Keyboard kb = Keyboard.current;
-                if (kb != null && kb.escapeKey.wasPressedThisFrame && !DevConsoleView.IsOpen)
+                if (kb != null && kb.escapeKey.wasPressedThisFrame && !DevConsoleView.IsOpen && !(Game.UiHasFocus && !Visible))
                 {
                     if (_page == Page.Settings) _page = Page.Home;
                     else if (InSession) _pauseOpen = !_pauseOpen;

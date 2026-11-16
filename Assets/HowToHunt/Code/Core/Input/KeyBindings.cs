@@ -15,6 +15,7 @@ namespace HowToHunt.Core
         Crouch,
         Fire,
         Scoreboard,
+        Interact,
     }
 
     /// <summary>
@@ -34,6 +35,7 @@ namespace HowToHunt.Core
             new StringCvar("bind_crouch", nameof(Key.LeftCtrl), "Crouch key.", CvarFlags.Archive),
             new StringCvar("bind_fire", "Mouse0", "Fire (Mouse0 = left button, or a key name).", CvarFlags.Archive),
             new StringCvar("bind_scoreboard", nameof(Key.Tab), "Show the party scoreboard while held.", CvarFlags.Archive),
+            new StringCvar("bind_interact", nameof(Key.E), "Use a camp station (sell, shop).", CvarFlags.Archive),
         };
 
         private static readonly Key[] Resolved = new Key[Cvars.Length];
