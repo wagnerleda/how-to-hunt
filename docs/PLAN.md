@@ -48,7 +48,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 - Heavy weapons slow you down while held. Light prey, the knife, nets, traps and tools never slow you.
 - Better weapon models: the owner provides them, or we fetch CC0 models from a repository after the owner approves the source. **Open**: the scout rifle is a stand-in built from boxes and cylinders.
 
-## Phase 5: gun workshop and attachments
+## Phase 5: gun workshop and attachments (done 2026-11-17 with stand-in models; awaiting the owner's gun assets and play test)
 - Workshop screen modelled on Battlefield 6's weapon customization (owner reference screenshot): the gun in the middle, slots around it joined by leader lines (muzzle, barrel, underbarrel, magazine, ammo, optic, top, stock), locked slots shown, stat bars (hip fire, precision, control, mobility) plus damage, fire rate and magazine size. Redone in our low-poly look.
 - A gun workshop (unlocked later in the game) sells expensive attachments: muzzle brakes, suppressors, stocks, grips, lasers, sights and scopes, magazine sizes, ammo types. Each changes weapon stats (recoil, spread, range, damage falloff, noise, reload, magazine).
 - Customization screen per weapon; each gun can become a killing machine of its own. Default recoil is high, which is what makes attachments worth it.

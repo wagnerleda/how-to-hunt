@@ -20,6 +20,9 @@ Status: M3. Adding prey, tools and upgrades needs no code; new behaviours (a new
 
 Firearms also set: `MagazineSize` and `ReloadSeconds` (ammo is infinite, magazines are not), `Automatic` (hold to fire), `BulletSpeed` and `BulletGravity` (bullets fly; tracers are real), `FalloffStart` / `FalloffEnd` / `MinDamageFraction` (damage drops linearly with distance), `SpreadDegrees` / `MoveSpreadPerMps` / `MaxSpreadDegrees` / `AdsSpreadFactor` (the cone widens with your speed; 0 per m/s for a scout rifle; tighter down the sights), `AdsZoom`, `ScopeOverlay` (look through a scope instead of iron sights), `SightOffset` and `MuzzleOffset` (model-space points: the sight that meets your eye, and where bullets leave along the model's +Z), `Weight` (0-3: heavy guns slow you, `sv_load_slow` per class).
 
+### Attachments (`AttachmentDefinition`, key `attachment.*`)
+`Slot` (Muzzle, Barrel, Underbarrel, Magazine, Ammo, Optic, Top, Stock), `Tools` (empty = any gun with a mount for that slot), `CostCoins`, `SortOrder`; effects (1 = unchanged): `RecoilMultiplier`, `SpreadMultiplier`, `MoveSpreadMultiplier`, `AdsSpreadMultiplier`, `RangeMultiplier` (falloff distances), `DamageMultiplier`, `BulletSpeedMultiplier`, `NoiseMultiplier` (how far prey hear the shot), `ReloadMultiplier`, `MagazineAdd`, `WeightAdd`; optics: `AdsZoom`, `ScopeOverlay`, `SightLift` (eye point above the mount); `Visual` (model at the mount, pointing +Z). Guns list their mounts in `ToolDefinition.AttachmentAnchors`; a slot without a mount is locked on that gun. Weapon sounds: `FireSounds` (random per shot), `ReloadSound`, `DryFireSound`, `EquipSound`, `InspectSound`, linked by the content build from `Art/Weapons/<tool name>/` (see its README).
+
 ### Upgrades (`UpgradeDefinition`, key `upgrade.*`)
 Target `Tool`, `Effect` (CaptureStrength +, DamageMultiplier x, Range +, UnlockTool, InventorySlots + (no tool)), `Value`, `CostCoins`, optional `Requires`, `SortOrder` (shop order).
 

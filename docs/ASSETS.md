@@ -32,5 +32,13 @@ Every asset and third-party package is listed here with its source and license. 
 | Gore, flame, tracer, dust materials | Generated (`GeneratedAssets.cs`) | Ours | Cube particles, pooled gibs and splats |
 | Wedge / SurfPrism meshes | Procedural (`ProceduralMeshes.cs`) | Ours | Level brushes |
 | Palette materials `M_*` | Generated (`Palette.cs`) | Ours | Art direction A |
+| Scout rifle, attachment models | Generated from primitives (`GeneratedAssets.cs`) | Ours | Stand-ins until the owner's gun assets land |
 
 Still approved for later use: Quaternius (CC0), PolyHaven (CC0). Procedural sounds (`ProceduralSounds.cs`) are ours.
+
+## Weapon drop-in (owner gun assets)
+Put each gun in `Assets/HowToHunt/Art/Weapons/<tool name>/` (the tool key without `tool.`: `revolver`, `scout`, or a new gun's name):
+the model (`.fbx`, gun only, no hands) and its sounds named by what they are: `fire_01.wav`, `fire_02.wav`... (one picked at
+random per shot), `reload.wav`, `dry.wav` (empty click), `equip.wav`, `inspect.wav`. The folder name is the link between a
+model and its sounds; no other naming is needed. The content build links the sounds automatically; the model is fitted once
+by hand (orientation, grip, sights, muzzle, attachment mounts). Add a row above for every source and licence.
