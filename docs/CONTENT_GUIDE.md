@@ -10,19 +10,20 @@ Status: M3. Adding prey, tools and upgrades needs no code; new behaviours (a new
 ### Prey (`PreyDefinition`, key `prey.*`)
 - Take-down: `Allowed` (catch, kill or either), `MaxHealth`, `CaptureDifficulty` (net strength needed), `MinKillTier`, `OverkillRatio` (one hit above MaxHealth x this ruins the carcass).
 - Hitboxes: capsules in model space (model faces +Z, pivot between the feet for walkers); mark the head `WeakPoint`.
-- Economy: `BaseValue`, `TrophiesOnKill`. Behaviour: `Flyer` (seeded flight, no bandwidth) or `Ground` (host AI: walk/flee speeds, flee radius, stun).
+- Economy: `BaseValue`, `TrophiesOnKill`. Behaviour: `Flyer` (seeded flight, no bandwidth) or `Ground` (host AI: walk/flee speeds, stamina, stun).
+- Senses: `FleeRadius` (flees from anyone this close, seen or not), `SightRange` (flees from a player it can see this far, line of sight; halved against crouching players, `sv_crouch_sight`), `HearingRange` (flees from gunshots within it; 0 for prey unafraid of guns, like predators), `Wariness` (rare prey: multiplies FleeRadius and SightRange). `Voice` picks the hit sound.
 - Presentation: `Visual` prefab or model, `VisualScale`, `Noun` ("a rabbit", used in feedback lines), `BloodColor`, `GibColor`, `GibCount`.
 - Inventory: `StackSize` (how many fit in one slot: small prey stack, big prey take a slot each).
 
 ### Tools (`ToolDefinition`, key `tool.*`)
-`Archetype` (Net, Blade, Firearm), `Mode` (Capture or Kill), `Tier`, `Damage`, `CaptureStrength`, `HeadshotMultiplier`, `Range`, `ArcDegrees` (melee cone; 0 = ray), `Cooldown`, hotbar `Slot`, `StartOwned`, `Viewmodel` (model held in first person, grip at the origin, pointing +Z).
+`Archetype` (Net, Blade, Firearm), `Mode` (Capture or Kill), `Tier`, `Damage`, `CaptureStrength`, `HeadshotMultiplier`, `Range`, `ArcDegrees` (melee cone; 0 = ray), `MaxTargets` (prey one swing reaches: nets scoop several, each checked against net strength), `Knockback` (m/s shove to prey and items hit), `RecoilUp` / `RecoilSide` / `RecoilRecover` (firearm aim kick in degrees, and the fraction that settles back by itself), `Cooldown`, hotbar `Slot`, `StartOwned`, `Viewmodel` (model held in first person, grip at the origin, pointing +Z).
 
 ### Upgrades (`UpgradeDefinition`, key `upgrade.*`)
 Target `Tool`, `Effect` (CaptureStrength +, DamageMultiplier x, Range +, UnlockTool, InventorySlots + (no tool)), `Value`, `CostCoins`, optional `Requires`, `SortOrder` (shop order).
 
 ## Placing content in a level
 - `PreySpawner`: which prey, how many, radius, respawn seconds. Spawners are ordered by object name, so ids match on every machine; give them unique names.
-- `CampStation`: Sell (Trader) or Shop (Outfitter) with a radius; players press Interact nearby.
+- `CampStation`: Sell (Trader) or Shop (Outfitter) with a radius; players press Interact nearby. A Trader's `ExpectedSale` is a typical full-bag sale in that area: it scales the cash burst (none for sales well below it). Prey thrown into a Trader sell.
 - Models: follow docs/ASSETS.md (Blender sources in `Art/Source`, exports in `Assets/HowToHunt/Art/Models/<Name>/`).
 
 ## Level geometry

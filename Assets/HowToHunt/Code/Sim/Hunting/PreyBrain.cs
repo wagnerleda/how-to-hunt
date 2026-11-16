@@ -55,6 +55,7 @@ namespace HowToHunt.Sim.Hunting
     {
         private const float Gravity = 20f;
         private const float StepHeight = 0.45f;
+        private const float SpawnDropHeight = 8f; // m: spawns search this far above and below for ground
         private const float KnockDrag = 7f;       // per second
         private const float KnockStopSpeed = 0.1f;
 
@@ -141,6 +142,15 @@ namespace HowToHunt.Sim.Hunting
             s.SlowTime = MathF.Max(s.SlowTime, seconds);
         }
 
+        /// <summary>Drop a prey onto the ground below (or above) its position: spawns use a spawner's height, not the terrain's.</summary>
+        public static void PlaceOnGround(ref PreyState s, in PreyBehavior b, ICollisionWorld world)
+        {
+            Vector3 ext = b.HalfExtents;
+            Vector3 top = s.Position + new Vector3(0f, SpawnDropHeight, 0f);
+            TraceResult down = world.TraceBox(top, top - new Vector3(0f, SpawnDropHeight * 2f, 0f), ext);
+            if (down.Hit && !down.StartSolid) s.Position = down.EndPosition - new Vector3(0f, ext.Y + 0.02f, 0f);
+        }
+
         /// <summary>Eye height above the feet.</summary>
         public static float EyeHeight(in PreyBehavior b) => b.HalfExtents.Y * 2f + 0.05f;
 
@@ -154,7 +164,8 @@ namespace HowToHunt.Sim.Hunting
             if (range <= 0f) return false;
             Vector3 eye = s.Position + new Vector3(0f, EyeHeight(b), 0f);
             if (Vector3.DistanceSquared(eye, threatEye) > range * range) return false;
-            return !world.TraceBox(eye, threatEye, Vector3.Zero).Hit;
+            TraceResult tr = world.TraceBox(eye, threatEye, Vector3.Zero);
+            return !tr.Hit && !tr.StartSolid;
         }
 
         /// <summary>A loud noise (gunshot) at <paramref name="source"/>: bolt away from it if within hearing range.</summary>

@@ -50,6 +50,19 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void ASpawnBelowTheGround_IsLiftedOntoIt_AndCanSeeOut()
+        {
+            var world = new BrushWorld();
+            world.Add(Brush.Box(new Vector3(0f, 0f, 0f), new Vector3(200f, 0.9f, 200f))); // ground top at 0.9
+            PreyBehavior b = Rabbit();
+            var s = new PreyState { Position = new Vector3(0f, -0.3f, 0f) };
+            Assert.IsFalse(PreyBrain.CanSee(in s, in b, PlayerEye, 1f, world), "buried: blind");
+            PreyBrain.PlaceOnGround(ref s, in b, world);
+            Assert.AreEqual(0.9f, s.Position.Y, 0.05f);
+            Assert.IsTrue(PreyBrain.CanSee(in s, in b, PlayerEye + new Vector3(0f, 0.9f, 0f), 1f, world));
+        }
+
+        [Test]
         public void RarePreyAreWarier()
         {
             BrushWorld world = Flat();

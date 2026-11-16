@@ -2,9 +2,9 @@
 
 Each phase ends with a playable build and a short checkpoint; the owner plays it before the next phase starts.
 Phases can be reordered as the game grows. Done: Phase 1 (feel pass) and Phase 2 (inventory, carcasses to fetch,
-hold/throw/drop, droppable tools, shape-fitted hitboxes).
+hold/throw/drop, droppable tools, shape-fitted hitboxes) and Phase 3 (physical hunting, below).
 
-## Phase 3: physical hunting (now)
+## Phase 3: physical hunting (done 2026-11-16, awaiting the owner's play test)
 The hunt itself gets more physical and the prey smarter. Grind goes up.
 
 | # | Change | Owner rule |

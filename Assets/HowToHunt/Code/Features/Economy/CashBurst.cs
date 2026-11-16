@@ -14,8 +14,8 @@ namespace HowToHunt.Economy
         public static readonly IntCvar MaxBills = new IntCvar("cl_cash_burst_max", 60, "Most bills in one burst.", CvarFlags.Archive, 0, 300);
 
         private static readonly Vector3 BillSize = new Vector3(0.17f, 0.004f, 0.08f);
-        private static readonly Color BillGreen = new Color(0.47f, 0.7f, 0.38f);
-        private static readonly Color BillPale = new Color(0.78f, 0.86f, 0.62f);
+        private static readonly Color BillGreen = new Color(0.22f, 0.52f, 0.2f);
+        private static readonly Color BillPale = new Color(0.42f, 0.68f, 0.34f);
 
         private static CashBurst _instance;
         private ParticleSystem _bills;

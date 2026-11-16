@@ -66,6 +66,7 @@ namespace HowToHunt.Economy
         public static readonly FloatCvar PickupReach = new FloatCvar("sv_pickup_reach", 2.6f, "How close (m) a player must be to pick an item up.", CvarFlags.Replicated | CvarFlags.Cheat, 0.5f, 10f);
         private const int MaxItems = 256;
         private const float MinHitSpeed = 3f; // m/s: a throw slower than this just lands on them
+        private const float ThrowSellSlack = 1f; // m beyond the trader's radius: hitting the counter counts
 
         private static readonly List<WorldItem> Items = new List<WorldItem>(64);
         private static NetworkManager _manager;
@@ -138,7 +139,7 @@ namespace HowToHunt.Economy
         {
             Vec3 pos = w.Body.Position;
             Vector3 upos = pos.ToUnity();
-            if (w.Item.Kind == ItemKind.Prey && CampStation.Nearest(upos, CampStationKind.Sell) != null
+            if (w.Item.Kind == ItemKind.Prey && CampStation.Nearest(upos, CampStationKind.Sell, ThrowSellSlack) != null
                 && EconomyNet.HostSellThrown(w.ThrownBy, w.Item))
             {
                 HostRemove(w);

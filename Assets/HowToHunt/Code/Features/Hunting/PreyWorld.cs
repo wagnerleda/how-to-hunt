@@ -228,6 +228,10 @@ namespace HowToHunt.Hunting
                     Stamina = p.Def.StaminaSeconds,
                     Timer = (float)Rng.NextDouble() * 2f,
                 };
+                // The spawn point is the spawner's height plus an offset: drop it onto the ground (hills, river bank),
+                // or the prey starts buried and can never move or see out.
+                PreyBehavior b = p.Def.Behavior;
+                PreyBrain.PlaceOnGround(ref p.State, in b, SimWorld.Current);
             }
             Broadcast(p);
         }
