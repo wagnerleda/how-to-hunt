@@ -1,53 +1,51 @@
-# Plan after the M3 playtest (owner feedback, 2026-11-16)
+# Plan (owner feedback after M3, updated 2026-11-16)
 
-The owner's notes after playing M3 are grouped into phases. Each phase ends with a playable build and a short
-checkpoint; nothing in a later phase starts before the owner has tried the earlier one.
+Each phase ends with a playable build and a short checkpoint; the owner plays it before the next phase starts.
+Phases can be reordered as the game grows. Done: Phase 1 (feel pass) and Phase 2 (inventory, carcasses to fetch,
+hold/throw/drop, droppable tools, shape-fitted hitboxes).
 
-## Phase 1: feel pass (now)
-Small, independent fixes to what is already in the game.
+## Phase 3: physical hunting (now)
+The hunt itself gets more physical and the prey smarter. Grind goes up.
 
-| # | Change | Where |
+| # | Change | Owner rule |
 |---|---|---|
-| 1 | Knife: a bright, metallic "shing" swish instead of the sandy Kenney slice | `ProceduralSounds.KnifeSwish/KnifeHit`, `ViewmodelController`, `HuntFeedback` |
-| 2 | Hands: one simple style, a round "ball" glove (cartoon, matches the low-poly look) on a sleeve | `Art/Source/{Net,Knife,Revolver}.blend` |
-| 3 | Net: sweeps across the upper screen in a curve (owner's sketch), right to left then left to right when spamming | `ViewmodelController.Sweep` |
-| 4 | Arms react to movement: dip on landing (scaled by impact), lift on jump, lag behind strafing, sway in the air, all spring-driven, not straight-line moves | `ViewmodelController` (springs) |
-| 5 | Plains about 25 % smaller (play area 200 m instead of 260 m) | `GrayboxSceneBuilder.Plains.cs` |
-| 6 | Cover for PvP: boulder clusters and fallen trees scattered through the meadow (collide), not the core of the design | same |
+| 1 | Knife swish quieter | |
+| 2 | Short take-down messages (one compact line) | current ones take too much screen |
+| 3 | Hit sounds differ per prey (squeak for a rabbit, papery flutter for a butterfly...) | |
+| 4 | **Sprint** (Shift): a modest ground-speed boost for players who can't bunny hop; bhop stays far faster | |
+| 5 | **Water**: the river sits in its bed (no longer raised), slows you down while wading, and splashes instead of footsteps | |
+| 6 | **Prey senses**: each prey has a sight distance (with line of sight) and flees from as far as it can see you; rare prey are warier (see further, startle sooner); harmless prey hear gunshots and flee | |
+| 7 | **Net sweep catches several**: everything the hoop passes through is scooped (net strength still applies to each) | approved |
+| 8 | **Economy rebalance**: less coin per prey, pricier upgrades, a slight grind; the pacing test is retuned (first upgrade ~4-6 min, all Plains upgrades ~20-30 min) | "easy to get the revolver and backpack too fast" |
+| 9 | **Hits move things**: shots and swings push prey (knockback) and world items (carcasses, dropped tools) | |
+| 10 | **Severe gun recoil**: firing kicks your aim up and sideways; you pull it back down (attachments will reduce it, Phase 4) | |
+| 11 | **Throw impacts slow, never stun**: a thrown item that hits a prey or a player slows it by 10 % for 0.75 s, no more. A stunned/slowed prey still needs a strong enough net | |
+| 12 | **One throw key**: hold to charge (capped), release to throw; tap to drop. Works for prey and items; replaces "Fire throws" | |
+| 13 | **Throw prey at the trader to sell it** (prey only; tools and guns bounce off, so a bad throw can't sell your gun) | |
+| 14 | **Cash burst on sales**: bills fly out of the trader, scaled to the area's expected sale (a big Plains sale is a shower; the same amount in a late area does nothing) | |
 
-## Phase 2: inventory and holding prey (How to Fish-style)
-A bigger change to the hunting loop; designed here, built after Phase 1 is approved.
+## Phase 4: gun overhaul
+- Visible bullets: fast tracer rounds that fly (no laser lines); hits checked along the bullet's path with lag compensation.
+- Every gun has a magazine and reloads (ammo is infinite).
+- Damage falls off with range.
+- Accuracy drops with speed (the faster you move, the less accurate), except a scout-style sniper that stays accurate.
+- Aim down sights.
+- Bullet impacts on the environment (dust, chips, decals by surface).
+- Heavy weapons slow you down while held. Light prey, the knife, nets, traps and tools never slow you.
+- Better weapon models: the owner provides them, or we fetch CC0 models from a repository after the owner approves the source.
 
-- **Inventory bar** at the bottom of the screen replaces the hidden "bag": a row of slots (start: 6) holding tools,
-  weapons and prey. Number keys and the mouse wheel select a slot; the selected item is what you hold.
-- **Prey are items.** A rabbit takes one slot; small prey (butterflies, later insects) stack (up to 10 per slot).
-- **Catch vs kill (owner rule, 2026-11-16):** a *caught* prey goes straight into your inventory (the net's advantage
-  on top of its 1.5x value). A *killed* prey drops where it died as a carcass (flung a little by the hit, falling out
-  of the air for flyers); you have to go and pick it up (E). Carcasses lie there for 2 minutes, and anyone in the
-  party can take them. Full inventory: you can't pick more up; a catch with no free slot falls at your feet.
-- **Held prey are physical.** Holding a rabbit shows it in your hand; Fire throws it (an arc with real collision
-  against the level), Q drops it. Thrown/dropped prey lie on the ground as pick-up-able items (E) for everyone in
-  the party, so friends can hand catches to each other, and steal them in PvP.
-- **Selling** at the trader sells every prey in your inventory; tools stay.
-- **Shop upgrades** add slots (6, then 8, then 10) next to the tool upgrades.
-- **Controls:** 1-9 select a slot (tools and prey alike), Fire throws the held prey, Q drops it, E picks up items
-  (and still uses camp stations).
-- **Tech:** the inventory lives in the host ledger like coins today. World items (carcasses, drops, throws) are
-  simulated with the sim's brush collision (no PhysX); the simulation is deterministic, so only spawn, pick-up and
-  "came to rest here" messages are sent. Icons are rendered from the 3D models at startup. Save migration turns the
-  old bag into inventory items.
+## Phase 5: gun workshop and attachments
+- A gun workshop (unlocked later in the game) sells expensive attachments: muzzle brakes, suppressors, stocks, grips, lasers, sights and scopes, magazine sizes, ammo types. Each changes weapon stats (recoil, spread, range, damage falloff, noise, reload, magazine).
+- Customization screen per weapon; each gun can become a killing machine of its own. Default recoil is high, which is what makes attachments worth it.
 
-### Phase 2 build order
-1. Inventory model (slots, stacking, capacity) in the ledger, net messages, save migration; tests.
-2. Inventory bar UI with model icons; slot selection drives the held tool or prey.
-3. World items: sim body (gravity, bounce, rest), spawn/remove messages, visuals; carcasses from kills.
-4. Pick up (E), throw (Fire), drop (Q); held prey in first person; selling from the inventory; slot upgrades.
-5. Tests (stacking, migration, item physics, allocation), bots/lag-comp/installer, checkpoint.
+## Phase 6: camp life and quests
+- NPCs at the stalls (trader, outfitter, gun workshop) with dialogue boxes, instead of empty counters.
+- NPCs guide through quests; the first quest chain ends by opening the east clearing to the next zone.
 
-## Phase 3: physical catching (later, after Phase 2 is played)
-More physics in the interactions themselves, in the spirit of How to Fish: the net as a swept volume that scoops
-whatever it passes through (several butterflies in one swing), prey knocked back by hits, thrown prey stunning other
-prey or players. Designed once Phase 2's items exist.
+## Phase 7: traps and bigger prey
+- Traps: place them to hold difficult prey for an easier kill or catch.
+- Strong prey (wolves, bears...) can break out of traps.
+- New prey per zone, including rare prey (wary, valuable).
 
-## Still planned for M4 (unchanged)
-Player health, downed/revive, PvP damage, menus moved to uGUI, ambience sounds.
+## Still planned for M4 (from the original brief)
+Player health, downed/revive, PvP damage, menus moved to uGUI, ambience sounds, death drop of unsold catch.

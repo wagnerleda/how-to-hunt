@@ -2,8 +2,8 @@
 
 Not approved for building. Each needs the owner's yes before work starts.
 
-- **Party sell celebration (to revise).** Original pitch: when anyone sells at camp, the party hears a bell, sees a coin fountain and a line "Alex sold 12 butterflies for 340 coins". Owner found it unclear; rethink as a smaller shared moment or drop.
-- **Carry capacity**: backpack limit forcing sell trips; upgrade raises it.
+- **Party sell celebration (to revise).** Partly answered by the Phase 3 cash burst on sales (scaled to the area). A party-wide version stays parked.
+- ~~Carry capacity~~: built in Phase 2 (inventory slots, pack upgrades).
 - **Trophy wall / specimen board** at camp showing kills (trophies) and captures (pinned specimens).
 - **Hit-stop and gib size scaled by prey size.**
 - **Overkill ruins value** is approved as part of the kill rules (docs/DESIGN.md); finer tuning ideas go here.
@@ -14,6 +14,10 @@ Not approved for building. Each needs the owner's yes before work starts.
 - PvP economy (coin stealing, kill rewards) — design seed only.
 - Jungle and Mountains biomes (post v1).
 - Plains ambience: birdsong, insects and a campfire crackle (needs CC0 recordings; Kenney packs have none).
-- Trader and outfitter characters behind the counters (low-poly NPCs with an idle animation).
+- Trader and outfitter characters: now planned (Phase 6, NPCs with dialogue and quests).
 - Rabbit idle animation (ear twitch, sniff) from a rig instead of the procedural hop only.
 - Trophy wall at camp showing trophies earned.
+- Physics catching beyond Phase 3: the catch registered at the exact moment the hoop reaches the prey along its swing; prey wriggling out of a weak net.
+- Weather and day/night affecting prey senses (fog shortens sight, night needs a light or a scope).
+- Sound of footsteps and sprinting alerting nearby prey (sprint is louder, crouching is quiet).
+- A recorded CC0 knife swish if the synthesized one never sounds right.
