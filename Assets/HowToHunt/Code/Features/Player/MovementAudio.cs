@@ -18,6 +18,7 @@ namespace HowToHunt.Player
         private const float Stride = 1.9f;
 
         private AudioClip[] _grass, _wood, _cloth, _thud;
+        private AudioClip _splash;
         private AudioClip _chime, _whoosh;
         private AudioSource[] _pool;
         private int _next;
@@ -30,6 +31,7 @@ namespace HowToHunt.Player
             _wood = Load("footstep_wood_00", 3);
             _cloth = new[] { Resources.Load<AudioClip>("Audio/Kenney/cloth1"), Resources.Load<AudioClip>("Audio/Kenney/cloth2"), Resources.Load<AudioClip>("Audio/Kenney/cloth3"), Resources.Load<AudioClip>("Audio/Kenney/cloth4") };
             _thud = Load("impactSoft_medium_00", 2);
+            _splash = ProceduralSounds.Splash();
             _chime = ProceduralSounds.Chime();
             _whoosh = ProceduralSounds.Whoosh();
 
@@ -101,9 +103,16 @@ namespace HowToHunt.Player
                 if (m.FootstepDistance < Stride) continue;
                 m.FootstepDistance = 0f;
                 float volume = Mathf.Clamp01(speed / MovementCvars.Config.MaxSpeed) * (s.Ducked ? 0.06f : 0.16f);
-                // Feet on the ground plane = grass; anything raised (platforms, crates, stalls) = wood.
+                if (s.InWater)
+                {
+                    // Wading: splashes, a bit louder than steps.
+                    Play(m, _splash, Mathf.Min(1f, volume * 2.2f), Random.Range(0.85f, 1.15f));
+                    continue;
+                }
+                // Feet on the terrain (or the flat lab floor) = grass; anything raised (platforms, crates, stalls) = wood.
                 float feet = s.Position.Y - MovementCvars.Config.Hull(s.Ducked).Y;
-                AudioClip[] set = feet < 0.25f ? _grass : _wood;
+                float ground = GroundHeight(s.Position.X, s.Position.Z);
+                AudioClip[] set = feet - ground < 0.3f ? _grass : _wood;
                 Play(m, set[_stepIndex++ % set.Length], volume, Random.Range(0.94f, 1.06f));
             }
 
@@ -118,6 +127,21 @@ namespace HowToHunt.Player
             }
             _wind.volume = Mathf.MoveTowards(_wind.volume, target, dt * 0.8f);
             _wind.pitch = Mathf.Lerp(_wind.pitch, pitch, 1f - Mathf.Exp(-3f * dt));
+        }
+
+        private SimTerrain _terrain;
+        private bool _terrainLooked;
+
+        /// <summary>Terrain height under a point (0 where there is no terrain: the lab floor).</summary>
+        private float GroundHeight(float x, float z)
+        {
+            if (!_terrainLooked || _terrain == null)
+            {
+                _terrain = FindAnyObjectByType<SimTerrain>();
+                _terrainLooked = _terrain != null;
+            }
+            float h = _terrain != null ? _terrain.HeightAt(x, z) : float.NaN;
+            return float.IsNaN(h) ? 0f : h;
         }
 
         private static AudioClip[] Load(string prefix, int count)

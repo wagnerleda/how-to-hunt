@@ -10,8 +10,8 @@ namespace HowToHunt.Sim.Movement
         None = 0,
         Jump = 1 << 0,
         Duck = 1 << 1,
-        // 1 << 2 was Walk (removed: nobody holds shift to walk in this game).
-        Reserved = 1 << 2,
+        /// <summary>Shift: a modest ground-speed boost for players who don't bunny hop (bit 2, once Walk).</summary>
+        Sprint = 1 << 2,
         /// <summary>Per-player accessibility option: holding jump keeps hopping. Sent with every cmd so host and client agree.</summary>
         AutoHop = 1 << 3,
     }
@@ -68,6 +68,8 @@ namespace HowToHunt.Sim.Movement
         public MoveEvents Events;
         /// <summary>Downward speed at the moment of landing (m/s), valid when Events has Landed.</summary>
         public float LandSpeed;
+        /// <summary>Feet in a water volume this tick (slower; splashes instead of footsteps).</summary>
+        public bool InWater;
 
         /// <summary>Airborne while touching a surface too steep to stand on.</summary>
         public bool Surfing => !OnGround && GroundNormal.Y > 0.05f && GroundNormal.Y < 0.7f;
@@ -87,6 +89,11 @@ namespace HowToHunt.Sim.Movement
         public float AirSpeedCap = 0.762f;        // 30 u/s: the bhop/strafe "wishspeed" cap in the air
         public float MaxSpeed = 6.35f;            // 250 u/s (knife run speed)
         public float DuckSpeedFactor = 0.34f;
+        /// <summary>Ground speed while sprinting (x MaxSpeed). Air speed is capped separately, so bhop stays faster.</summary>
+        public float SprintFactor = 1.25f;
+        /// <summary>Ground speed while wading (x MaxSpeed), and horizontal drag per second in water.</summary>
+        public float WaterSpeedFactor = 0.55f;
+        public float WaterDrag = 3f;
         public float JumpSpeed = 7.67f;           // 301.99 u/s
         public float MaxVelocity = 88.9f;         // sv_maxvelocity 3500
         /// <summary>Surfaces with normal.y below this are too steep to stand on: you slide (surf).</summary>

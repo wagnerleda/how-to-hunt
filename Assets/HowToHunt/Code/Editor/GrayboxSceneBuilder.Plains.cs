@@ -139,7 +139,8 @@ namespace HowToHunt.Editor
         {
             float h = Hills(x, z);
             float river = RiverDistance(x, z);
-            if (river < 9f && OutsidePlay(x, z) < 10f) h -= 1.5f * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((river - 2.5f) / 6.5f)));
+            // River bed: flat bottom 1.8 m down within 4 m of the centre line, banks rising to the meadow by 10 m.
+            if (river < 10f && OutsidePlay(x, z) < 10f) h -= 1.8f * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((river - 4f) / 6f)));
             return Mathf.Lerp(h, 0f, FlatMask(x, z));
         }
 
@@ -247,14 +248,13 @@ namespace HowToHunt.Editor
         {
             var verts = new List<Vector3>();
             var tris = new List<int>();
-            const float halfWidth = 4.2f;
+            const float halfWidth = 7f; // the edges run under the banks, so only the recessed middle shows
             for (float x = PlayMinX - Band; x <= PlayMaxX + Band; x += 2.5f)
             {
                 float z = RiverZ(x);
                 float dzdx = (RiverZ(x + 0.5f) - RiverZ(x - 0.5f));
                 Vector2 side = new Vector2(-dzdx, 1f).normalized * halfWidth;
-                // Water sits below the banks: the un-carved terrain minus a little.
-                float y = Mathf.Min(Hills(x, z + side.y), Hills(x, z - side.y)) - 0.6f;
+                float y = WaterLevel(x);
                 int i = verts.Count;
                 verts.Add(new Vector3(x + side.x, y, z + side.y));
                 verts.Add(new Vector3(x - side.x, y, z - side.y));
@@ -275,6 +275,28 @@ namespace HowToHunt.Editor
             go.GetComponent<MeshFilter>().sharedMesh = mesh;
             go.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Water.mat");
             go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            // Water volumes along the river (not solid): the movement sim slows players wading through them.
+            Transform volumes = Group(plains, "River Water (volumes)");
+            for (float x = PlayMinX - Band; x <= PlayMaxX + Band; x += 2.5f)
+            {
+                float z = RiverZ(x + 1.25f);
+                float dzdx = RiverZ(x + 1.75f) - RiverZ(x + 0.75f);
+                float yaw = Mathf.Atan2(1f, dzdx) * Mathf.Rad2Deg; // box length along the river
+                float top = WaterLevel(x + 1.25f);
+                GameObject v = Box(volumes, $"Water {x:0}", new Vector3(x + 1.25f, top - 1.5f, z), new Vector3(9f, 3f, 3.2f), "Surf", yaw); // local z along the river, x across
+                v.GetComponent<MeshRenderer>().enabled = false;
+                v.GetComponent<SimBrush>().Surface = HowToHunt.Sim.Collision.SurfaceFlags.Water;
+            }
+        }
+
+        /// <summary>Water surface: 0.6 m above the lowest point of the bed across the river at x (always below the banks).</summary>
+        private static float WaterLevel(float x)
+        {
+            float z = RiverZ(x);
+            float bed = float.MaxValue;
+            for (float d = -4f; d <= 4f; d += 1f) bed = Mathf.Min(bed, GroundY(x, z + d));
+            return bed + 0.6f;
         }
 
         // --- forest ring, exits -----------------------------------------------------------------------------

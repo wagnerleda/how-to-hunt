@@ -73,6 +73,31 @@ namespace HowToHunt.Tests
             Assert.AreEqual(field.Sample(s.Position.X, s.Position.Z), s.Position.Y, 0.08f, "feet on the ground");
         }
 
+        private static float GroundSpeedAfter(MoveButtons buttons, bool water, int ticks = 64 * 3)
+        {
+            var cfg = new MoveConfig();
+            var world = new BrushWorld();
+            world.Add(Brush.Box(new Vector3(0, -0.5f, 0), new Vector3(200, 0.5f, 200)));
+            if (water) world.Add(Brush.Box(new Vector3(0, 0.3f, 0), new Vector3(200, 0.5f, 200), SurfaceFlags.Water));
+            var s = new MoveState { Position = new Vector3(0, cfg.HullHalfExtents.Y + 0.01f, 0) };
+            var cmd = new MoveCmd { Forward = 1f, Yaw = 0f, Buttons = buttons };
+            for (int i = 0; i < ticks; i++) PlayerMove.Step(ref s, in cmd, cfg, world, Dt);
+            return PlayerMove.HorizontalSpeed(s.Velocity);
+        }
+
+        [Test]
+        public void Sprint_IsFasterThanRunning_WaterIsSlower()
+        {
+            var cfg = new MoveConfig();
+            float run = GroundSpeedAfter(MoveButtons.None, false);
+            float sprint = GroundSpeedAfter(MoveButtons.Sprint, false);
+            float wade = GroundSpeedAfter(MoveButtons.None, true);
+            Assert.AreEqual(cfg.MaxSpeed, run, 0.1f);
+            Assert.AreEqual(cfg.MaxSpeed * cfg.SprintFactor, sprint, 0.15f, "sprint is a modest boost");
+            Assert.Less(sprint, 9f, "bunny hopping stays the way to go really fast");
+            Assert.Less(wade, run * 0.7f, "wading slows you down");
+        }
+
         [Test]
         public void Rabbit_SprintsFasterThanRunning_ThenTires()
         {

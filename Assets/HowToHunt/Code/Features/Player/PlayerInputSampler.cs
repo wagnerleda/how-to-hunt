@@ -81,6 +81,7 @@ namespace HowToHunt.Player
             cmd.Side = (KeyBindings.IsPressed(GameAction.Right) ? 1f : 0f) - (KeyBindings.IsPressed(GameAction.Left) ? 1f : 0f);
             if (KeyBindings.IsPressed(GameAction.Jump) || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
             if (KeyBindings.IsPressed(GameAction.Crouch)) cmd.Buttons |= MoveButtons.Duck;
+            if (KeyBindings.IsPressed(GameAction.Sprint)) cmd.Buttons |= MoveButtons.Sprint;
             if (MovementCvars.ClientAutoHop.Value) cmd.Buttons |= MoveButtons.AutoHop;
             _jumpLatched = false;
             return cmd;

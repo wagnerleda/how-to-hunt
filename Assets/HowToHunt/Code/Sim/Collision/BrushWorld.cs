@@ -31,11 +31,15 @@ namespace HowToHunt.Sim.Collision
         Surf = 1 << 0,
         /// <summary>Touching this resets the player to the last checkpoint.</summary>
         Hazard = 1 << 1,
+        /// <summary>Not solid: a water volume. Traces pass through; movement slows inside (see InWater).</summary>
+        Water = 1 << 2,
     }
 
     public interface ICollisionWorld
     {
         TraceResult TraceBox(Vector3 start, Vector3 end, Vector3 halfExtents);
+        /// <summary>Is this point inside a water volume?</summary>
+        bool InWater(Vector3 point);
     }
 
     public readonly struct Plane3
@@ -207,11 +211,38 @@ namespace HowToHunt.Sim.Collision
         public void Clear()
         {
             _count = 0;
+            _waterCount = 0;
             _gridDirty = true;
+        }
+
+        private Brush[] _water = Array.Empty<Brush>();
+        private int _waterCount;
+
+        /// <summary>True if the point is inside any water volume (all its planes behind the point).</summary>
+        public bool InWater(Vector3 point)
+        {
+            for (int i = 0; i < _waterCount; i++)
+            {
+                Brush b = _water[i];
+                if (point.X < b.Min.X || point.X > b.Max.X || point.Y < b.Min.Y || point.Y > b.Max.Y || point.Z < b.Min.Z || point.Z > b.Max.Z) continue;
+                bool inside = true;
+                Plane3[] planes = b.Planes;
+                for (int p = 0; p < planes.Length && inside; p++)
+                    if (Vector3.Dot(planes[p].Normal, point) > planes[p].Distance) inside = false;
+                if (inside) return true;
+            }
+            return false;
         }
 
         public void Add(Brush brush)
         {
+            if ((brush.Surface & SurfaceFlags.Water) != 0)
+            {
+                // Water isn't solid: kept apart, never traced against.
+                if (_waterCount == _water.Length) Array.Resize(ref _water, Math.Max(16, _water.Length * 2));
+                _water[_waterCount++] = brush;
+                return;
+            }
             if (_count == _brushes.Length) Array.Resize(ref _brushes, Math.Max(16, _brushes.Length * 2));
             _brushes[_count++] = brush;
             _gridDirty = true;

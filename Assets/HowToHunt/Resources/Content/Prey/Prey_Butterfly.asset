@@ -42,4 +42,5 @@ MonoBehaviour:
   BloodColor: {r: 0.72, g: 0.82, b: 0.28, a: 1}
   GibColor: {r: 0.96, g: 0.58, b: 0.18, a: 1}
   GibCount: 3
+  Voice: 1
   StackSize: 10

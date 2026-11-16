@@ -39,7 +39,11 @@ namespace HowToHunt.Sim.Movement
 
             UpdateDuck(ref s, in cmd, cfg, world);
 
+            // Wading: feet a little above the bottom of the hull are under water.
+            s.InWater = world.InWater(s.Position - new Vector3(0f, cfg.Hull(s.Ducked).Y - 0.3f, 0f));
             ComputeWish(in cmd, cfg, s.Ducked && s.OnGround, out Vector3 wishDir, out float wishSpeed);
+            if (s.OnGround && !s.Ducked && cmd.Has(MoveButtons.Sprint) && cmd.Forward > 0.1f) wishSpeed *= cfg.SprintFactor;
+            if (s.InWater) wishSpeed *= cfg.WaterSpeedFactor;
 
             bool jumpDown = cmd.Has(MoveButtons.Jump);
             bool autoHop = cfg.AutoHop || cmd.Has(MoveButtons.AutoHop);
@@ -52,6 +56,13 @@ namespace HowToHunt.Sim.Movement
                 s.Velocity.Y = cfg.JumpSpeed;
                 s.OnGround = false;
                 s.Events |= MoveEvents.Jumped;
+            }
+
+            if (s.InWater)
+            {
+                float keep = MathF.Max(0f, 1f - cfg.WaterDrag * dt);
+                s.Velocity.X *= keep;
+                s.Velocity.Z *= keep;
             }
 
             Vector3 ext = cfg.Hull(s.Ducked);

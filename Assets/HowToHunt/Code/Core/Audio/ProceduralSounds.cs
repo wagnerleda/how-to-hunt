@@ -172,6 +172,29 @@ namespace HowToHunt.Core
             });
         }
 
+        /// <summary>A step in shallow water: a short watery slosh with a couple of bubbly blips.</summary>
+        public static AudioClip Splash()
+        {
+            var rng = new System.Random(63);
+            var band = new BandPass();
+            float phase = 0f;
+            const float len = 0.28f;
+            return Make("splash", len, (t, i) =>
+            {
+                float u = t / len;
+                float slosh = band.Process(Noise(rng), Mathf.Lerp(1800f, 700f, u), 1.1f) * Mathf.Exp(-t * 14f) * 2.5f;
+                // Bubbles: two quick rising chirps.
+                float bubbleT = t < 0.09f ? t - 0.04f : t - 0.13f;
+                float bubble = 0f;
+                if (bubbleT > 0f && bubbleT < 0.05f)
+                {
+                    phase += 2f * Mathf.PI * Mathf.Lerp(500f, 1100f, bubbleT / 0.05f) / Rate;
+                    bubble = Mathf.Sin(phase) * Mathf.Sin(Mathf.PI * bubbleT / 0.05f) * 0.35f;
+                }
+                return slosh + bubble;
+            });
+        }
+
         /// <summary>Small mammal hit: a short high squeak sliding down, with a little vibrato.</summary>
         public static AudioClip Squeak()
         {
