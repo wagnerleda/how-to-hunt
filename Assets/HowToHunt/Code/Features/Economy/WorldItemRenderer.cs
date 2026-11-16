@@ -1,30 +1,30 @@
 using HowToHunt.Core;
-using HowToHunt.Foundation;
-using HowToHunt.Hunting;
 using HowToHunt.Net;
-using HowToHunt.Sim.Hunting;
 using UnityEngine;
 
 namespace HowToHunt.Economy
 {
     /// <summary>
-    /// Draws world items each frame (one loop for all): interpolated between ticks, tumbling while in the air.
-    /// Carcasses lie on their side; live catches that fell out of a full inventory sit upright.
+    /// Draws world items each frame (one loop for all): interpolated between ticks, tumbling while in the air, lying
+    /// in the same pose and at the same yaw their collision box was measured in (ItemShapes), so what you see is what
+    /// collides and what you pick up. Tools on the ground show without the hand.
     /// </summary>
     public sealed class WorldItemRenderer : MonoBehaviour
     {
         public static void Create(WorldItem w)
         {
-            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(new ContentId(w.Item.Content));
+            ItemShapes.Shape shape = ItemShapes.Get(w.Item);
             var root = new GameObject($"Item {w.Id}");
-            if (def != null && def.Visual != null)
+            if (shape.Prefab != null)
             {
-                GameObject model = Instantiate(def.Visual, root.transform, false);
-                model.transform.localScale = Vector3.one * def.VisualScale;
-                Animator anim = model.GetComponentInChildren<Animator>();
-                if (anim != null && !w.Item.Captured) anim.enabled = false; // carcasses don't flap
-                // Pivot at the body's centre: models have their pivot at the feet.
-                model.transform.localPosition = new Vector3(0f, -w.HalfExtents.Y, 0f);
+                GameObject model = Instantiate(shape.Prefab, root.transform, false);
+                if (shape.HideHand) IconRenderer.HideParts(model, "Hand");
+                foreach (Animator anim in model.GetComponentsInChildren<Animator>())
+                    anim.enabled = w.Item.Captured; // a live catch keeps flapping; carcasses and tools don't
+                model.transform.localScale = Vector3.one * shape.Scale;
+                model.transform.localRotation = shape.Lie;
+                // Put the model's centre on the body's centre.
+                model.transform.localPosition = -(shape.Lie * (shape.LocalBounds.center * shape.Scale));
             }
             w.Visual = root;
             Place(w, 0f);
@@ -42,9 +42,8 @@ namespace HowToHunt.Economy
         {
             if (w.Visual == null) return;
             Vector3 p = Vector3.LerpUnclamped(w.PreviousPosition.ToUnity(), w.Body.Position.ToUnity(), t);
-            float yaw = (w.Id * 137.5f) % 360f;
-            Quaternion lie = w.Item.Captured ? Quaternion.identity : Quaternion.Euler(0f, 0f, 90f);
-            Quaternion rot = Quaternion.Euler(0f, yaw, 0f) * (w.Body.Resting ? lie : Quaternion.Euler(w.Body.Spin, 0f, w.Body.Spin * 0.4f) * lie);
+            Quaternion yaw = Quaternion.Euler(0f, ItemShapes.Yaw(w.Id), 0f);
+            Quaternion rot = w.Body.Resting || w.Body.Spin == 0f ? yaw : yaw * Quaternion.Euler(w.Body.Spin, 0f, w.Body.Spin * 0.4f);
             w.Visual.transform.SetPositionAndRotation(p, rot);
         }
     }

@@ -29,6 +29,9 @@ namespace HowToHunt.Hunting
         private int _equipped = -1;
         private int _previous = -1;
 
+        /// <summary>Host: does this client carry this tool? Set by the economy feature (inventory). Null = upgrades decide.</summary>
+        public static Func<int, uint, bool> HostHasTool;
+
         public static event Action<PlayerTools, ToolDefinition, Vector3, Vector3> LocalUse;
         public static event Action<ToolDefinition> LocalEquipped;
 
@@ -46,8 +49,7 @@ namespace HowToHunt.Hunting
         {
             base.OnStartClient();
             if (!IsOwner) return;
-            Local = this;
-            EquipFirstOwned();
+            Local = this; // the inventory bar selects what is held
         }
 
         public override void OnStopClient()
@@ -66,11 +68,13 @@ namespace HowToHunt.Hunting
         /// <summary>The inventory bar selected a tool slot (null = empty hands).</summary>
         public void SelectTool(ToolDefinition tool)
         {
+            bool wasHolding = HeldPrey != null;
             HeldPrey = null;
             if (tool == null)
             {
-                if (_equipped < 0) return;
-                _previous = _equipped;
+                // Empty hands. (Also after throwing the last prey of a slot: the viewmodel must drop it.)
+                if (_equipped < 0 && !wasHolding) return;
+                if (_equipped >= 0) _previous = _equipped;
                 _equipped = -1;
                 LocalEquipped?.Invoke(null);
                 return;
@@ -102,11 +106,6 @@ namespace HowToHunt.Hunting
         private void Equip(int index)
         {
             if (index == _equipped || index < 0 || index >= Loadouts.AllTools.Count) return;
-            if (!Loadouts.Local.Owns(Loadouts.AllTools[index]))
-            {
-                HuntFeedback.Message($"You don't own the {Loadouts.AllTools[index].DisplayName} yet. Buy it at camp.", warning: true);
-                return;
-            }
             _previous = _equipped;
             _equipped = index;
             LocalEquipped?.Invoke(Equipped);
@@ -164,7 +163,9 @@ namespace HowToHunt.Hunting
             if (toolIndex >= tools.Count || toolIndex >= MaxTools) { HitLog("bad tool index"); return; }
             ToolDefinition tool = tools[toolIndex];
             Loadout loadout = Loadouts.ForClient(Owner.ClientId);
-            if (!loadout.Owns(tool)) { HitLog("tool not owned"); return; }
+            // You must carry the tool (tools can be dropped, lost, or picked up by someone else).
+            bool carried = HostHasTool != null ? HostHasTool(Owner.ClientId, tool.Id.Value) : loadout.Owns(tool);
+            if (!carried) { HitLog("tool not carried"); return; }
             if (Time.time < _serverCooldownUntil[toolIndex]) { HitLog("cooldown"); return; }
             _serverCooldownUntil[toolIndex] = Time.time + tool.Cooldown * 0.8f;
             if (dir.sqrMagnitude < 0.5f || float.IsNaN(dir.x)) return;

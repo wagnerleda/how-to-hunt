@@ -52,8 +52,28 @@ namespace HowToHunt.Economy
             return list;
         }
 
-        /// <summary>Re-lays the hotbar after upgrades change; returns prey that no longer fit.</summary>
-        public List<ItemStack> RefreshInventory() => Inventory.Configure(OwnedTools(), SlotCapacity);
+        /// <summary>Applies the slot count from upgrades; returns items that no longer fit.</summary>
+        public List<ItemStack> ApplyCapacity() => Inventory.SetCapacity(SlotCapacity);
+
+        /// <summary>Owned tools (start tools, unlocked ones) that aren't in the inventory: lost, dropped, never given.</summary>
+        public List<uint> MissingTools()
+        {
+            var missing = new List<uint>();
+            foreach (uint t in OwnedTools()) if (!Inventory.HasTool(t)) missing.Add(t);
+            return missing;
+        }
+
+        /// <summary>Puts missing owned tools in the inventory; returns those that didn't fit.</summary>
+        public List<ItemStack> GiveMissingTools()
+        {
+            var overflow = new List<ItemStack>();
+            foreach (uint t in MissingTools())
+            {
+                ItemStack tool = ItemStack.Tool(t);
+                if (Inventory.Add(tool, 1) > 0) overflow.Add(tool);
+            }
+            return overflow;
+        }
 
         public void CopyFrom(EconomyProfile other)
         {
@@ -113,7 +133,7 @@ namespace HowToHunt.Economy
 
     /// <summary>
     /// The "economy" slice of the profile file. Content is saved by key (permanent) rather than by hash.
-    /// v1 had an unordered "bag"; v2 stores the prey stacks of the inventory (tools are derived from upgrades).
+    /// v1 had an unordered "bag"; v2 stored prey stacks only; v3 stores every slot (tools are items you can drop).
     /// </summary>
     public sealed class EconomySaveSlice : ISaveSlice
     {
@@ -125,7 +145,13 @@ namespace HowToHunt.Economy
             public List<string> researchKeys = new List<string>();
             public List<int> researchCounts = new List<int>();
             public List<string> upgrades = new List<string>();
-            // v2: prey stacks in slot order (after the tools).
+            // v3: every slot (kind 1 = tool, 2 = prey).
+            public List<int> slotIndex = new List<int>();
+            public List<byte> slotKind = new List<byte>();
+            public List<string> slotKey = new List<string>();
+            public List<byte> slotFlags = new List<byte>();
+            public List<int> slotCounts = new List<int>();
+            // v2 (read only): prey stacks.
             public List<string> stackPrey = new List<string>();
             public List<byte> stackFlags = new List<byte>();
             public List<int> stackCounts = new List<int>();
@@ -147,7 +173,7 @@ namespace HowToHunt.Economy
         }
 
         public string Key => "economy";
-        public int Version => 2;
+        public int Version => 3;
 
         public string Save()
         {
@@ -174,12 +200,16 @@ namespace HowToHunt.Economy
             for (int i = 0; i < Inventory.MaxSlots; i++)
             {
                 ItemStack s = _profile.Inventory[i];
-                if (s.Kind != ItemKind.Prey || s.Count == 0) continue;
-                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(s.Content));
-                if (p == null) continue;
-                d.stackPrey.Add(p.Key);
-                d.stackFlags.Add(s.Flags);
-                d.stackCounts.Add(s.Count);
+                if (s.IsEmpty) continue;
+                ContentDefinition def = s.Kind == ItemKind.Tool
+                    ? ContentRegistry.Get<ToolDefinition>(new Foundation.ContentId(s.Content))
+                    : ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(s.Content));
+                if (def == null) continue;
+                d.slotIndex.Add(i);
+                d.slotKind.Add((byte)s.Kind);
+                d.slotKey.Add(def.Key);
+                d.slotFlags.Add(s.Flags);
+                d.slotCounts.Add(s.Count);
             }
             return JsonUtility.ToJson(d);
         }
@@ -203,16 +233,37 @@ namespace HowToHunt.Economy
                 UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(key);
                 if (u != null && !_profile.Upgrades.Contains(u.Id.Value)) _profile.Upgrades.Add(u.Id.Value);
             }
-            _profile.RefreshInventory();
+            _profile.ApplyCapacity();
+            if (savedVersion >= 3)
+            {
+                int n = Math.Min(Math.Min(d.slotIndex.Count, d.slotKind.Count), Math.Min(d.slotKey.Count, Math.Min(d.slotFlags.Count, d.slotCounts.Count)));
+                for (int i = 0; i < n; i++)
+                {
+                    var kind = (ItemKind)d.slotKind[i];
+                    ContentDefinition def = kind == ItemKind.Tool
+                        ? ContentRegistry.Get<ToolDefinition>(d.slotKey[i])
+                        : ContentRegistry.Get<PreyDefinition>(d.slotKey[i]);
+                    if (def == null || d.slotCounts[i] <= 0) continue;
+                    var item = new ItemStack { Kind = kind, Content = def.Id.Value, Flags = d.slotFlags[i], Count = (ushort)d.slotCounts[i] };
+                    int slot = d.slotIndex[i];
+                    if (slot >= 0 && slot < _profile.Inventory.Capacity && _profile.Inventory[slot].IsEmpty) _profile.Inventory.SetSlot(slot, item);
+                    else _profile.Inventory.Add(item, EconomyProfile.StackSize(item.Content));
+                }
+                _changed?.Invoke();
+                return;
+            }
+
+            // Older saves had no tools in them: hand out the owned ones first.
+            _profile.GiveMissingTools();
             if (savedVersion < 2)
             {
-                // v1 bag -> stacks. Whatever doesn't fit in the starting slots is sold to nobody: keep the first ones.
+                // v1 bag -> stacks. Whatever doesn't fit in the starting slots is dropped from the save.
                 for (int i = 0; i < d.bagPrey.Count && i < d.bagFlags.Count; i++)
                 {
                     PreyDefinition p = ContentRegistry.Get<PreyDefinition>(d.bagPrey[i]);
                     if (p == null) continue;
                     var item = new ItemStack { Kind = ItemKind.Prey, Content = p.Id.Value, Flags = d.bagFlags[i], Count = 1 };
-                    _profile.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content));
+                    _profile.Inventory.Add(item, EconomyProfile.StackSize(item.Content));
                 }
             }
             else
@@ -222,7 +273,7 @@ namespace HowToHunt.Economy
                     PreyDefinition p = ContentRegistry.Get<PreyDefinition>(d.stackPrey[i]);
                     if (p == null || d.stackCounts[i] <= 0) continue;
                     var item = new ItemStack { Kind = ItemKind.Prey, Content = p.Id.Value, Flags = d.stackFlags[i], Count = (ushort)d.stackCounts[i] };
-                    _profile.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content));
+                    _profile.Inventory.Add(item, EconomyProfile.StackSize(item.Content));
                 }
             }
             _changed?.Invoke();
@@ -231,7 +282,8 @@ namespace HowToHunt.Economy
         public void Reset()
         {
             _profile.Clear();
-            _profile.RefreshInventory();
+            _profile.ApplyCapacity();
+            _profile.GiveMissingTools(); // a new hunter starts with the net and the knife
             _changed?.Invoke();
         }
     }

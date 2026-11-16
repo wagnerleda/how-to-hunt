@@ -56,7 +56,7 @@ namespace HowToHunt.Economy
                 {
                     PreyDefinition prey = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(msg.EventContent));
                     var item = new ItemStack { Kind = ItemKind.Prey, Content = msg.EventContent, Flags = msg.EventFlags, Count = 1 };
-                    string name = prey?.DisplayName ?? "catch";
+                    string name = prey?.DisplayName ?? ContentRegistry.Get<ContentDefinition>(new Foundation.ContentId(msg.EventContent))?.DisplayName ?? "item";
                     string how = item.Captured ? "caught" : item.Quality == CarcassQuality.Ruined ? "ruined" : "killed";
                     var e = (EconomyEvent)msg.Event;
                     if (e == EconomyEvent.Caught)
@@ -92,6 +92,10 @@ namespace HowToHunt.Economy
                     if (u.Effect == UpgradeEffect.InventorySlots) HuntFeedback.Message($"+{u.Value:0} inventory slots.");
                     break;
                 }
+                case EconomyEvent.ToolsReturned:
+                    HuntFeedback.Message(msg.EventCount == 1 ? "The outfitter hands you a replacement tool." : $"The outfitter hands you {msg.EventCount} replacement tools.");
+                    Sfx.Play2D("Kenney/handleSmallLeather", 0.4f);
+                    break;
                 case EconomyEvent.Refused:
                     HuntFeedback.Message(RefusalLine((EconomyRefusal)msg.Refusal), warning: true);
                     break;
@@ -148,10 +152,13 @@ namespace HowToHunt.Economy
 
         private static string PromptFor(WorldItem w)
         {
-            PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(w.Item.Content));
+            string key = KeyBindings.DisplayName(GameAction.Interact);
+            ContentDefinition def = ContentRegistry.Get<ContentDefinition>(new Foundation.ContentId(w.Item.Content));
+            string name = def != null ? def.DisplayName : "item";
+            if (w.Item.Kind == ItemKind.Tool) return $"[{key}] Pick up {name}";
             string how = w.Item.Captured ? "caught" : w.Item.Quality == CarcassQuality.Ruined ? "ruined" : "killed";
             string count = w.Item.Count > 1 ? $" x{w.Item.Count}" : string.Empty;
-            return $"[{KeyBindings.DisplayName(GameAction.Interact)}] Pick up {p?.DisplayName ?? "item"}{count} ({how})";
+            return $"[{key}] Pick up {name}{count} ({how})";
         }
 
         private string PromptFor(CampStation station)

@@ -30,6 +30,7 @@ namespace HowToHunt.Economy
         private int _shownCapacity = -1;
         private float _nextThrow;
         private ItemStack _heldItem;
+        private PlayerTools _tools;
 
         private static readonly Color Frame = new Color(0.1f, 0.09f, 0.08f, 0.55f);
         private static readonly Color FrameSelected = new Color(1f, 0.85f, 0.45f, 0.85f);
@@ -104,7 +105,7 @@ namespace HowToHunt.Economy
             if (s.Kind == ItemKind.Tool)
             {
                 ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(s.Content));
-                return t != null ? IconRenderer.Get(t.Viewmodel, -70f, 20f) : null;
+                return t != null ? IconRenderer.Get(t.Viewmodel, -70f, 20f, "Hand") : null;
             }
             PreyDefinition p = ContentRegistry.Get<PreyDefinition>(new ContentId(s.Content));
             return p != null ? IconRenderer.Get(p.Visual, 140f, 18f) : null;
@@ -132,7 +133,7 @@ namespace HowToHunt.Economy
             {
                 ToolDefinition t = ContentRegistry.Get<ToolDefinition>(new ContentId(s.Content));
                 if (t != tools.Equipped || PlayerTools.HeldPrey != null) tools.SelectTool(t);
-                label = t != null ? t.DisplayName : string.Empty;
+                label = t != null ? $"{t.DisplayName}  ·  Q drop" : string.Empty;
             }
             else if (s.Kind == ItemKind.Prey)
             {
@@ -166,6 +167,13 @@ namespace HowToHunt.Economy
                 if (_labelLife <= 0f) _label.gameObject.SetActive(false);
             }
 
+            if (PlayerTools.Local != _tools)
+            {
+                // Our player (re)spawned: hold whatever the selected slot has.
+                _tools = PlayerTools.Local;
+                _heldItem = default;
+                if (_tools != null) Select(_selected);
+            }
             if (PlayerTools.Local == null || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
             Keyboard kb = Keyboard.current;
             Inventory inv = EconomyNet.Local.Inventory;
@@ -176,11 +184,12 @@ namespace HowToHunt.Economy
             }
 
             ItemStack held = inv[_selected];
-            if (held.Kind != ItemKind.Prey) return;
+            if (held.IsEmpty) return;
             Camera cam = Camera.main;
             if (cam == null || Time.time < _nextThrow) return;
+            // Anything can be dropped (Q); prey can also be thrown (Fire). Tools use Fire themselves.
             bool drop = kb != null && kb.qKey.wasPressedThisFrame;
-            bool throwIt = KeyBindings.WasPressedThisFrame(GameAction.Fire);
+            bool throwIt = held.Kind == ItemKind.Prey && KeyBindings.WasPressedThisFrame(GameAction.Fire);
             if (!drop && !throwIt) return;
             _nextThrow = Time.time + ThrowCooldown;
             Transform ct = cam.transform;

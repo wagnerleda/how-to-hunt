@@ -23,9 +23,10 @@ namespace HowToHunt.Sim.Hunting
     public static class ItemPhysics
     {
         public const float Gravity = 20f;
-        private const float Restitution = 0.3f;
-        private const float GroundFriction = 6f;
-        private const float RestSpeed = 0.35f;
+        private const float Restitution = 0.12f;  // carcasses thud, they don't bounce
+        private const float GroundFriction = 24f; // speed lost per second on the ground (m/s per s): no rolling away
+        private const float RestSpeed = 0.9f;
+        private const float ImpactGrip = 0.7f;   // share of sliding speed lost when it lands
 
         public static void Step(ref ItemBody b, ICollisionWorld world, Vector3 halfExtents, float dt)
         {
@@ -47,7 +48,13 @@ namespace HowToHunt.Sim.Hunting
                 if (!tr.Hit) break;
                 Vector3 n = tr.Normal;
                 float into = Vector3.Dot(b.Velocity, n);
-                if (into < 0f) b.Velocity -= (1f + Restitution) * into * n;
+                if (into < 0f)
+                {
+                    b.Velocity -= (1f + Restitution) * into * n;
+                    // Landing on the ground: the body grips and loses most of its sliding speed at once (a carcass
+                    // thuds down, it doesn't skate). Walls only bounce.
+                    if (n.Y > 0.7f && into < -1f) b.Velocity -= (b.Velocity - Vector3.Dot(b.Velocity, n) * n) * ImpactGrip;
+                }
                 if (n.Y > 0.7f) grounded = true;
                 remaining = (remaining * (1f - tr.Fraction));
                 remaining -= Vector3.Dot(remaining, n) * n;
@@ -65,7 +72,8 @@ namespace HowToHunt.Sim.Hunting
                     b.Resting = true;
                 }
             }
-            if (!b.Resting) b.Spin += 540f * dt * MathF.Min(1f, b.Velocity.Length() / 6f);
+            // Tumble only in the air; on the ground it slides to a stop.
+            if (!b.Resting && !grounded) b.Spin += 540f * dt * MathF.Min(1f, b.Velocity.Length() / 6f);
         }
     }
 }

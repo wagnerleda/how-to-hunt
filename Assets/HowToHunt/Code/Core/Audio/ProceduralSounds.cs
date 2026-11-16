@@ -153,21 +153,42 @@ namespace HowToHunt.Core
         /// </summary>
         public static AudioClip KnifeSwish()
         {
+            // White noise through a resonant band-pass (RBJ biquad) whose centre sweeps up then down, with a bell
+            // envelope like the blade's speed: the classic "fwhoosh" of a fast swing. A second, higher band adds the
+            // airy "sh". Quarter of a second, peaks two thirds of the way through.
             var rng = new System.Random(57);
-            float lp1 = 0f, lp2 = 0f;
-            const float len = 0.2f;
+            var low = new BandPass();
+            var high = new BandPass();
+            const float len = 0.26f;
             return Make("knife_swish", len, (t, i) =>
             {
                 float u = t / len;
-                float centre = Mathf.Lerp(0.18f, 0.55f, Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.3f)));
+                float speed = Mathf.Pow(Mathf.Sin(Mathf.PI * Mathf.Pow(u, 0.75f)), 2f); // fast rise, softer tail
+                float centre = Mathf.Lerp(900f, 4200f, speed);
                 float n = Noise(rng);
-                lp1 += (n - lp1) * centre;          // low-pass at the moving centre
-                lp2 += (lp1 - lp2) * centre * 0.35f; // a second, lower one
-                float band = lp1 - lp2;               // = band-pass around the centre
-                float env = Mathf.Pow(Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.15f)), 1.6f);
-                float ring = (Mathf.Sin(2f * Mathf.PI * 3150f * t) + 0.6f * Mathf.Sin(2f * Mathf.PI * 4720f * t) + 0.35f * Mathf.Sin(2f * Mathf.PI * 6290f * t)) * Mathf.Exp(-t * 28f) * 0.05f;
-                return band * env * 3f + ring;
+                float body = low.Process(n, centre, 2.2f);
+                float air = high.Process(n, centre * 2.1f, 1.4f);
+                return (body * 1f + air * 0.45f) * speed;
             });
+        }
+
+        /// <summary>RBJ cookbook band-pass (constant peak gain), coefficients recomputed per sample for sweeps.</summary>
+        private sealed class BandPass
+        {
+            private float _x1, _x2, _y1, _y2;
+
+            public float Process(float x, float centreHz, float q)
+            {
+                float w = 2f * Mathf.PI * Mathf.Clamp(centreHz, 40f, Rate * 0.45f) / Rate;
+                float alpha = Mathf.Sin(w) / (2f * q);
+                float a0 = 1f + alpha;
+                float b0 = alpha / a0, b2 = -alpha / a0;
+                float a1 = -2f * Mathf.Cos(w) / a0, a2 = (1f - alpha) / a0;
+                float y = b0 * x + b2 * _x2 - a1 * _y1 - a2 * _y2;
+                _x2 = _x1; _x1 = x;
+                _y2 = _y1; _y1 = y;
+                return y;
+            }
         }
 
         /// <summary>Blade drawn or hitting: a quick metallic "shing" (inharmonic partials with a fast decay).</summary>

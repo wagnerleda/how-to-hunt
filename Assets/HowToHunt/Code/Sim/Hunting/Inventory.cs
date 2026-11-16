@@ -32,8 +32,8 @@ namespace HowToHunt.Sim.Hunting
     }
 
     /// <summary>
-    /// The hotbar: a row of slots. Owned tools always fill the first slots (in tool order); prey stacks use the rest.
-    /// Capacity counts every slot, tools included. Pure and allocation-free except when reorganizing tools.
+    /// The hotbar: a row of slots holding anything: tools, weapons, prey stacks. Everything can be dropped and picked
+    /// up again; only prey can be sold. Pure and allocation-free except when resizing or selling.
     /// </summary>
     public sealed class Inventory
     {
@@ -41,50 +41,42 @@ namespace HowToHunt.Sim.Hunting
 
         private readonly ItemStack[] _slots = new ItemStack[MaxSlots];
         private int _capacity = 6;
-        private int _toolCount;
 
         public int Capacity => _capacity;
-        public int ToolCount => _toolCount;
         public ItemStack this[int slot] => slot >= 0 && slot < MaxSlots ? _slots[slot] : default;
 
-        /// <summary>Sets the tools (in order) and the slot count; prey are kept, packed after the tools.</summary>
-        /// <returns>Prey stacks that no longer fit (the caller drops them on the ground).</returns>
-        public List<ItemStack> Configure(IReadOnlyList<uint> tools, int capacity)
+        /// <summary>Changes the slot count. Items keep their slots; those beyond a smaller capacity are returned.</summary>
+        public List<ItemStack> SetCapacity(int capacity)
         {
-            var prey = new List<ItemStack>();
-            for (int i = 0; i < MaxSlots; i++)
-                if (_slots[i].Kind == ItemKind.Prey && _slots[i].Count > 0) prey.Add(_slots[i]);
-            Array.Clear(_slots, 0, MaxSlots);
-            _capacity = Math.Clamp(capacity, 1, MaxSlots);
-            _toolCount = Math.Min(tools.Count, _capacity);
-            for (int i = 0; i < _toolCount; i++) _slots[i] = ItemStack.Tool(tools[i]);
             var overflow = new List<ItemStack>();
-            int next = _toolCount;
-            foreach (ItemStack p in prey)
+            _capacity = Math.Clamp(capacity, 1, MaxSlots);
+            for (int i = _capacity; i < MaxSlots; i++)
             {
-                if (next < _capacity) _slots[next++] = p;
-                else overflow.Add(p);
+                if (!_slots[i].IsEmpty) overflow.Add(_slots[i]);
+                _slots[i] = default;
             }
             return overflow;
         }
 
         /// <summary>
-        /// Adds prey, filling existing matching stacks first (up to <paramref name="maxStack"/>), then empty slots.
+        /// Adds an item, filling matching stacks first (up to <paramref name="maxStack"/>; tools never stack), then
+        /// empty slots from the left.
         /// </summary>
         /// <returns>How many could not be added (0 = all fit).</returns>
-        public int AddPrey(in ItemStack item, int maxStack)
+        public int Add(in ItemStack item, int maxStack)
         {
+            if (item.IsEmpty) return 0;
             int left = item.Count;
-            maxStack = Math.Max(1, maxStack);
-            for (int i = _toolCount; i < _capacity && left > 0; i++)
+            maxStack = item.Kind == ItemKind.Tool ? 1 : Math.Max(1, maxStack);
+            for (int i = 0; i < _capacity && left > 0 && maxStack > 1; i++)
             {
                 ref ItemStack s = ref _slots[i];
-                if (s.Kind != ItemKind.Prey || !s.SameItem(item) || s.Count >= maxStack) continue;
+                if (s.IsEmpty || !s.SameItem(item) || s.Count >= maxStack) continue;
                 int add = Math.Min(left, maxStack - s.Count);
                 s.Count = (ushort)(s.Count + add);
                 left -= add;
             }
-            for (int i = _toolCount; i < _capacity && left > 0; i++)
+            for (int i = 0; i < _capacity && left > 0; i++)
             {
                 ref ItemStack s = ref _slots[i];
                 if (!s.IsEmpty) continue;
@@ -98,22 +90,23 @@ namespace HowToHunt.Sim.Hunting
 
         public bool CanAdd(in ItemStack item, int maxStack)
         {
-            for (int i = _toolCount; i < _capacity; i++)
+            maxStack = item.Kind == ItemKind.Tool ? 1 : Math.Max(1, maxStack);
+            for (int i = 0; i < _capacity; i++)
             {
                 ItemStack s = _slots[i];
                 if (s.IsEmpty) return true;
-                if (s.Kind == ItemKind.Prey && s.SameItem(item) && s.Count < Math.Max(1, maxStack)) return true;
+                if (maxStack > 1 && s.SameItem(item) && s.Count < maxStack) return true;
             }
             return false;
         }
 
-        /// <summary>Takes one prey from a slot (throwing, dropping).</summary>
+        /// <summary>Takes one item from a slot (dropping, throwing).</summary>
         public bool TakeOne(int slot, out ItemStack taken)
         {
             taken = default;
-            if (slot < _toolCount || slot >= _capacity) return false;
+            if (slot < 0 || slot >= _capacity) return false;
             ref ItemStack s = ref _slots[slot];
-            if (s.Kind != ItemKind.Prey || s.Count == 0) return false;
+            if (s.IsEmpty) return false;
             taken = s;
             taken.Count = 1;
             s.Count--;
@@ -121,13 +114,14 @@ namespace HowToHunt.Sim.Hunting
             return true;
         }
 
-        /// <summary>Removes every prey stack (selling) and returns them.</summary>
+        /// <summary>Removes every prey stack (selling) and returns them. Tools stay.</summary>
         public List<ItemStack> TakeAllPrey()
         {
             var list = new List<ItemStack>();
-            for (int i = _toolCount; i < MaxSlots; i++)
+            for (int i = 0; i < MaxSlots; i++)
             {
-                if (_slots[i].Kind == ItemKind.Prey && _slots[i].Count > 0) list.Add(_slots[i]);
+                if (_slots[i].Kind != ItemKind.Prey) continue;
+                if (_slots[i].Count > 0) list.Add(_slots[i]);
                 _slots[i] = default;
             }
             return list;
@@ -138,12 +132,18 @@ namespace HowToHunt.Sim.Hunting
             get
             {
                 int n = 0;
-                for (int i = _toolCount; i < MaxSlots; i++) if (_slots[i].Kind == ItemKind.Prey) n += _slots[i].Count;
+                for (int i = 0; i < MaxSlots; i++) if (_slots[i].Kind == ItemKind.Prey) n += _slots[i].Count;
                 return n;
             }
         }
 
-        /// <summary>Overwrites a slot (network/save restore). Use Configure first to set tools and capacity.</summary>
+        public bool HasTool(uint tool)
+        {
+            for (int i = 0; i < _capacity; i++) if (_slots[i].Kind == ItemKind.Tool && _slots[i].Content == tool && _slots[i].Count > 0) return true;
+            return false;
+        }
+
+        /// <summary>Overwrites a slot (network restore).</summary>
         public void SetSlot(int slot, in ItemStack item)
         {
             if (slot >= 0 && slot < MaxSlots) _slots[slot] = item;
@@ -153,13 +153,8 @@ namespace HowToHunt.Sim.Hunting
         {
             Array.Copy(other._slots, _slots, MaxSlots);
             _capacity = other._capacity;
-            _toolCount = other._toolCount;
         }
 
-        public void Clear()
-        {
-            Array.Clear(_slots, 0, MaxSlots);
-            _toolCount = 0;
-        }
+        public void Clear() => Array.Clear(_slots, 0, MaxSlots);
     }
 }

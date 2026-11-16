@@ -30,6 +30,8 @@ namespace HowToHunt.Economy
         Refused,
         /// <summary>No room: the catch fell at the player's feet.</summary>
         InventoryFull,
+        /// <summary>The outfitter handed back lost tools.</summary>
+        ToolsReturned,
     }
 
     public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull }
@@ -59,7 +61,7 @@ namespace HowToHunt.Economy
         public string LifetimeCoins;
     }
 
-    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop }
+    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools }
 
     /// <summary>Client → host: sell, buy, pick an item up, throw or drop the held prey.</summary>
     public struct EconomyRequestBroadcast : IBroadcast
@@ -107,6 +109,9 @@ namespace HowToHunt.Economy
             m.ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
             m.ClientManager.RegisterBroadcast<EconomyStateBroadcast>(OnStateFromHost);
             WorldItems.Attach(m);
+            // Using a tool requires carrying it (tools can be dropped, lost or picked up by someone else).
+            PlayerTools.HostHasTool = (clientId, tool) =>
+                HuntingCvars.AllTools.Value || (Ledger.TryGetValue(clientId, out EconomyProfile l) && l.Inventory.HasTool(tool));
         }
 
         public static void Detach()
@@ -114,6 +119,7 @@ namespace HowToHunt.Economy
             _manager = null;
             _joined = false;
             Ledger.Clear();
+            PlayerTools.HostHasTool = null;
             WorldItems.Detach();
         }
 
@@ -139,6 +145,8 @@ namespace HowToHunt.Economy
             if (upgrade != null) Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.Buy, Upgrade = upgrade.Id.Value });
         }
 
+        public static void RequestReclaimTools() => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.ReclaimTools });
+
         public static void RequestPickUp(ushort item) => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.PickUp, Item = item });
 
         public static void RequestThrow(int slot, Vector3 origin, Vector3 direction)
@@ -159,7 +167,7 @@ namespace HowToHunt.Economy
         public static void OnLocalLoaded()
         {
             Loadouts.Local.SetUpgrades(Local.Upgrades);
-            Local.RefreshInventory();
+            Local.ApplyCapacity();
             LocalChanged?.Invoke(new EconomyStateBroadcast { Event = (byte)EconomyEvent.Synced });
         }
 
@@ -202,7 +210,7 @@ namespace HowToHunt.Economy
             }
             p.Captures++;
             p.Research[e.Prey.Value] = p.ResearchOf(e.Prey.Value) + 1;
-            if (p.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content)) > 0)
+            if (p.Inventory.Add(item, EconomyProfile.StackSize(item.Content)) > 0)
             {
                 DropAtFeet(e.ClientId, item);
                 Send(conn, p, EconomyEvent.InventoryFull, content: e.Prey.Value, flags: item.Flags);
@@ -221,6 +229,7 @@ namespace HowToHunt.Economy
                 case EconomyRequestKind.PickUp: PickUp(conn, p, req.Item); break;
                 case EconomyRequestKind.Throw: Release(conn, p, req, thrown: true); break;
                 case EconomyRequestKind.Drop: Release(conn, p, req, thrown: false); break;
+                case EconomyRequestKind.ReclaimTools: Reclaim(conn, p); break;
             }
         }
 
@@ -247,8 +256,20 @@ namespace HowToHunt.Economy
             p.Trophies -= u.CostTrophies;
             p.Upgrades.Add(upgradeId);
             Loadouts.ForClient(conn.ClientId).AddUpgrade(upgradeId);
-            foreach (ItemStack overflow in p.RefreshInventory()) DropAtFeet(conn.ClientId, overflow);
+            foreach (ItemStack overflow in p.ApplyCapacity()) DropAtFeet(conn.ClientId, overflow);
+            if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null && p.Inventory.Add(ItemStack.Tool(u.Tool.Id.Value), 1) > 0)
+                DropAtFeet(conn.ClientId, ItemStack.Tool(u.Tool.Id.Value));
             Send(conn, p, EconomyEvent.Bought, content: upgradeId, coins: u.CostCoins);
+        }
+
+        /// <summary>Host: the outfitter replaces owned tools the player no longer carries (lost, dropped, taken).</summary>
+        private static void Reclaim(NetworkConnection conn, EconomyProfile p)
+        {
+            if (!NearStation(conn, CampStationKind.Shop)) { Refuse(conn, p, EconomyRefusal.NotAtStation); return; }
+            int missing = p.MissingTools().Count;
+            if (missing == 0) { Refuse(conn, p, EconomyRefusal.AlreadyOwned); return; }
+            foreach (ItemStack overflow in p.GiveMissingTools()) DropAtFeet(conn.ClientId, overflow);
+            Send(conn, p, EconomyEvent.ToolsReturned, count: missing);
         }
 
         private static void PickUp(NetworkConnection conn, EconomyProfile p, ushort itemId)
@@ -261,7 +282,7 @@ namespace HowToHunt.Economy
             int stack = EconomyProfile.StackSize(w.Item.Content);
             if (!p.Inventory.CanAdd(w.Item, stack)) { Refuse(conn, p, EconomyRefusal.InventoryFull, w.Item.Content); return; }
             ItemStack item = w.Item;
-            int left = p.Inventory.AddPrey(item, stack);
+            int left = p.Inventory.Add(item, stack);
             Vector3 at = w.Body.Position.ToUnity();
             WorldItems.HostRemove(w);
             if (left > 0)
@@ -404,16 +425,20 @@ namespace HowToHunt.Economy
             p.Kills = msg.Kills;
             p.LifetimeCoins = BigDouble.Deserialize(msg.LifetimeCoins);
 
-            p.RefreshInventory();
             int n = msg.SlotKind != null ? msg.SlotKind.Length : 0;
             if (msg.SlotContent == null || msg.SlotFlags == null || msg.SlotCount == null) n = 0;
+            if (exact) p.Inventory.SetCapacity(Math.Max(1, n));
+            else p.ApplyCapacity();
             for (int s = 0; s < n; s++)
             {
-                if (msg.SlotKind[s] != (byte)ItemKind.Prey || msg.SlotCount[s] == 0) continue;
-                var item = new ItemStack { Kind = ItemKind.Prey, Content = msg.SlotContent[s], Flags = msg.SlotFlags[s], Count = msg.SlotCount[s] };
-                if (exact) p.Inventory.SetSlot(s, item);
-                else if (ContentRegistry.Get<PreyDefinition>(new ContentId(item.Content)) != null)
-                    p.Inventory.AddPrey(item, EconomyProfile.StackSize(item.Content));
+                var kind = (ItemKind)msg.SlotKind[s];
+                if (kind == ItemKind.Empty || msg.SlotCount[s] == 0) continue;
+                var item = new ItemStack { Kind = kind, Content = msg.SlotContent[s], Flags = msg.SlotFlags[s], Count = msg.SlotCount[s] };
+                if (exact) { p.Inventory.SetSlot(s, item); continue; }
+                bool known = kind == ItemKind.Tool
+                    ? ContentRegistry.Get<ToolDefinition>(new ContentId(item.Content)) != null
+                    : ContentRegistry.Get<PreyDefinition>(new ContentId(item.Content)) != null;
+                if (known) p.Inventory.Add(item, EconomyProfile.StackSize(item.Content));
             }
         }
 

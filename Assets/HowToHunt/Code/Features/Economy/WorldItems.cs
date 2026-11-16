@@ -92,12 +92,7 @@ namespace HowToHunt.Economy
             return null;
         }
 
-        private static Vec3 HalfExtentsFor(in ItemStack item)
-        {
-            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(new ContentId(item.Content));
-            Vector3 h = def != null ? def.HalfExtents * Mathf.Min(1f, def.VisualScale) : new Vector3(0.1f, 0.1f, 0.1f);
-            return new Vec3(Mathf.Max(0.06f, h.x), Mathf.Max(0.06f, h.y), Mathf.Max(0.06f, h.z));
-        }
+        private static Vec3 HalfExtentsFor(in ItemStack item, ushort id) => ItemShapes.HalfExtents(item, id);
 
         // --- host -------------------------------------------------------------------------------------------
 
@@ -114,7 +109,7 @@ namespace HowToHunt.Economy
                 ExpireAt = Time.time + Lifetime.Value,
             };
             if (_nextId == 0) _nextId = 1;
-            w.HalfExtents = HalfExtentsFor(item);
+            w.HalfExtents = HalfExtentsFor(item, w.Id);
             w.PreviousPosition = w.Body.Position;
             Items.Add(w);
             WorldItemRenderer.Create(w);
@@ -183,7 +178,7 @@ namespace HowToHunt.Economy
                 Item = new ItemStack { Kind = (ItemKind)msg.Kind, Content = msg.Content, Flags = msg.Flags, Count = msg.Count },
                 Body = new ItemBody { Position = msg.Position.ToSim(), Velocity = msg.Velocity.ToSim(), Resting = msg.Resting },
             };
-            w.HalfExtents = HalfExtentsFor(w.Item);
+            w.HalfExtents = HalfExtentsFor(w.Item, w.Id);
             // Catch up to now: the host started simulating at msg.Tick.
             int behind = Mathf.Clamp((int)(_manager.TimeManager.Tick - msg.Tick), 0, 256);
             float dt = (float)_manager.TimeManager.TickDelta;

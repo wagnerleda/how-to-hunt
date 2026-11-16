@@ -485,10 +485,67 @@ namespace HowToHunt.Editor
                 else b.Encapsulate(r.bounds);
             }
             if (!any) return;
-            Vector3 size = trunkOnly ? new Vector3(0.12f * scale, b.size.y, 0.12f * scale) : Vector3.Scale(b.size, new Vector3(0.8f, 1f, 0.8f));
-            Vector3 center = trunkOnly ? new Vector3(feet.x, feet.y + b.size.y * 0.5f, feet.z) : b.center;
-            GameObject brush = Box(parent, model + " Collision", center, size, "Rock");
-            brush.GetComponent<MeshRenderer>().enabled = false;
+            if (trunkOnly)
+            {
+                // Trees: only the trunk blocks (walk under the canopy).
+                GameObject trunk = Box(parent, model + " Collision", new Vector3(feet.x, feet.y + b.size.y * 0.5f, feet.z), new Vector3(0.12f * scale, b.size.y, 0.12f * scale), "Rock");
+                trunk.GetComponent<MeshRenderer>().enabled = false;
+                return;
+            }
+            // Rocks, logs, stumps, tents: a 26-sided hull fitted to the model's own vertices, so the collision follows
+            // the shape (a log lying diagonally is a log, not a big square box).
+            var hull = new GameObject(model + " Collision");
+            hull.transform.SetParent(parent, false);
+            hull.AddComponent<SimBrush>();
+            Vector4[] planes = FitHull(go, out Vector3 min, out Vector3 max);
+            hull.GetComponent<SimBrush>().SetPlanes(planes, min, max);
+        }
+
+        private static readonly Vector3[] HullAxes =
+        {
+            new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1),
+            new Vector3(1, 1, 0), new Vector3(1, -1, 0), new Vector3(1, 0, 1), new Vector3(1, 0, -1), new Vector3(0, 1, 1), new Vector3(0, 1, -1),
+            new Vector3(1, 1, 1), new Vector3(1, 1, -1), new Vector3(1, -1, 1), new Vector3(-1, 1, 1),
+        };
+
+        /// <summary>
+        /// A 26-DOP around every vertex of the model (13 directions, both ways), pulled in 2 cm so you brush against
+        /// the surface rather than an invisible shell. Always convex, so it is a valid brush.
+        /// </summary>
+        private static Vector4[] FitHull(GameObject go, out Vector3 min, out Vector3 max)
+        {
+            var points = new List<Vector3>();
+            var buffer = new List<Vector3>();
+            foreach (MeshFilter mf in go.GetComponentsInChildren<MeshFilter>())
+            {
+                if (mf.sharedMesh == null) continue;
+                buffer.Clear();
+                mf.sharedMesh.GetVertices(buffer);
+                Matrix4x4 m = mf.transform.localToWorldMatrix;
+                foreach (Vector3 v in buffer) points.Add(m.MultiplyPoint3x4(v));
+            }
+            const float inset = 0.02f;
+            var planes = new List<Vector4>(26);
+            min = Vector3.one * float.MaxValue;
+            max = Vector3.one * float.MinValue;
+            foreach (Vector3 p in points) { min = Vector3.Min(min, p); max = Vector3.Max(max, p); }
+            foreach (Vector3 axis in HullAxes)
+            {
+                Vector3 n = axis.normalized;
+                float hi = float.MinValue, lo = float.MaxValue;
+                foreach (Vector3 p in points)
+                {
+                    float d = Vector3.Dot(n, p);
+                    if (d > hi) hi = d;
+                    if (d < lo) lo = d;
+                }
+                if (hi - lo < inset * 3f) { hi += inset; lo -= inset; } // keep very thin props solid
+                planes.Add(new Vector4(n.x, n.y, n.z, hi - inset));
+                planes.Add(new Vector4(-n.x, -n.y, -n.z, -(lo + inset)));
+            }
+            min += Vector3.one * inset;
+            max -= Vector3.one * inset;
+            return planes.ToArray();
         }
 
         // --- instanced scatter (grass, flowers, bushes, forest ring) ------------------------------------------

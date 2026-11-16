@@ -14,18 +14,30 @@ namespace HowToHunt.Core
         private static readonly Vector3 Stage = new Vector3(0f, -5000f, 0f);
 
         /// <param name="yaw">Model yaw for the shot (e.g. -60 shows a tool from the side).</param>
-        public static Texture2D Get(GameObject model, float yaw = 30f, float pitch = 15f)
+        /// <summary>
+        /// Removes child objects whose name ends with the suffix (e.g. the hand baked into a viewmodel). Removed rather
+        /// than disabled: a disabled renderer left in the one-shot icon render came out in debug colours.
+        /// </summary>
+        public static void HideParts(GameObject root, string suffix)
+        {
+            foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+                if (r != null && r.gameObject != root && r.gameObject.name.EndsWith(suffix, System.StringComparison.Ordinal)) Object.DestroyImmediate(r.gameObject);
+        }
+
+        public static Texture2D Get(GameObject model, float yaw = 30f, float pitch = 15f, string hideSuffix = null)
         {
             if (model == null || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return null;
-            var key = (model, Mathf.RoundToInt(yaw * 10f + pitch));
+            var key = (model, Mathf.RoundToInt(yaw * 10f + pitch) + (hideSuffix != null ? 1 << 20 : 0));
             if (Cache.TryGetValue(key, out Texture2D cached) && cached != null) return cached;
 
             GameObject instance = Object.Instantiate(model, Stage, Quaternion.Euler(0f, yaw, 0f));
             foreach (Animator a in instance.GetComponentsInChildren<Animator>()) a.enabled = false;
+            if (hideSuffix != null) HideParts(instance, hideSuffix);
             Bounds b = new Bounds(Stage, Vector3.zero);
             bool any = false;
             foreach (Renderer r in instance.GetComponentsInChildren<Renderer>())
             {
+                if (!r.enabled) continue;
                 if (!any) { b = r.bounds; any = true; }
                 else b.Encapsulate(r.bounds);
             }

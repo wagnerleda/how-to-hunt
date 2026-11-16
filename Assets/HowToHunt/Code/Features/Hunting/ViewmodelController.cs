@@ -135,7 +135,7 @@ namespace HowToHunt.Hunting
             _useTime = Time.time;
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
-            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.3f, Random.Range(0.92f, 1.12f));
+            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.55f, Random.Range(0.9f, 1.12f));
         }
 
         /// <summary>A hard landing gives the arm an extra downward kick on top of the inertia (it reads better).</summary>
@@ -255,7 +255,7 @@ namespace HowToHunt.Hunting
             };
         }
 
-        private static readonly Pose NetRest = new Pose { Offset = new Vector3(0f, -0.02f, 0f), Euler = new Vector3(-50f, -8f, 0f) };
+        private static readonly Pose NetRest = new Pose { Offset = new Vector3(0.05f, -0.03f, 0f), Euler = new Vector3(-42f, 28f, -18f) }; // angled off to the right, out of the way
         private Pose _netPose = NetRest, _netFrom, _netVia, _netTo;
         private bool _netHasVia;
         private float _netDir = 1f;   // direction of the last swoop: -1 = moved left, +1 = moved right
@@ -264,7 +264,7 @@ namespace HowToHunt.Hunting
         private void StartNetSwoop(Camera cam)
         {
             float dir = _netDir > 0f ? -1f : 1f; // alternate; the first swoop from rest goes right -> left
-            float yawEnd = HalfFovDegrees(cam) + 14f;
+            float yawEnd = HalfFovDegrees(cam) + 2f; // just past the screen edge
             _netFrom = _netPose;
             // Coming from rest (or from the wrong side): wind up to the starting side first.
             _netHasVia = Mathf.Sign(_netPose.Euler.y + 0.001f) != -dir || _netPose.Euler.x < -25f;

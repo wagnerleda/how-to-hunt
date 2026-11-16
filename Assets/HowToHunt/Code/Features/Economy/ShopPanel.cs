@@ -24,6 +24,7 @@ namespace HowToHunt.Economy
         private RectTransform _panel;
         private TextMeshProUGUI _title;
         private TextMeshProUGUI _wallet;
+        private Image _reclaim;
         private RectTransform _rows;
         private CampStation _station;
         private bool _open;
@@ -62,6 +63,16 @@ namespace HowToHunt.Economy
             TextMeshProUGUI hint = Child(Hud.Text("Shop Hint", new Vector2(0.5f, 0f), new Vector2(0f, 26f), 20f, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.6f)));
             hint.rectTransform.sizeDelta = new Vector2(860f, 30f);
             hint.SetText($"{KeyBindings.DisplayName(GameAction.Interact)} or Esc to close");
+            // Lost a tool (dropped it, someone took it)? The outfitter replaces owned tools for free.
+            _reclaim = Hud.Rect("Reclaim", new Vector2(0.5f, 0f), new Vector2(0f, 74f), new Vector2(360f, 40f), new Color(0.35f, 0.55f, 0.7f));
+            _reclaim.rectTransform.SetParent(_panel, false);
+            _reclaim.raycastTarget = true;
+            _reclaim.gameObject.AddComponent<Button>().onClick.AddListener(() => { Sfx.Play2D("Kenney/click_001", 0.4f); EconomyNet.RequestReclaimTools(); });
+            TextMeshProUGUI reclaimLabel = Hud.Text("Label", new Vector2(0.5f, 0.5f), Vector2.zero, 20f, TextAlignmentOptions.Center, Color.white);
+            reclaimLabel.rectTransform.SetParent(_reclaim.rectTransform, false);
+            reclaimLabel.rectTransform.anchoredPosition = Vector2.zero;
+            reclaimLabel.rectTransform.sizeDelta = new Vector2(360f, 40f);
+            reclaimLabel.SetText("Recover lost tools (free)");
             _rows = new GameObject("Rows", typeof(RectTransform)).GetComponent<RectTransform>();
             _rows.SetParent(_panel, false);
             _rows.anchorMin = _rows.anchorMax = new Vector2(0.5f, 1f);
@@ -193,6 +204,7 @@ namespace HowToHunt.Economy
         {
             EconomyProfile p = EconomyNet.Local;
             _wallet.SetText($"You have {p.Coins.ToShortString()} coins");
+            _reclaim.gameObject.SetActive(p.MissingTools().Count > 0);
             foreach (Row row in _rowList)
             {
                 UpgradeDefinition u = row.Upgrade;
