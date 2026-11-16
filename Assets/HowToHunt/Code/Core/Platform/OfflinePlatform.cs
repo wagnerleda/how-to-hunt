@@ -27,6 +27,7 @@ namespace HowToHunt.Core
         public ulong LocalUserId { get; }
         public string LocalUserName { get; }
         public ILobbyService Lobbies => null;
+        public ICloudStorage Cloud => null;
         public void SetRichPresence(string key, string value) { }
         public void UnlockAchievement(string apiName) { }
         public void Tick() { }

@@ -1,10 +1,19 @@
 using System.Collections.Generic;
 using HowToHunt.Core;
 using HowToHunt.Sim.Combat;
+using FishNet.Broadcast;
 using UnityEngine;
 
 namespace HowToHunt.Hunting
 {
+    /// <summary>Host → everyone: a dummy's health changed.</summary>
+    public struct DummyStateBroadcast : IBroadcast
+    {
+        public int Index;
+        public float Health;
+        public bool Down;
+    }
+
     /// <summary>
     /// A shooting-range target that walks back and forth on a deterministic path (pure function of the server tick).
     /// The host records its pose every tick for lag compensation; every machine draws it at its own view tick.

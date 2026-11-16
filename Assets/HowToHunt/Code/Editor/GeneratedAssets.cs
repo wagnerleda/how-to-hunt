@@ -69,6 +69,26 @@ namespace HowToHunt.Editor
             m.SetFloat("_Smoothness", 0.05f);
             m.enableInstancing = true;
             EditorUtility.SetDirty(m);
+
+            // Gore: particle cubes take their colour from the particle (vertex colour); gibs and splats are tinted
+            // copies of M_Gib made at runtime, one per colour. Slightly glossy so blood reads as wet.
+            LitFx("M_Gore", "Universal Render Pipeline/Particles/Lit", Color.white, 0.5f);
+            LitFx("M_Gib", "Universal Render Pipeline/Lit", Color.white, 0.45f);
+        }
+
+        private static void LitFx(string name, string shader, Color color, float smoothness)
+        {
+            string path = ResourcesDir + "/FX/" + name + ".mat";
+            Material m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(Shader.Find(shader));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            m.SetColor("_BaseColor", color);
+            m.SetFloat("_Smoothness", smoothness);
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
         }
 
         private static void UnlitFx(string name, Color color)
@@ -125,7 +145,7 @@ namespace HowToHunt.Editor
                 NetworkObject nob = root.AddComponent<NetworkObject>();
                 root.AddComponent<PlayerMotor>();
                 root.AddComponent<PlayerVisual>();
-                root.AddComponent<Hunting.PlayerWeapon>();
+                root.AddComponent<Hunting.PlayerTools>();
 
                 var visual = new GameObject("Visual");
                 visual.transform.SetParent(root.transform, false);

@@ -16,6 +16,9 @@ namespace HowToHunt.Core
         /// <summary>Set by the platform module during Register (Steam if available, Offline otherwise).</summary>
         public static IPlatformServices Platform { get; set; }
 
+        /// <summary>Launched with -nocfg (bots, automated tests): no config or profile writes.</summary>
+        public static bool TestInstance { get; internal set; }
+
         /// <summary>
         /// Build version: VERSION file + git commit count (e.g. 0.1.0.42), stamped by tools/build-windows.
         /// In the editor it is computed the same way, so the editor and a fresh build of the same commit can play together.

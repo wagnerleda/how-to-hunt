@@ -45,6 +45,9 @@ namespace HowToHunt.Core
 
         public T Cvar<T>(T cvar) where T : Foundation.Cvar => Console.Register(cvar);
 
+        /// <summary>Adds a slice to the player profile (versioned, migrates itself).</summary>
+        public void SaveSlice(ISaveSlice slice) => ProfileStore.Register(slice);
+
         public void Command(string name, string description, Foundation.CommandHandler handler,
             Foundation.CommandFlags flags = Foundation.CommandFlags.None)
             => Console.Register(name, description, handler, flags);

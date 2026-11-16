@@ -25,6 +25,9 @@ namespace HowToHunt.Core
         /// <summary>Lobby service, or null when offline.</summary>
         ILobbyService Lobbies { get; }
 
+        /// <summary>Cloud saves, or null when unavailable.</summary>
+        ICloudStorage Cloud { get; }
+
         void SetRichPresence(string key, string value);
 
         /// <summary>Unlocks an achievement by API name (no-op offline).</summary>

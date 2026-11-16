@@ -97,12 +97,12 @@ namespace HowToHunt.Hunting
             _tick = ProceduralSounds.HitTick();
             _kill = ProceduralSounds.KillThunk();
 
-            PlayerWeapon.LocalShot += OnLocalShot;
+            PlayerTools.LocalUse += OnLocalUse;
         }
 
         private void OnDestroy()
         {
-            PlayerWeapon.LocalShot -= OnLocalShot;
+            PlayerTools.LocalUse -= OnLocalUse;
             if (_instance == this) _instance = null;
         }
 
@@ -128,11 +128,12 @@ namespace HowToHunt.Hunting
 
         public static void RememberSeen(double viewTick) => _lastSeenTick = viewTick;
 
-        private void OnLocalShot(PlayerWeapon weapon, Vector3 origin, Vector3 dir)
+        private void OnLocalUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
+            if (tool.Archetype != Sim.Hunting.ToolArchetype.Firearm) return;
             Vector3 muzzle = origin + dir * 0.6f + Camera.main.transform.right * 0.18f - Camera.main.transform.up * 0.12f;
             // Cosmetic tracer end: stop at level geometry (the host decides what was really hit).
-            Vector3 end = origin + dir * HuntingCvars.Range.Value;
+            Vector3 end = origin + dir * tool.Range;
             var tr = SimWorld.Current.TraceBox(origin.ToSim(), end.ToSim(), System.Numerics.Vector3.Zero);
             if (tr.Hit) end = tr.EndPosition.ToUnity();
             Tracer(muzzle, end);
@@ -153,13 +154,7 @@ namespace HowToHunt.Hunting
         {
             if (_instance == null) return;
             HitFeedback f = _instance;
-            Color c = killed || head ? new Color(1f, 0.3f, 0.25f) : Color.white;
-            foreach (Image i in f._marker)
-            {
-                i.color = c;
-                i.gameObject.SetActive(true);
-            }
-            f._markerLife = killed ? 0.35f : 0.18f;
+            Marker(killed || head ? new Color(1f, 0.3f, 0.25f) : Color.white, killed ? 0.35f : 0.18f);
             f._audio.PlayOneShot(killed ? f._kill : f._tick, killed ? 0.45f : 0.3f);
             f.ShowNumber(point, damage, head || killed);
 
@@ -173,6 +168,18 @@ namespace HowToHunt.Hunting
                 f._debugLife = 1.5f;
                 Game.Console.Print($"[hit] rewound {rewoundTicks:0.0} ticks ({rewoundTicks * 1000f / HitClock.TickRate:0} ms), seen vs checked offset {(seen.Position.ToUnity() - checkedFeet).magnitude * 100f:0.0} cm");
             }
+        }
+
+        /// <summary>Flashes the crosshair hit marker.</summary>
+        public static void Marker(Color color, float seconds)
+        {
+            if (_instance == null) return;
+            foreach (Image i in _instance._marker)
+            {
+                i.color = color;
+                i.gameObject.SetActive(true);
+            }
+            _instance._markerLife = seconds;
         }
 
         private void Tracer(Vector3 from, Vector3 to)

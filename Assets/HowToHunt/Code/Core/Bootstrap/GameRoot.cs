@@ -30,6 +30,8 @@ namespace HowToHunt.Core
         private void Awake()
         {
             Game.ResetStatics();
+            ProfileStore.ResetStatics();
+            ContentRegistry.Reset();
             EventBus.ClearAll();
             ConsoleSystem.ResetGlobal();
             Game.Root = this;
@@ -48,6 +50,7 @@ namespace HowToHunt.Core
 
             // -nocfg: neither read nor write config.cfg (several instances on one PC: tests, bots).
             NoConfig = Array.IndexOf(Environment.GetCommandLineArgs(), "-nocfg") >= 0;
+            Game.TestInstance = NoConfig;
             if (!NoConfig)
             {
                 ExecIfExists(console, ConfigFile);
@@ -57,6 +60,7 @@ namespace HowToHunt.Core
                 if ((cvar.Flags & CvarFlags.Archive) != 0) cvar.Changed += _ => ScheduleConfigSave();
 
             Game.Modules.InitializeAll();
+            ProfileStore.Load(Game.Platform.LocalUserId);
             gameObject.AddComponent<DevConsoleView>();
 
             console.Print($"How to Hunt {Game.Version} ({Application.platform}), platform: {Game.Platform.Name}" +
@@ -67,6 +71,7 @@ namespace HowToHunt.Core
         private void Update()
         {
             Game.Platform?.Tick();
+            ProfileStore.Update();
             if (_saveConfigAt > 0f && Time.unscaledTime >= _saveConfigAt)
             {
                 _saveConfigAt = -1f;
@@ -77,6 +82,7 @@ namespace HowToHunt.Core
         private void OnApplicationQuit()
         {
             SaveConfig();
+            ProfileStore.SaveNow();
             Game.Modules?.ShutdownAll();
             Game.Platform?.Shutdown();
             ConsoleSystem.Global.Output -= EchoToUnityLog;

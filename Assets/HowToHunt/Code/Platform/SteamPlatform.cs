@@ -71,6 +71,8 @@ namespace HowToHunt.Platform
         public ulong LocalUserId { get; }
         public string LocalUserName { get; }
         public ILobbyService Lobbies => _initialized ? _lobbies : null;
+        public ICloudStorage Cloud => _initialized ? _cloud : null;
+        private readonly SteamCloud _cloud = new SteamCloud();
 
         public void SetRichPresence(string key, string value)
         {

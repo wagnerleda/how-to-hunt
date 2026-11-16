@@ -72,6 +72,9 @@ namespace HowToHunt.Net
         /// <summary>Raised on the main thread after a NetworkManager is created, before it starts (features hook events here).</summary>
         public static event Action<NetworkManager> ManagerCreated;
 
+        /// <summary>Raised after the session ends and its NetworkManager is gone (features drop session state here).</summary>
+        public static event Action SessionEnded;
+
         /// <summary>Host a party. Online through Steam when available, otherwise a local session (solo still works).</summary>
         public static void Host(bool forceLocal = false)
         {
@@ -222,6 +225,7 @@ namespace HowToHunt.Net
                 if (manager.IsServerStarted) manager.ServerManager.StopConnection(true);
                 UnityEngine.Object.Destroy(manager.gameObject);
             }
+            if (manager != null) SessionEnded?.Invoke();
             Game.Platform?.Lobbies?.Leave();
             Game.Platform?.SetRichPresence("status", string.Empty);
             HostName = string.Empty;
