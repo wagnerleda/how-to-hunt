@@ -41,8 +41,9 @@ MonoBehaviour:
   MaxSpreadDegrees: 7
   AdsSpreadFactor: 0.25
   AdsZoom: 1.15
-  SightOffset: {x: 0, y: 0.07, z: 0}
+  SightOffset: {x: 0, y: 0.075, z: 0}
   MuzzleOffset: {x: 0, y: 0.04, z: 0.29}
+  ScopeOverlay: 0
   Weight: 0
   Cooldown: 0.4
   Slot: 3

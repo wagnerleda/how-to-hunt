@@ -64,7 +64,11 @@ namespace HowToHunt.Core
 
             var rt = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = rt;
+            // No scene fog on icons: the camera is far from the stage and fog would tint the whole item.
+            bool fog = RenderSettings.fog;
+            RenderSettings.fog = false;
             cam.Render();
+            RenderSettings.fog = fog;
             RenderTexture previous = RenderTexture.active;
             RenderTexture.active = rt;
             var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false) { name = $"Icon {model.name}" };

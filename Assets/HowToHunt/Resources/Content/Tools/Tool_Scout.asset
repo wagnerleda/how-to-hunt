@@ -43,6 +43,7 @@ MonoBehaviour:
   AdsZoom: 3.5
   SightOffset: {x: 0, y: 0.09, z: -0.06}
   MuzzleOffset: {x: 0, y: 0.03, z: 0.78}
+  ScopeOverlay: 1
   Weight: 1
   Cooldown: 1.1
   Slot: 4

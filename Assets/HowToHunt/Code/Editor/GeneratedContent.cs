@@ -151,7 +151,7 @@ namespace HowToHunt.Editor
                 t.MaxSpreadDegrees = 7f;
                 t.AdsSpreadFactor = 0.25f;
                 t.AdsZoom = 1.15f;
-                t.SightOffset = new Vector3(0f, 0.07f, 0f);
+                t.SightOffset = new Vector3(0f, 0.075f, 0f);
                 t.MuzzleOffset = new Vector3(0f, 0.04f, 0.29f);
                 t.Weight = 0;
                 t.HeadshotMultiplier = 2f;
@@ -191,6 +191,7 @@ namespace HowToHunt.Editor
                 t.MaxSpreadDegrees = 0.15f;
                 t.AdsSpreadFactor = 0.5f;
                 t.AdsZoom = 3.5f;
+                t.ScopeOverlay = true;
                 t.SightOffset = new Vector3(0f, 0.09f, -0.06f);
                 t.MuzzleOffset = new Vector3(0f, 0.03f, 0.78f);
                 t.Weight = 1; // a little heavy: slows you slightly while held

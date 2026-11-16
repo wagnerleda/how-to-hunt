@@ -124,7 +124,7 @@ namespace HowToHunt.Hunting
 
         // --- local firearm state (owner) -----------------------------------------------------------------------
 
-        private readonly int[] _ammo = new int[MaxTools];          // -1 = full (not yet fired)
+        private readonly int[] _ammo = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }; // -1 = full
         private float _reloadStart = -1f, _reloadUntil = -1f;
         private int _reloadTool = -1;
 
@@ -156,12 +156,12 @@ namespace HowToHunt.Hunting
             bool gun = tool != null && tool.Archetype == ToolArchetype.Firearm;
             UpdateGunState(tool, gun);
             if (AutoFireShots > 0) { AutoFire(); return; }
-            if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) { LocalAiming = false; return; }
+            if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) { LocalAiming = gun && HuntingCvars.ForceAim.Value && LocalReload < 0f; return; }
 
             // Slot keys belong to the inventory bar (economy feature), which calls SelectTool / HoldPrey.
             if (KeyBindings.WasPressedThisFrame(GameAction.Inspect) && (tool != null || HeldPrey != null)) LocalInspect?.Invoke();
             if (tool == null) { LocalAiming = false; return; }
-            LocalAiming = gun && KeyBindings.IsPressed(GameAction.Aim) && LocalReload < 0f && LocalThrowCharge <= 0f;
+            LocalAiming = gun && (KeyBindings.IsPressed(GameAction.Aim) || HuntingCvars.ForceAim.Value) && LocalReload < 0f && LocalThrowCharge <= 0f;
             if (gun && KeyBindings.WasPressedThisFrame(GameAction.Reload)) StartReload(tool);
 
             bool trigger = gun && !tool.Automatic ? KeyBindings.WasPressedThisFrame(GameAction.Fire) : KeyBindings.IsPressed(GameAction.Fire);

@@ -46,9 +46,12 @@ namespace HowToHunt.Hunting
 
         // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
         private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
-        private const float AdsSeconds = 0.16f, AdsForward = 0.2f, InspectSeconds = 2.6f;
+        private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
         private Vector3 _kick, _kickVel;
         private float _ads;
+
+        /// <summary>Local: how far the gun is raised to the eye (0 hip .. 1 aiming down sights).</summary>
+        public static float AdsBlend { get; private set; }
         private float _inspectStart = -10f;
 
         private void Awake()
@@ -202,7 +205,11 @@ namespace HowToHunt.Hunting
                     _lastCameraRotation = cam.transform.rotation;
                 }
             }
-            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip;
+            // Aim-down-sights blend first: it keeps running while a scope picture hides the model.
+            bool gunHeld = _tool != null && _tool.Archetype == ToolArchetype.Firearm;
+            _ads = Mathf.MoveTowards(_ads, gunHeld && PlayerTools.LocalAiming ? 1f : 0f, Mathf.Min(Time.deltaTime, 0.05f) / AdsSeconds);
+            AdsBlend = _ads;
+            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
             if (!visible || (_tool == null && _heldPrey == null)) { _hasLastVelocity = false; return; }
 
@@ -292,8 +299,7 @@ namespace HowToHunt.Hunting
             }
 
             // Aim down sights: the sight comes to the eye on the view axis; sway and bob mostly settle.
-            bool gun = _tool != null && _tool.Archetype == ToolArchetype.Firearm;
-            _ads = Mathf.MoveTowards(_ads, gun && PlayerTools.LocalAiming ? 1f : 0f, dt / AdsSeconds);
+            bool gun = gunHeld;
             float a = Smooth(_ads);
             if (a > 0f)
             {
@@ -305,8 +311,11 @@ namespace HowToHunt.Hunting
             float zoom = gun ? Mathf.Lerp(1f, Mathf.Max(1f, _tool.AdsZoom), a) : 1f;
             PlayerCamera.Zoom = zoom;
             PlayerInputSampler.SensitivityScale = 1f / zoom;
-            _holder.localPosition = position;
+            // The viewmodel is drawn by the zoomed camera too: shrink it toward the eye by the zoom so it keeps its size
+            // on screen (smaller and nearer looks identical once the field of view narrows by the same factor).
+            _holder.localPosition = position / zoom;
             _holder.localRotation = rotation;
+            _holder.localScale = Vector3.one / zoom;
         }
 
         /// <summary>

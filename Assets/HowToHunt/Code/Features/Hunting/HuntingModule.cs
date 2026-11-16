@@ -48,6 +48,7 @@ namespace HowToHunt.Hunting
             root.AddComponent<HitFeedback>();
             root.AddComponent<BulletFx>();
             root.AddComponent<AmmoHud>();
+            root.AddComponent<ScopeOverlay>();
             root.AddComponent<HuntFeedback>();
             root.AddComponent<TakedownFx>();
             root.AddComponent<ViewmodelController>();

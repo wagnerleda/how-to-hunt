@@ -21,7 +21,7 @@ New-Item -ItemType Directory -Force $logs | Out-Null
 function Run([int]$lagcomp) {
     Get-ChildItem $logs -Filter "*-$lagcomp.log" | Remove-Item
     $h = Start-Process $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/host-$lagcomp.log",
-        '+sv_cheats', '1', '+sv_hitdebug', '1', '+sv_alltools', '1', '+sv_damage_scale', '0.04', '+sv_lagcomp', "$lagcomp", '+host', 'local', '+delay', '32', 'quit') -PassThru
+        '+sv_cheats', '1', '+sv_hitdebug', '1', '+sv_alltools', '1', '+sv_damage_scale', '0.04', '+sv_infinite_mag', '1', '+sv_lagcomp', "$lagcomp", '+host', 'local', '+delay', '32', 'quit') -PassThru
     Start-Sleep -Seconds 4
     $c = Start-Process $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/client-$lagcomp.log",
         '+net_fakelag', "$LatencyMs", '+sv_hitdebug', '1', '+connect', '127.0.0.1', '+delay', '6', 'setpos', '3', '0.3', '-2', '+delay', '7.5', 'wpn_autofire', "$Dummy", '30',

@@ -60,6 +60,8 @@ namespace HowToHunt.Hunting
         public Vector3 SightOffset = new Vector3(0f, 0.09f, 0.05f);
         [Tooltip("Model space: where bullets leave (end of the barrel). They fly along the model's +Z.")]
         public Vector3 MuzzleOffset = new Vector3(0f, 0.07f, 0.26f);
+        [Tooltip("Aiming down sights looks through a scope (black ring, reticle; the model hides) instead of iron sights.")]
+        public bool ScopeOverlay;
         [Tooltip("Weight class 0-3: heavy weapons slow you while held (sv_load_slow per class). Light tools are 0.")]
         [Range(0, 3)] public int Weight;
 
