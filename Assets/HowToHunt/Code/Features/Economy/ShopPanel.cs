@@ -133,7 +133,7 @@ namespace HowToHunt.Economy
 
                 var row = new Row { Upgrade = u };
                 row.Name = RowText(rt, "Name", new Vector2(20f, -12f), new Vector2(520f, 32f), 26f, FontStyles.Bold, new Color(1f, 0.95f, 0.85f));
-                row.Detail = RowText(rt, "Detail", new Vector2(20f, -44f), new Vector2(560f, 28f), 19f, FontStyles.Normal, new Color(1f, 1f, 1f, 0.7f));
+                row.Detail = RowText(rt, "Detail", new Vector2(20f, -40f), new Vector2(560f, 36f), 16f, FontStyles.Normal, new Color(1f, 1f, 1f, 0.7f));
                 row.Cost = RowText(rt, "Cost", new Vector2(560f, -24f), new Vector2(140f, 32f), 22f, FontStyles.Bold, new Color(1f, 0.85f, 0.45f));
                 row.Cost.alignment = TextAlignmentOptions.Right;
 

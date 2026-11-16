@@ -24,7 +24,8 @@ namespace HowToHunt.Hunting
                 GameObject model = Instantiate(prey.Def.Visual, go.transform, false);
                 model.transform.localScale = Vector3.one * prey.Def.VisualScale;
                 v._model = model.transform;
-                if (model.TryGetComponent(out Animator anim))
+                Animator anim = model.GetComponentInChildren<Animator>();
+                if (anim != null)
                 {
                     anim.cullingMode = AnimatorCullingMode.CullCompletely;
                     anim.speed = Random.Range(0.85f, 1.2f);

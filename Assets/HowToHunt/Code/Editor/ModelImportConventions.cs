@@ -52,6 +52,37 @@ namespace HowToHunt.Editor
             importer.clipAnimations = clips;
         }
 
+        private const string KenneyNatureRoot = "Assets/HowToHunt/Art/ThirdParty/KenneyNatureKit/";
+
+        /// <summary>
+        /// Kenney Nature Kit colours come in washed out (pastel teal leaves, pink wood). Map its material names onto the
+        /// art-direction A palette: warm greens, honey wood, soft grey stone.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<string, string> KenneyColors = new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "leafsGreen", "6FAE4C" }, { "leafsDark", "4F8C3F" }, { "leafsFall", "E39A3B" }, { "grass", "7EBC55" },
+            { "wood", "A0703F" }, { "woodDark", "7C5232" }, { "woodBark", "8C5E3B" }, { "woodBarkDark", "6B442A" }, { "woodInner", "E4C28F" },
+            { "stone", "AEB3B4" }, { "stoneDark", "8A9093" }, { "dirt", "A97B51" },
+            { "colorPurple", "9D7CD8" }, { "colorRed", "E2574F" }, { "colorRedDark", "B9433D" }, { "colorYellow", "F3C94B" }, { "colorTan", "DDB68A" },
+        };
+
+        // After URP's FBX material description preprocessor (order 2), which would overwrite these colours.
+        public override int GetPostprocessOrder() => 10;
+        public override uint GetVersion() => 2;
+
+        private void OnPreprocessMaterialDescription(UnityEditor.AssetImporters.MaterialDescription description, Material material, AnimationClip[] clips)
+        {
+            if (!assetPath.StartsWith(KenneyNatureRoot, System.StringComparison.Ordinal)) return;
+            string name = string.IsNullOrEmpty(description.materialName) ? material.name : description.materialName;
+            if (KenneyColors.TryGetValue(name, out string hex) && ColorUtility.TryParseHtmlString("#" + hex, out Color c))
+            {
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", c);
+                material.color = c;
+            }
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.08f);
+            material.enableInstancing = true;
+        }
+
         private void OnPostprocessMaterial(Material material)
         {
             if (!InScope) return;

@@ -5,7 +5,8 @@ using UnityEngine;
 namespace HowToHunt.Player
 {
     /// <summary>
-    /// Movement sounds for every player: footsteps by distance travelled, jump, landing thud scaled by impact,
+    /// Movement sounds for every player: footsteps by distance travelled (Kenney CC0 recordings: grass on the ground,
+    /// wood on raised platforms), a cloth rustle on jump, a soft landing thud scaled by impact,
     /// zone cues, and a wind loop for the local player that rises with speed (surf/bhop feel). Pooled sources,
     /// no allocations after startup.
     /// </summary>
@@ -16,8 +17,8 @@ namespace HowToHunt.Player
         private const int PoolSize = 16;
         private const float Stride = 1.9f;
 
-        private AudioClip[] _steps;
-        private AudioClip _jump, _land, _chime, _whoosh;
+        private AudioClip[] _grass, _wood, _cloth, _thud;
+        private AudioClip _chime, _whoosh;
         private AudioSource[] _pool;
         private int _next;
         private AudioSource _wind;
@@ -25,9 +26,10 @@ namespace HowToHunt.Player
 
         private void Awake()
         {
-            _steps = new[] { ProceduralSounds.Footstep(1), ProceduralSounds.Footstep(2), ProceduralSounds.Footstep(3), ProceduralSounds.Footstep(4) };
-            _jump = ProceduralSounds.Jump();
-            _land = ProceduralSounds.Land();
+            _grass = Load("footstep_grass_00", 5);
+            _wood = Load("footstep_wood_00", 3);
+            _cloth = new[] { Resources.Load<AudioClip>("Audio/Kenney/cloth1"), Resources.Load<AudioClip>("Audio/Kenney/cloth2"), Resources.Load<AudioClip>("Audio/Kenney/cloth3"), Resources.Load<AudioClip>("Audio/Kenney/cloth4") };
+            _thud = Load("impactSoft_medium_00", 2);
             _chime = ProceduralSounds.Chime();
             _whoosh = ProceduralSounds.Whoosh();
 
@@ -64,11 +66,11 @@ namespace HowToHunt.Player
 
         private void OnMoveFeedback(PlayerMotor motor, MoveEvents events, float landSpeed)
         {
-            if ((events & MoveEvents.Jumped) != 0) Play(motor, _jump, 0.05f, Random.Range(0.95f, 1.05f));
+            if ((events & MoveEvents.Jumped) != 0) Play(motor, _cloth[Random.Range(0, _cloth.Length)], 0.07f, Random.Range(0.95f, 1.08f));
             if ((events & MoveEvents.Landed) != 0 && landSpeed > 2.5f)
             {
                 float k = Mathf.Clamp01((landSpeed - 2.5f) / 12f);
-                Play(motor, _land, 0.06f + 0.22f * k, Mathf.Lerp(1.05f, 0.9f, k));
+                Play(motor, _thud[Random.Range(0, _thud.Length)], 0.05f + 0.2f * k, Mathf.Lerp(1.05f, 0.85f, k));
                 motor.FootstepDistance = 0f;
             }
         }
@@ -98,8 +100,11 @@ namespace HowToHunt.Player
                 m.FootstepDistance += speed * dt;
                 if (m.FootstepDistance < Stride) continue;
                 m.FootstepDistance = 0f;
-                float volume = Mathf.Clamp01(speed / MovementCvars.Config.MaxSpeed) * (s.Ducked ? 0.03f : 0.09f);
-                Play(m, _steps[_stepIndex++ & 3], volume, Random.Range(0.92f, 1.08f));
+                float volume = Mathf.Clamp01(speed / MovementCvars.Config.MaxSpeed) * (s.Ducked ? 0.06f : 0.16f);
+                // Feet on the ground plane = grass; anything raised (platforms, crates, stalls) = wood.
+                float feet = s.Position.Y - MovementCvars.Config.Hull(s.Ducked).Y;
+                AudioClip[] set = feet < 0.25f ? _grass : _wood;
+                Play(m, set[_stepIndex++ % set.Length], volume, Random.Range(0.94f, 1.06f));
             }
 
             PlayerMotor local = PlayerMotor.Local;
@@ -115,8 +120,16 @@ namespace HowToHunt.Player
             _wind.pitch = Mathf.Lerp(_wind.pitch, pitch, 1f - Mathf.Exp(-3f * dt));
         }
 
+        private static AudioClip[] Load(string prefix, int count)
+        {
+            var clips = new AudioClip[count];
+            for (int i = 0; i < count; i++) clips[i] = Resources.Load<AudioClip>($"Audio/Kenney/{prefix}{i}");
+            return clips;
+        }
+
         private void Play(PlayerMotor motor, AudioClip clip, float volume, float pitch)
         {
+            if (clip == null) return;
             AudioSource src = _pool[_next];
             _next = (_next + 1) % PoolSize;
             bool local = motor == PlayerMotor.Local;

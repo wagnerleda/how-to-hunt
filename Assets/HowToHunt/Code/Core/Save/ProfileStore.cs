@@ -55,7 +55,10 @@ namespace HowToHunt.Core
 
         public static string Directory => Path.Combine(Application.persistentDataPath, "profiles");
         public static string CloudFileName => "profile.json";
-        public static string LocalPath => Path.Combine(Directory, $"{_userId}.json");
+        /// <summary>Editor Play mode keeps its own profile and never touches Steam Cloud, so testing can't alter a real save.</summary>
+        public static string LocalPath => Path.Combine(Directory, Application.isEditor ? $"{_userId}-editor.json" : $"{_userId}.json");
+
+        private static ICloudStorage Cloud => Application.isEditor ? null : Game.Platform?.Cloud;
 
         /// <summary>Raised after the profile has been loaded (or reset).</summary>
         public static event Action Loaded;
@@ -71,7 +74,7 @@ namespace HowToHunt.Core
             _userId = userId;
             ProfileFile local = Read(File.Exists(LocalPath) ? File.ReadAllText(LocalPath) : null);
             ProfileFile cloud = null;
-            ICloudStorage c = Game.Platform?.Cloud;
+            ICloudStorage c = Cloud;
             if (c != null && c.Available)
             {
                 byte[] bytes = c.Read(CloudFileName);
@@ -130,7 +133,7 @@ namespace HowToHunt.Core
             {
                 Debug.LogWarning($"[Profile] Local save failed: {e.Message}");
             }
-            ICloudStorage c = Game.Platform?.Cloud;
+            ICloudStorage c = Cloud;
             if (c != null && c.Available && !c.Write(CloudFileName, Encoding.UTF8.GetBytes(json)))
                 Debug.LogWarning("[Profile] Steam Cloud write failed (local copy is saved).");
         }

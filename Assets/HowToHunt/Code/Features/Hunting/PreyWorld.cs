@@ -284,7 +284,7 @@ namespace HowToHunt.Hunting
 
                 if (snapshot)
                 {
-                    _manager.ServerManager.Broadcast(new PreySnapshotBroadcast
+                    SendToReady(new PreySnapshotBroadcast
                     {
                         Id = p.Id,
                         Tick = tick,
@@ -292,7 +292,7 @@ namespace HowToHunt.Hunting
                         Yaw = (short)(ushort)(Mathf.Repeat(p.State.Yaw, 360f) / 360f * 65536f),
                         Ai = (byte)p.State.Ai,
                         HealthPct = (byte)Mathf.Clamp(Mathf.RoundToInt(p.Health / p.Def.MaxHealth * 255f), 0, 255),
-                    }, true, Channel.Unreliable);
+                    }, Channel.Unreliable);
                 }
             }
         }
@@ -300,7 +300,14 @@ namespace HowToHunt.Hunting
         private static void Broadcast(PreyInstance p)
         {
             if (!IsHost) return;
-            _manager.ServerManager.Broadcast(Life(p));
+            SendToReady(Life(p), Channel.Reliable);
+        }
+
+        /// <summary>To every client that has finished joining (others get the full state when they load in).</summary>
+        private static void SendToReady<T>(T msg, Channel channel) where T : struct, IBroadcast
+        {
+            foreach (NetworkConnection c in _manager.ServerManager.Clients.Values)
+                if (c.IsAuthenticated) _manager.ServerManager.Broadcast(c, msg, true, channel);
         }
 
         private static PreyLifeBroadcast Life(PreyInstance p) => new PreyLifeBroadcast

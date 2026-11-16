@@ -19,7 +19,7 @@ namespace HowToHunt.Editor
     /// a two-ramp surf course, a slope gallery (walkable vs surfable), stairs, jump/crouch-jump ledges and a sprint
     /// lane with 5 m markers. Generated from code so it can be rebuilt after changes to brush or zone conventions.
     /// </summary>
-    public static class GrayboxSceneBuilder
+    public static partial class GrayboxSceneBuilder
     {
         public const string ScenePath = GeneratedAssets.Root + "/Scenes/Graybox.unity";
         public const string VolumeProfilePath = GeneratedAssets.Root + "/Settings/PP_SunnyDiorama.asset";
@@ -44,7 +44,11 @@ namespace HowToHunt.Editor
 
             // Ground and boundary walls.
             Box(level, "Ground", new Vector3(0, -0.5f, 0), new Vector3(160, 1, 160), "Grass");
-            Box(level, "Wall N", new Vector3(0, 3, 80.5f), new Vector3(162, 8, 1), "Wall");
+            // North wall: a walking gate into the Plains at x = -30, and the bhop course passes through (fenced on the
+            // Plains side, GrayboxSceneBuilder.Plains.cs).
+            Box(level, "Wall N West", new Vector3(-59.5f, 3, 80.5f), new Vector3(43, 8, 1), "Wall");
+            Box(level, "Wall N Mid", new Vector3(-15.25f, 3, 80.5f), new Vector3(13.5f, 8, 1), "Wall");
+            Box(level, "Wall N East", new Vector3(44.75f, 3, 80.5f), new Vector3(72.5f, 8, 1), "Wall");
             Box(level, "Wall S", new Vector3(0, 3, -80.5f), new Vector3(162, 8, 1), "Wall");
             Box(level, "Wall E", new Vector3(80.5f, 3, 0), new Vector3(1, 8, 160), "Wall");
             Box(level, "Wall W", new Vector3(-80.5f, 3, 0), new Vector3(1, 8, 160), "Wall");
@@ -57,7 +61,7 @@ namespace HowToHunt.Editor
                 float a = i / 8f * Mathf.PI * 2f;
                 var sp = new GameObject($"Spawn {i + 1}", typeof(SpawnPoint));
                 sp.transform.SetParent(spawns, false);
-                sp.transform.SetPositionAndRotation(new Vector3(Mathf.Sin(a) * 3f, 0.1f, Mathf.Cos(a) * 3f), Quaternion.identity);
+                sp.transform.SetPositionAndRotation(CampCenter + new Vector3(Mathf.Sin(a) * 4.5f, 0.1f, Mathf.Cos(a) * 4.5f - 2f), Quaternion.identity);
             }
             Transform plazaReturn = Marker(zones, "Plaza Return", PlazaReturn, 0f);
             Pad(level, zones, signs, "BHOP", new Vector3(5f, 0.1f, 5f), Marker(zones, "Bhop Start", BhopStart, 0f));
@@ -71,7 +75,7 @@ namespace HowToHunt.Editor
             BuildLedgesAndStairs(level, signs);
             BuildSprintLane(level, signs);
             BuildShootingRange(level, signs);
-            PlaceButterflies();
+            BuildPlains(level, signs);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
@@ -290,22 +294,6 @@ namespace HowToHunt.Editor
             nose.transform.localScale = new Vector3(0.3f, 0.2f, 0.12f);
             nose.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("Visor");
             go.AddComponent<Hunting.TargetDummy>().Configure(start, end, speed);
-        }
-
-        private static void PlaceButterflies()
-        {
-            var butterfly = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ButterflyPrefabPath);
-            if (butterfly == null) return;
-            Transform ambient = new GameObject("Butterflies (pipeline proof)").transform;
-            var rng = new System.Random(7);
-            for (int i = 0; i < 6; i++)
-            {
-                var b = (GameObject)PrefabUtility.InstantiatePrefab(butterfly, ambient);
-                b.transform.SetPositionAndRotation(
-                    new Vector3(-6f + (float)rng.NextDouble() * 4f, 1.1f + (float)rng.NextDouble() * 0.8f, -3f + (float)rng.NextDouble() * 6f),
-                    Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f));
-                b.transform.localScale = Vector3.one * 1.5f;
-            }
         }
 
         // --- building blocks -------------------------------------------------------------------------------

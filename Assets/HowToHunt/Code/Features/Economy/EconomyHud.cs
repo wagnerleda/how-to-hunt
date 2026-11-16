@@ -24,11 +24,11 @@ namespace HowToHunt.Economy
         private void Awake()
         {
             var warm = new Color(1f, 0.93f, 0.7f);
-            _wallet = Hud.Text("Wallet", new Vector2(1f, 1f), new Vector2(-30f, -28f), 30f, TextAlignmentOptions.TopRight, warm);
+            _wallet = Hud.Text("Wallet", new Vector2(1f, 1f), new Vector2(-30f, -84f), 30f, TextAlignmentOptions.TopRight, warm);
             _wallet.rectTransform.pivot = new Vector2(1f, 1f);
             _wallet.rectTransform.sizeDelta = new Vector2(600f, 40f);
             _wallet.fontStyle = FontStyles.Bold;
-            _bag = Hud.Text("Bag", new Vector2(1f, 1f), new Vector2(-30f, -66f), 22f, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.85f));
+            _bag = Hud.Text("Bag", new Vector2(1f, 1f), new Vector2(-30f, -122f), 22f, TextAlignmentOptions.TopRight, new Color(1f, 1f, 1f, 0.85f));
             _bag.rectTransform.pivot = new Vector2(1f, 1f);
             _bag.rectTransform.sizeDelta = new Vector2(600f, 32f);
             _prompt = Hud.Text("Station Prompt", new Vector2(0.5f, 0.5f), new Vector2(0f, -170f), 28f, TextAlignmentOptions.Center, Color.white);

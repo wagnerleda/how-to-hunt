@@ -75,6 +75,7 @@ namespace HowToHunt.Editor
             // copies of M_Gib made at runtime, one per colour. Slightly glossy so blood reads as wet.
             LitFx("M_Gore", "Universal Render Pipeline/Particles/Lit", Color.white, 0.5f);
             LitFx("M_Gib", "Universal Render Pipeline/Lit", Color.white, 0.45f);
+            LitFx("M_Flame", "Universal Render Pipeline/Particles/Unlit", Color.white, 0f);
         }
 
         private static void LitFx(string name, string shader, Color color, float smoothness)
@@ -193,7 +194,7 @@ namespace HowToHunt.Editor
         public const string ButterflyModelPath = Root + "/Art/Models/Butterfly/Butterfly.fbx";
         public const string ButterflyPrefabPath = Root + "/Prefabs/Ambient/Butterfly.prefab";
 
-        /// <summary>Asset-pipeline proof: Blender model + rig + Flap clip -> animated prefab. Gameplay comes in M3.</summary>
+        /// <summary>Blender model + rig + Flap clip -> animated prefab (the butterfly prey visual).</summary>
         private static void BuildButterflyPrefab()
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(ButterflyModelPath);
@@ -208,10 +209,12 @@ namespace HowToHunt.Editor
             UnityEditor.Animations.AnimatorController controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPathWithClip(controllerPath, flap);
 
             EnsureFolder(Path.GetDirectoryName(ButterflyPrefabPath)!.Replace('\\', '/'));
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            // The source faces -Y in Blender, which imports facing -Z: turn it to face +Z (Unity forward) under a root.
+            var root = new GameObject("Butterfly");
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(model, root.transform);
+            instance.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             try
             {
-                instance.name = "Butterfly";
                 Animator animator = instance.TryGetComponent(out Animator existing) ? existing : instance.AddComponent<Animator>();
                 animator.runtimeAnimatorController = controller;
                 animator.cullingMode = AnimatorCullingMode.CullCompletely;
@@ -220,11 +223,11 @@ namespace HowToHunt.Editor
                     smr.updateWhenOffscreen = false;
                     smr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                 }
-                PrefabUtility.SaveAsPrefabAsset(instance, ButterflyPrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(root, ButterflyPrefabPath);
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(instance);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 

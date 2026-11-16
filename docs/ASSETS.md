@@ -5,7 +5,7 @@ Every asset and third-party package is listed here with its source and license. 
 ## Model pipeline (Blender 5.x → Unity)
 - **Source**: `Art/Source/<Name>.blend` (outside `Assets/`, LFS). Export: `Assets/HowToHunt/Art/Models/<Name>/<Name>.fbx`.
 - **Units/scale**: meters, real-world size, scene scale 1.0. Prefabs may scale up for readability (butterfly prefab instances use 1.5).
-- **Orientation**: model faces **-Y** in Blender, Z up. Left side = +X (`.L` bones).
+- **Orientation**: model faces **+Y** in Blender, Z up (imports facing Unity +Z with the export settings below). The butterfly predates this rule (faces -Y) and is turned 180° in its generated prefab.
 - **Pivot**: at the logical center for flying/small things, between the feet for walkers.
 - **Mesh**: low-poly, flat shading (`use_smooth = False`), one material per palette color. Name materials `MAT_<Name><Part>`; materials containing `Wing`, `Leaf` or `DoubleSided` render both faces.
 - **Rig**: simple deform bones only (`Root`, then parts like `Wing.L`); vertex groups match bone names.
