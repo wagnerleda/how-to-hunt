@@ -20,6 +20,8 @@ namespace HowToHunt.Hunting
     {
         private const float RaiseSeconds = 0.22f;
         private static readonly Vector3 Rest = new Vector3(0.18f, -0.17f, 0.40f);
+        private static readonly Vector3 Shoulder = new Vector3(0.24f, -0.42f, -0.12f);
+        private const float ShoulderShare = 1f; // the whole turn is the arm, so the sleeve always points back at the shoulder
 
         // Inertia spring (position, metres in camera space) and tilt spring (degrees).
         private const float Stiffness = 140f, Damping = 15f, InertiaScale = 0.0016f, MaxOffset = 0.07f;
@@ -152,18 +154,26 @@ namespace HowToHunt.Hunting
 
             Vector3 offset;
             Quaternion use;
+            float shoulderYaw = 0f;
             if (_tool.Archetype == ToolArchetype.Firearm)
             {
                 float t = (Time.time - _useTime) / Mathf.Max(0.12f, _tool.Cooldown * 0.75f);
                 Recoil(t >= 0f && t < 1f ? t : 1f, out offset, out use);
+            }
+            else if (_tool.Archetype == ToolArchetype.Net)
+            {
+                NetSwoop(cam, out offset, out use, out shoulderYaw);
             }
             else
             {
                 Sweep(dt, out offset, out use);
             }
 
-            _holder.localPosition = Rest + bob + _springPos + offset + new Vector3(0f, -0.25f * (1f - raise), 0f);
-            _holder.localRotation = _lag * Quaternion.Euler(_tilt) * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
+            // Big sweeps turn the whole arm around the shoulder (below-right of the eye) like a real arm, not around the grip.
+            Quaternion shoulder = Quaternion.Euler(0f, shoulderYaw, 0f);
+            Vector3 grip = Shoulder + shoulder * (Rest + offset - Shoulder);
+            _holder.localPosition = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
+            _holder.localRotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
         }
 
         // --- melee sweeps -----------------------------------------------------------------------------------
@@ -173,8 +183,98 @@ namespace HowToHunt.Hunting
         private float _sweepFrom, _sweepTo;
         private float _sweepStart = -10f, _sweepSeconds = 0.3f;
 
+        // --- net swoops (owner's schema) ----------------------------------------------------------------------
+        // Rest: held upright, hoop above the hand. Swoop 1: wind up to the right, then sweep through a dipping curve
+        // all the way past the left edge of the screen, the hoop rolled so its opening leads. Swoop 2: the mirror, left
+        // to right. Spamming alternates 1, 2, 1...; stopping eases back to rest. The sweep angle comes from the real
+        // field of view, so it crosses the whole screen at any FOV.
+        private struct Pose
+        {
+            public Vector3 Offset;
+            public Vector3 Euler; // pitch (down +), yaw (right +), roll
+
+            public static Pose Lerp(in Pose a, in Pose b, float t) => new Pose
+            {
+                Offset = Vector3.LerpUnclamped(a.Offset, b.Offset, t),
+                Euler = new Vector3(Mathf.LerpUnclamped(a.Euler.x, b.Euler.x, t), Mathf.LerpUnclamped(a.Euler.y, b.Euler.y, t), Mathf.LerpUnclamped(a.Euler.z, b.Euler.z, t)),
+            };
+        }
+
+        private static readonly Pose NetRest = new Pose { Offset = new Vector3(0f, -0.02f, 0f), Euler = new Vector3(-50f, -8f, 0f) };
+        private Pose _netPose = NetRest, _netFrom, _netVia, _netTo;
+        private bool _netHasVia;
+        private float _netDir = 1f;   // direction of the last swoop: -1 = moved left, +1 = moved right
+        private float _netEndTime = -10f;
+
+        private void StartNetSwoop(Camera cam)
+        {
+            float dir = _netDir > 0f ? -1f : 1f; // alternate; the first swoop from rest goes right -> left
+            float yawEnd = HalfFovDegrees(cam) + 14f;
+            _netFrom = _netPose;
+            // Coming from rest (or from the wrong side): wind up to the starting side first.
+            _netHasVia = Mathf.Sign(_netPose.Euler.y + 0.001f) != -dir || _netPose.Euler.x < -25f;
+            _netVia = new Pose { Offset = new Vector3(-dir * 0.03f, 0.01f, 0f), Euler = new Vector3(-24f, -dir * yawEnd * 0.55f, dir * 35f) };
+            _netTo = new Pose { Offset = new Vector3(dir * 0.04f, 0f, 0.02f), Euler = new Vector3(-22f, dir * yawEnd, -dir * 75f) }; // opening faces the way it moves
+            _netDir = dir;
+            _sweepStart = Time.time;
+            _sweepSeconds = Mathf.Clamp(_tool.Cooldown * 0.85f, 0.3f, 0.6f);
+            _netEndTime = _sweepStart + _sweepSeconds;
+        }
+
+        private static float HalfFovDegrees(Camera cam)
+        {
+            float v = cam.fieldOfView * Mathf.Deg2Rad * 0.5f;
+            return Mathf.Atan(Mathf.Tan(v) * cam.aspect) * Mathf.Rad2Deg;
+        }
+
+        private void NetSwoop(Camera cam, out Vector3 offset, out Quaternion rotation, out float shoulderYaw)
+        {
+            float t = (Time.time - _sweepStart) / _sweepSeconds;
+            if (t >= 0f && t < 1f)
+            {
+                const float wind = 0.22f;
+                if (_netHasVia && t < wind)
+                {
+                    _netPose = Pose.Lerp(_netFrom, _netVia, Smooth(t / wind));
+                }
+                else
+                {
+                    float k = _netHasVia ? (t - wind) / (1f - wind) : t;
+                    Pose start = _netHasVia ? _netVia : _netFrom;
+                    _netPose = Pose.Lerp(start, _netTo, Smooth(k));
+                    // The U-shaped path: the hoop dips through the middle of the screen, then rises at the far side.
+                    float dip = Mathf.Sin(k * Mathf.PI);
+                    _netPose.Offset.y -= 0.035f * dip;
+                    _netPose.Euler.x += 8f * dip;
+                }
+            }
+            else
+            {
+                // Hold the end of the swoop briefly (so spamming chains), then ease back to the upright rest.
+                float idle = Time.time - _netEndTime - 0.25f;
+                if (idle > 0f) _netPose = Pose.Lerp(_netPose, NetRest, Mathf.Clamp01(Time.deltaTime * 7f));
+                if (idle > 0.6f) _netDir = 1f; // after a real pause, the next swoop starts from the right again
+            }
+            offset = _netPose.Offset;
+            shoulderYaw = _netPose.Euler.y * ShoulderShare;
+            // Mid-swoop the wrist leads: the hoop runs ahead of the hand, so the net crosses the view side-on.
+            float lead = (Time.time - _sweepStart) / _sweepSeconds is float tt && tt >= 0f && tt < 1f ? Mathf.Sin(Mathf.Clamp01(tt) * Mathf.PI) * _netDir * 32f : 0f;
+            rotation = Quaternion.Euler(_netPose.Euler.x, _netPose.Euler.y * (1f - ShoulderShare) + lead, _netPose.Euler.z);
+        }
+
+        private static float Smooth(float k)
+        {
+            k = Mathf.Clamp01(k);
+            return k * k * k * (k * (k * 6f - 15f) + 10f);
+        }
+
         private void StartSweep()
         {
+            if (_tool != null && _tool.Archetype == ToolArchetype.Net && _camera != null)
+            {
+                StartNetSwoop(_camera);
+                return;
+            }
             _sweepFrom = _side;
             _sweepTo = _side > 0f ? -1f : 1f;
             _sweepStart = Time.time;
