@@ -17,6 +17,7 @@ Not approved for building. Each needs the owner's yes before work starts.
 - Trader and outfitter characters: now planned (Phase 6, NPCs with dialogue and quests).
 - Rabbit idle animation (ear twitch, sniff) from a rig instead of the procedural hop only.
 - Trophy wall at camp showing trophies earned.
+- Weapon inspect in the workshop (rotate the gun, close-up per slot).
 - Physics catching beyond Phase 3: the catch registered at the exact moment the hoop reaches the prey along its swing; prey wriggling out of a weak net.
 - Weather and day/night affecting prey senses (fog shortens sight, night needs a light or a scope).
 - Sound of footsteps and sprinting alerting nearby prey (sprint is louder, crouching is quiet).
