@@ -68,7 +68,7 @@ namespace HowToHunt.Economy
     /// </summary>
     public static class EconomyNet
     {
-        public static readonly IntCvar BagCapacity = new IntCvar("sv_bag_capacity", 20, "How many unsold catches a hunter can carry.", CvarFlags.Replicated | CvarFlags.Cheat, 1, 500);
+        public static readonly IntCvar BagCapacity = new IntCvar("sv_bag_capacity", 12, "How many unsold catches a hunter can carry.", CvarFlags.Replicated | CvarFlags.Cheat, 1, 500);
         public static readonly FloatCvar StationReach = new FloatCvar("sv_station_reach", 3.5f, "Extra distance (m) beyond a camp station's radius at which the host still accepts its use.", CvarFlags.Replicated | CvarFlags.Cheat, 0f, 50f);
 
         /// <summary>The local player's profile (persistent, mirrored from the host during a party).</summary>

@@ -38,6 +38,7 @@ namespace HowToHunt.Editor
             BuildPlayerPrefab();
             BuildNetworkManagerPrefab();
             BuildButterflyPrefab();
+            GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
             Debug.Log("[HowToHunt] Generated assets rebuilt.");

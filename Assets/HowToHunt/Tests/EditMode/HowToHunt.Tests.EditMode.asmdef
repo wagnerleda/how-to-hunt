@@ -5,6 +5,8 @@
         "HowToHunt.Foundation",
         "HowToHunt.Sim",
         "HowToHunt.Core",
+        "HowToHunt.Hunting",
+        "HowToHunt.Economy",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

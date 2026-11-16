@@ -49,7 +49,7 @@ namespace HowToHunt.Core
             return list;
         }
 
-        internal static void Reset()
+        public static void Reset()
         {
             ById.Clear();
             AllDefinitions.Clear();

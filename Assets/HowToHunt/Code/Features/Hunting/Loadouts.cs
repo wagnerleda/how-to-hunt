@@ -28,7 +28,7 @@ namespace HowToHunt.Hunting
         public bool Owns(ToolDefinition tool)
         {
             if (tool == null) return false;
-            if (tool.StartOwned) return true;
+            if (tool.StartOwned || HuntingCvars.AllTools.Value) return true;
             foreach (UpgradeDefinition u in Loadouts.AllUpgrades)
                 if (u.Tool == tool && u.Effect == UpgradeEffect.UnlockTool && HasUpgrade(u)) return true;
             return false;
@@ -47,6 +47,7 @@ namespace HowToHunt.Hunting
                 HeadshotMultiplier = tool.HeadshotMultiplier,
             };
             range = tool.Range;
+            s.Damage *= HuntingCvars.DamageScale.Value;
             foreach (UpgradeDefinition u in Loadouts.AllUpgrades)
             {
                 if (u.Tool != tool || !HasUpgrade(u)) continue;
@@ -100,7 +101,7 @@ namespace HowToHunt.Hunting
             return null;
         }
 
-        internal static void Reset()
+        public static void Reset()
         {
             ByClient.Clear();
             _upgrades = null;
