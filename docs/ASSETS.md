@@ -28,6 +28,7 @@ Every asset and third-party package is listed here with its source and license. 
 | Rabbit model | Hand-made in Blender via MCP (`Art/Source/Rabbit.blend`) | Ours | Plains Rabbit prey; static mesh, hop is procedural |
 | Net, Knife, Revolver viewmodels | Hand-made in Blender via MCP (`Art/Source/{Net,Knife,Revolver}.blend`) | Ours | First-person tools; swing/scoop/recoil are procedural |
 | Nature Kit (53 models used) | Kenney, kenney.nl/assets/nature-kit | CC0 1.0 (License.txt kept) | `Art/ThirdParty/KenneyNatureKit`; colours remapped to the palette on import |
+| Blaster Kit 2.1 (blaster-a, blaster-f + colormap) | Kenney, kenney.nl/assets/blaster-kit | CC0 1.0 (License.txt kept) | `Art/ThirdParty/KenneyBlasterKit`; owner trial for the pistol and scout viewmodels (`GeneratedContent.KenneyGuns`), wrapped with ball hands in `Prefabs/Weapons` |
 | Impact Sounds, Interface Sounds, RPG Audio (selected clips) | Kenney, kenney.nl | CC0 1.0 (license files kept) | `Resources/Audio/Kenney`: footsteps, cloth, impacts, coins, UI |
 | Gore, flame, tracer, dust materials | Generated (`GeneratedAssets.cs`) | Ours | Cube particles, pooled gibs and splats |
 | Wedge / SurfPrism meshes | Procedural (`ProceduralMeshes.cs`) | Ours | Level brushes |

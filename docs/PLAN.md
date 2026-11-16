@@ -24,7 +24,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 13 | **Throw prey at the trader to sell it** (prey only; tools and guns bounce off, so a bad throw can't sell your gun) | |
 | 14 | **Cash burst on sales**: bills fly out of the trader, scaled to the area's expected sale (a big Plains sale is a shower; the same amount in a late area does nothing) | |
 
-## Phase 3.5: feedback on Phase 3 (next)
+## Phase 3.5: feedback on Phase 3 (done 2026-11-16, awaiting the owner's play test)
 | # | Change | Owner rule |
 |---|---|---|
 | 1 | **Items rest in their real pose**: lying items keep the orientation their hitbox physics gives them (a net tips over onto its hoop, a revolver lies flat); no snapping back to a straight model pose, nothing levitates | net and revolver float in the screenshot |
