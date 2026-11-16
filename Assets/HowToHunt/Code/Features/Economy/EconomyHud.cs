@@ -79,6 +79,7 @@ namespace HowToHunt.Economy
                     HuntFeedback.Feed($"Sold {msg.EventCount} · {BigDouble.Deserialize(msg.EventCoins).ToShortString()}c");
                     HuntFeedback.Message($"+{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
                     Sfx.Play2D("Kenney/handleCoins", 0.6f);
+                    if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
                 case EconomyEvent.Bought:
                 {

@@ -26,6 +26,9 @@ namespace HowToHunt.Economy
             r.Cvar(EconomyNet.ThrowChargeTime);
             r.Cvar(EconomyNet.ThrowSlowTime);
             r.Cvar(EconomyNet.ThrowTapTime);
+            r.Cvar(CashBurst.MinRatio);
+            r.Cvar(CashBurst.BillsPerExpected);
+            r.Cvar(CashBurst.MaxBills);
             r.Cvar(WorldItems.Lifetime);
             r.Cvar(WorldItems.PickupReach);
             r.Cvar(EconomyNet.StationReach);
@@ -59,6 +62,7 @@ namespace HowToHunt.Economy
             root.AddComponent<EconomyHud>();
             root.AddComponent<ShopPanel>();
             root.AddComponent<InventoryBar>();
+            root.AddComponent<CashBurst>();
             root.AddComponent<WorldItemRenderer>();
             NetSession.ManagerCreated += OnManagerCreated;
             NetSession.SessionEnded += EconomyNet.Detach;

@@ -20,6 +20,7 @@ namespace HowToHunt.Editor
         private const float PlayMinX = -100f, PlayMaxX = 100f, PlayMinZ = 115f, PlayMaxZ = 315f, CornerRadius = 34f;
         private const float Band = 30f;
         private const float TerrainCell = 5f;
+        private const double PlainsExpectedSale = 50;
         private const float GateX = -30f;
         private const float ClearingZ = 215f;
         public static readonly Vector3 CampCenter = new Vector3(GateX, 0f, 135f);
@@ -457,7 +458,8 @@ namespace HowToHunt.Editor
             var station = new GameObject($"Station {label}");
             station.transform.SetParent(t, false);
             station.transform.position = feet;
-            station.AddComponent<CampStation>().Configure(kind, 2.8f, label);
+            // Plains: a full bag sells for roughly 50 coins (Phase 3 economy); that sets the size of the cash burst.
+            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, PlainsExpectedSale);
         }
 
         private static void Spawner(Transform parent, string name, string preyKey, Vector3 position, int count, float radius, float respawn)

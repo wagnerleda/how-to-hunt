@@ -33,6 +33,17 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void CashBurst_ScalesWithTheAreasExpectedSale()
+        {
+            Assert.That(CashBurst.Bills(5, 50), Is.EqualTo(0), "small sale for the area: no burst");
+            int normal = CashBurst.Bills(50, 50), big = CashBurst.Bills(150, 50);
+            Assert.That(normal, Is.GreaterThan(5));
+            Assert.That(big, Is.GreaterThan(normal * 2));
+            Assert.That(CashBurst.Bills(1e9, 50), Is.EqualTo(CashBurst.MaxBills.Value), "capped");
+            Assert.That(CashBurst.Bills(50, 5000), Is.EqualTo(0), "the same sale in a richer area is small");
+        }
+
+        [Test]
         public void StarterNet_CannotHoldRabbit_SturdyNetCan()
         {
             ContentRegistry.Reset();
