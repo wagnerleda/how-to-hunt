@@ -41,13 +41,18 @@ MonoBehaviour:
   MaxSpreadDegrees: 0.15
   AdsSpreadFactor: 0.5
   AdsZoom: 3.5
-  SightOffset: {x: 0, y: 0.21, z: 0.05}
-  MuzzleOffset: {x: 0, y: 0.09, z: 0.69}
+  SightOffset: {x: 0, y: 0.09, z: -0.06}
+  MuzzleOffset: {x: 0, y: 0.03, z: 0.78}
   ScopeOverlay: 1
   Weight: 1
-  RestEuler: {x: 358.63187, y: 358.5752, z: 92.32459}
-  RestCenter: {x: -0.09317951, y: 0.0030127838, z: 0.19135109}
-  RestSize: {x: 0.3381944, y: 0.13353527, z: 0.9834076}
+  FireSounds: []
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 0.13285479, y: 0.13302769, z: 90.074524}
+  RestCenter: {x: -0.004780516, y: 0.01795841, z: 0.19492692}
+  RestSize: {x: 0.20671687, y: 0.084149614, z: 1.1703483}
   Cooldown: 1.1
   Slot: 4
   StartOwned: 0

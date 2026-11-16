@@ -59,7 +59,8 @@ namespace HowToHunt.Core
             {
                 Layer layer = _layers[l];
                 if (layer.Mesh == null || layer.Instances.Length == 0) continue;
-                float maxSq = layer.DrawDistance * layer.DrawDistance;
+                float reach = layer.DrawDistance * RenderDistance.ScatterScale.Value;
+                float maxSq = reach * reach;
                 for (int c = 0; c < layer.Chunks.Length; c++)
                 {
                     Chunk chunk = layer.Chunks[c];

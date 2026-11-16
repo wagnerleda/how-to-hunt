@@ -45,6 +45,11 @@ MonoBehaviour:
   MuzzleOffset: {x: 0, y: 0.07, z: 0.26}
   ScopeOverlay: 0
   Weight: 0
+  FireSounds: []
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
   RestEuler: {x: 0, y: 0, z: 183.68346}
   RestCenter: {x: -0.000000059604645, y: 0.13971074, z: 0.3995255}
   RestSize: {x: 0.3385663, y: 0.31933886, z: 0.979051}

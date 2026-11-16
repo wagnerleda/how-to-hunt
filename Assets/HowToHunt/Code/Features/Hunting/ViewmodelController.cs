@@ -126,7 +126,11 @@ namespace HowToHunt.Hunting
             rotation = Quaternion.Euler(-35f * back + 40f * fling, 0f, 0f);
         }
 
-        private void OnInspect() => _inspectStart = Time.time;
+        private void OnInspect()
+        {
+            _inspectStart = Time.time;
+            if (_tool != null && _tool.InspectSound != null) Sfx.Play2D(_tool.InspectSound, 0.5f);
+        }
 
         private void OnReload(ToolDefinition tool) => _inspectStart = -10f;
 
@@ -165,6 +169,7 @@ namespace HowToHunt.Hunting
             model.SetActive(true);
             _shown = model;
             if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Shing, 0.22f, Random.Range(0.97f, 1.04f));
+            else if (tool.EquipSound != null) Sfx.Play2D(tool.EquipSound, 0.5f);
             else Sfx.Play2D("Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
         }
 

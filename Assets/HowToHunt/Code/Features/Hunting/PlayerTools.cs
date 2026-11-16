@@ -124,6 +124,7 @@ namespace HowToHunt.Hunting
 
         // --- local firearm state (owner) -----------------------------------------------------------------------
 
+        private int _sentHeld = -2;
         private readonly int[] _ammo = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }; // -1 = full
         private float _reloadStart = -1f, _reloadUntil = -1f;
         private int _reloadTool = -1;
@@ -176,7 +177,11 @@ namespace HowToHunt.Hunting
             if (AmmoOf(_equipped, tool) <= 0 && !HuntingCvars.InfiniteMag.Value)
             {
                 // Dry: click, then reload by itself.
-                if (KeyBindings.WasPressedThisFrame(GameAction.Fire)) Sfx.Play2D("Kenney/click_001", 0.5f, 1.4f);
+                if (KeyBindings.WasPressedThisFrame(GameAction.Fire))
+                {
+                    if (tool.DryFireSound != null) Sfx.Play2D(tool.DryFireSound, 0.6f);
+                    else Sfx.Play2D("Kenney/click_001", 0.5f, 1.4f);
+                }
                 StartReload(tool);
                 return;
             }
@@ -194,15 +199,18 @@ namespace HowToHunt.Hunting
             }
             if (_reloadTool >= 0 && Time.time >= _reloadUntil)
             {
+                ToolDefinition reloaded = _reloadTool < Loadouts.AllTools.Count ? Loadouts.AllTools[_reloadTool] : null;
                 _ammo[_reloadTool] = -1; // full
                 _reloadTool = -1;
                 _reloadUntil = -1f;
-                Sfx.Play2D("Kenney/close_001", 0.4f, 1.15f);
+                if (reloaded == null || reloaded.ReloadSound == null) Sfx.Play2D("Kenney/close_001", 0.4f, 1.15f); // a recorded reload has its own end
+
             }
             LocalReload = _reloadTool >= 0 ? Mathf.Clamp01((Time.time - _reloadStart) / Mathf.Max(0.01f, _reloadUntil - _reloadStart)) : -1f;
             LocalMagazine = gun ? tool.MagazineSize : 0;
             LocalAmmo = gun ? AmmoOf(_equipped, tool) : 0;
             PlayerInputSampler.LoadLevel = tool != null ? tool.Weight : 0;
+            if (_equipped != _sentHeld) { _sentHeld = _equipped; CmdHeld((short)_equipped); }
             MovementHud.HideCrosshair = gun || LocalThrowCharge > 0f; // guns aim by the barrel; a charging throw shows its ring instead
             if (!gun) LocalAiming = false;
         }
@@ -214,7 +222,8 @@ namespace HowToHunt.Hunting
             _reloadStart = Time.time;
             _reloadUntil = Time.time + tool.ReloadSeconds;
             LocalAiming = false;
-            Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
+            if (tool.ReloadSound != null) Sfx.Play2D(tool.ReloadSound, 0.6f);
+            else Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
             LocalReloadStarted?.Invoke(tool);
             CmdReload((byte)_equipped);
         }
@@ -275,12 +284,15 @@ namespace HowToHunt.Hunting
             double viewTick = HitClock.ViewTick();
             HitFeedback.RememberSeen(viewTick);
             LocalUse?.Invoke(this, tool, origin, dir);
-            CmdUse((byte)_equipped, origin, dir, viewTick);
+            CmdUse((byte)_equipped, origin, dir, viewTick, PreyClock.RenderTick());
         }
 
         [ServerRpc]
-        private void CmdUse(byte toolIndex, Vector3 origin, Vector3 dir, double viewTick)
+        private void CmdUse(byte toolIndex, Vector3 origin, Vector3 dir, double viewTick, double preyTick)
         {
+            // Prey are drawn a little further behind than the rest (PreyClock): rewind them by that much more.
+            double preyLag = HuntingCvars.LagComp.Value ? Math.Max(0.0, Math.Min(32.0, viewTick - preyTick)) : 0.0;
+            ToolResolver.PreyLag = preyLag;
             var tools = Loadouts.AllTools;
             if (toolIndex >= tools.Count || toolIndex >= MaxTools) { HitLog("bad tool index"); return; }
             ToolDefinition tool = tools[toolIndex];
@@ -321,7 +333,7 @@ namespace HowToHunt.Hunting
                 // segment against targets rewound to what the shooter saw at that moment of the flight.
                 if (!HostTakeRound(toolIndex, tool)) return;
                 GunBallistics g = tool.Ballistics;
-                var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), dir.ToSim(), g, range), Tick = t, Start = origin, Dir = dir };
+                var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), dir.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = dir };
                 RpcShotFx(toolIndex, origin, dir);
                 PreyWorld.HostGunshot(origin);
                 if (StepBullet(ref hb, (float)TimeManager.TickDelta)) _bullets.Add(hb);
@@ -375,6 +387,7 @@ namespace HowToHunt.Hunting
             public GunBallistics Ballistics;
             public Bullet Body;
             public double Tick;     // rewound tick the next segment is checked at (what the shooter saw then)
+            public double PreyLag;  // extra rewind for prey (PreyClock)
             public Vector3 Start, Dir;
         }
 
@@ -413,6 +426,7 @@ namespace HowToHunt.Hunting
             if (length > 0f)
             {
                 Vector3 f = from.ToUnity();
+                ToolResolver.PreyLag = hb.PreyLag;
                 ToolResolver.Target target = ToolResolver.Find(hb.Tool, length, f, d.ToUnity(), hb.Tick);
                 if (target.Kind != ToolResolver.TargetKind.None)
                 {
@@ -450,6 +464,19 @@ namespace HowToHunt.Hunting
             if (ammo <= 0) { HitLog("empty magazine"); return false; }
             _serverAmmo[index] = ammo - 1;
             return true;
+        }
+
+        /// <summary>Owner -> host -> everyone else: what this player holds (buffered, so late joiners see it too).</summary>
+        [ServerRpc]
+        private void CmdHeld(short toolIndex) => RpcHeld(toolIndex);
+
+        [ObserversRpc(ExcludeOwner = true, BufferLast = true)]
+        private void RpcHeld(short toolIndex)
+        {
+            var tools = Loadouts.AllTools;
+            ThirdPersonTool view = GetComponent<ThirdPersonTool>();
+            if (view == null) view = gameObject.AddComponent<ThirdPersonTool>();
+            view.Show(toolIndex >= 0 && toolIndex < tools.Count ? tools[toolIndex] : null);
         }
 
         [ServerRpc]
@@ -532,6 +559,7 @@ namespace HowToHunt.Hunting
         {
             var tools = Loadouts.AllTools;
             if (toolIndex < tools.Count) HitFeedback.RemoteShot(transform.position, tools[toolIndex], origin, dir);
+            GetComponent<ThirdPersonTool>()?.Kick();
         }
     }
 
@@ -554,6 +582,9 @@ namespace HowToHunt.Hunting
 
         public const int MaxSweepTargets = 8;
 
+        /// <summary>Host: extra ticks the shooter drew prey behind their view tick (PreyClock), set before resolving a shot.</summary>
+        public static double PreyLag;
+
         /// <summary>Does one use of this tool reach several prey (a net sweep)?</summary>
         public static bool SweepsSeveral(ToolDefinition tool) =>
             tool.MaxTargets > 1 && tool.Archetype != ToolArchetype.Firearm && tool.ArcDegrees > 0f;
@@ -570,7 +601,7 @@ namespace HowToHunt.Hunting
             for (int i = 0; i < prey.Count; i++)
             {
                 PreyInstance p = prey[i];
-                if (!p.TryPoseAt(tick, true, out EntityPose pose)) continue;
+                if (!p.TryPoseAt(tick - PreyLag, true, out EntityPose pose)) continue;
                 Vector3 center = pose.Position.ToUnity() + Vector3.up * CapsuleMidHeight(p.Def.Capsules);
                 float angle = tool.ArcDegrees * 0.5f;
                 if (!Consider(origin, dir, center, range + 0.3f, ref angle)) continue;
@@ -606,7 +637,7 @@ namespace HowToHunt.Hunting
             for (int i = 0; i < prey.Count; i++)
             {
                 PreyInstance p = prey[i];
-                if (!p.TryPoseAt(tick, true, out EntityPose pose)) continue;
+                if (!p.TryPoseAt(tick - PreyLag, true, out EntityPose pose)) continue;
                 if (RayCapsules(o, d, pose, p.Def.Capsules, ref bestDist, out bool weak))
                     best = new Target { Kind = TargetKind.Prey, PreyId = p.Id, Point = origin + dir * bestDist, WeakPoint = weak, Pose = pose };
             }
@@ -651,7 +682,7 @@ namespace HowToHunt.Hunting
             for (int i = 0; i < prey.Count; i++)
             {
                 PreyInstance p = prey[i];
-                if (!p.TryPoseAt(tick, true, out EntityPose pose)) continue;
+                if (!p.TryPoseAt(tick - PreyLag, true, out EntityPose pose)) continue;
                 Vector3 center = pose.Position.ToUnity() + Vector3.up * CapsuleMidHeight(p.Def.Capsules);
                 if (Consider(origin, dir, center, range + 0.3f, ref bestAngle))
                     best = new Target { Kind = TargetKind.Prey, PreyId = p.Id, Point = center, Pose = pose };

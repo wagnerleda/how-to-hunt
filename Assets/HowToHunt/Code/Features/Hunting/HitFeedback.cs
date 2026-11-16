@@ -113,7 +113,7 @@ namespace HowToHunt.Hunting
             // The bullet leaves the barrel (origin is the muzzle) and flies; its tracer and any impact are drawn by BulletFx.
             BulletFx.Fire(tool, origin, dir);
             _audio.pitch = Random.Range(0.96f, 1.04f);
-            _audio.PlayOneShot(_shot, 0.35f);
+            _audio.PlayOneShot(tool.PickFireSound() ?? _shot, 0.35f);
         }
 
         public static void RemoteShot(Vector3 shooter, ToolDefinition tool, Vector3 origin, Vector3 dir)
@@ -121,7 +121,7 @@ namespace HowToHunt.Hunting
             if (_instance == null) return;
             BulletFx.Fire(tool, origin, dir);
             _instance._remoteAudio.transform.position = shooter;
-            _instance._remoteAudio.PlayOneShot(_instance._shot, 0.4f);
+            _instance._remoteAudio.PlayOneShot(tool.PickFireSound() ?? _instance._shot, 0.4f);
         }
 
         public static void Confirm(Vector3 point, float damage, bool head, bool killed, int target, Vector3 checkedFeet, float checkedYaw, float rewoundTicks)

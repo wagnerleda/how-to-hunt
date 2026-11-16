@@ -38,7 +38,7 @@ namespace HowToHunt.Editor
             BuildPlayerPrefab();
             BuildNetworkManagerPrefab();
             BuildButterflyPrefab();
-            BuildWeaponPrefabs();
+            BuildScoutPrefab();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
@@ -197,40 +197,28 @@ namespace HowToHunt.Editor
         }
 
         public const string ScoutPrefabPath = Root + "/Prefabs/Weapons/ScoutRifle.prefab";
-        public const string KenneyPistolPrefabPath = Root + "/Prefabs/Weapons/KenneyPistol.prefab";
-        private const string BlasterKitDir = Root + "/Art/ThirdParty/KenneyBlasterKit/";
 
         /// <summary>
-        /// Viewmodels from Kenney's Blaster Kit (CC0, owner trial, Phase 4): the model turned to point +Z (it ships
-        /// pointing -Z), scaled to real size, and placed so the grip sits at the origin; ball hands, named "...Hand" so
-        /// icons and world items hide them.
+        /// Stand-in scout rifle built from primitives (grip at the origin, barrel along +Z, scope on top), until real
+        /// weapon models land (PLAN Phase 4: owner-approved source). Ball hands, as agreed for the graybox.
         /// </summary>
-        private static void BuildWeaponPrefabs()
+        private static void BuildScoutPrefab()
         {
             EnsureFolder(Path.GetDirectoryName(ScoutPrefabPath)!.Replace('\\', '/'));
-            BuildBlaster(KenneyPistolPrefabPath, "blaster-a", 0.35f, new Vector3(0f, 0.052f, 0.066f),
-                new Vector3(0f, -0.06f, -0.02f), new Vector3(0f, 0f, 0f), false);
-            BuildBlaster(ScoutPrefabPath, "blaster-f", 0.75f, new Vector3(0f, 0.09f, 0.195f),
-                new Vector3(0f, -0.06f, -0.02f), new Vector3(0f, -0.03f, 0.36f), true);
-        }
-
-        private static void BuildBlaster(string prefabPath, string model, float scale, Vector3 modelOffset, Vector3 hand, Vector3 frontHand, bool twoHanded)
-        {
-            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(BlasterKitDir + model + ".fbx");
-            if (fbx == null) { Debug.LogWarning($"[HowToHunt] Missing {model}.fbx in {BlasterKitDir}"); return; }
-            var root = new GameObject(Path.GetFileNameWithoutExtension(prefabPath));
+            var root = new GameObject("ScoutRifle");
             try
             {
-                var gun = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-                gun.name = "Gun";
-                gun.transform.SetParent(root.transform, false);
-                gun.transform.localPosition = modelOffset;
-                gun.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                gun.transform.localScale = Vector3.one * scale;
-                foreach (Renderer r in gun.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                Part(root, "Hand", PrimitiveType.Sphere, hand, Vector3.one * 0.095f, Vector3.zero, "PlayerSuit");
-                if (twoHanded) Part(root, "FrontHand", PrimitiveType.Sphere, frontHand, Vector3.one * 0.085f, Vector3.zero, "PlayerSuit");
-                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                Part(root, "Stock", PrimitiveType.Cube, new Vector3(0f, -0.035f, -0.24f), new Vector3(0.045f, 0.1f, 0.3f), Vector3.zero, "Wood");
+                Part(root, "Receiver", PrimitiveType.Cube, new Vector3(0f, 0.02f, 0.06f), new Vector3(0.04f, 0.06f, 0.3f), Vector3.zero, "Gunmetal");
+                Part(root, "Fore-end", PrimitiveType.Cube, new Vector3(0f, -0.002f, 0.33f), new Vector3(0.046f, 0.045f, 0.28f), Vector3.zero, "Wood");
+                Part(root, "Barrel", PrimitiveType.Cylinder, new Vector3(0f, 0.03f, 0.53f), new Vector3(0.022f, 0.25f, 0.022f), new Vector3(90f, 0f, 0f), "Gunmetal");
+                Part(root, "Scope", PrimitiveType.Cylinder, new Vector3(0f, 0.09f, 0.07f), new Vector3(0.036f, 0.13f, 0.036f), new Vector3(90f, 0f, 0f), "Gunmetal");
+                Part(root, "Scope Mount", PrimitiveType.Cube, new Vector3(0f, 0.062f, 0.07f), new Vector3(0.02f, 0.03f, 0.1f), Vector3.zero, "Gunmetal");
+                Part(root, "Bolt", PrimitiveType.Cube, new Vector3(0.035f, 0.035f, -0.02f), new Vector3(0.05f, 0.018f, 0.018f), Vector3.zero, "Gunmetal");
+                Part(root, "Grip", PrimitiveType.Cube, new Vector3(0f, -0.05f, -0.03f), new Vector3(0.035f, 0.09f, 0.04f), new Vector3(-15f, 0f, 0f), "Wood");
+                Part(root, "Hand", PrimitiveType.Sphere, new Vector3(0.01f, -0.075f, -0.03f), Vector3.one * 0.095f, Vector3.zero, "PlayerSuit");
+                Part(root, "FrontHand", PrimitiveType.Sphere, new Vector3(-0.005f, -0.045f, 0.34f), Vector3.one * 0.085f, Vector3.zero, "PlayerSuit");
+                PrefabUtility.SaveAsPrefabAsset(root, ScoutPrefabPath);
             }
             finally
             {

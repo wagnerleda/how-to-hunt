@@ -21,6 +21,7 @@ namespace HowToHunt.Editor
         private const float Band = 30f;
         private const float TerrainCell = 5f;
         private const double PlainsExpectedSale = 50;
+        private static int BackdropLayer => Mathf.Max(0, LayerMask.NameToLayer(HowToHunt.Core.RenderDistance.BackdropLayerName));
         private const float GateX = -30f;
         private const float ClearingZ = 215f;
         public static readonly Vector3 CampCenter = new Vector3(GateX, 0f, 135f);
@@ -686,6 +687,7 @@ namespace HowToHunt.Editor
                 var pos = center + new Vector3(Mathf.Sin(angle) * dist, -4f, Mathf.Cos(angle) * dist);
                 Mesh m = Mountain(rng, Range(rng, 55f, 110f), Range(rng, 70f, 120f), i);
                 var go = new GameObject($"Mountain {i}", typeof(MeshFilter), typeof(MeshRenderer));
+                go.layer = BackdropLayer; // drawn past r_drawdistance (the horizon)
                 go.transform.SetParent(sky, false);
                 go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, Range(rng, 0f, 360f), 0f));
                 go.GetComponent<MeshFilter>().sharedMesh = m;
@@ -698,6 +700,7 @@ namespace HowToHunt.Editor
             for (int i = 0; i < 16; i++)
             {
                 var go = new GameObject($"Cloud {i}", typeof(MeshFilter), typeof(MeshRenderer));
+                go.layer = BackdropLayer;
                 go.transform.SetParent(sky, false);
                 go.transform.position = center + new Vector3(Range(rng, -260f, 260f), Range(rng, 55f, 85f), Range(rng, -260f, 260f));
                 go.transform.localScale = Vector3.one * Range(rng, 6f, 12f);

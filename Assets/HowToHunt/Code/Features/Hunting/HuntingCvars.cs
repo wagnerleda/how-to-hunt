@@ -29,6 +29,7 @@ namespace HowToHunt.Hunting
             c.Register(MaxUnlag);
             c.Register(InterpTicks);
             c.Register(ShowHits);
+            c.Register(PreyClock.InterpTicks);
             c.Register(CrouchSight);
             c.Register(RecoilScale);
             c.Register(AdsRecoil);

@@ -41,6 +41,7 @@ namespace HowToHunt.Player
             console.Register(RollAngle);
             console.Register(LandKick);
             console.Register(SpeedFov);
+            RenderDistance.Register(console);
         }
 
         public static void Attach(PlayerMotor motor)
@@ -125,6 +126,7 @@ namespace HowToHunt.Player
             // Aiming down sights magnifies (true zoom: the tangent of the half angle shrinks).
             if (Zoom > 1.001f) vfov = 2f * Mathf.Atan(Mathf.Tan(vfov * 0.5f * Mathf.Deg2Rad) / Zoom) * Mathf.Rad2Deg;
             _camera.fieldOfView = vfov;
+            RenderDistance.Apply(_camera);
 
             Vector3 center = _visual.position;
             float feetY = center.y - cfg.Hull(s.Ducked).Y;

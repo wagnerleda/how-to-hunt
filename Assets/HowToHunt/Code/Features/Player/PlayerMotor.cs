@@ -60,6 +60,7 @@ namespace HowToHunt.Player
             public byte Mode;
             public float SlowTime;
             public float Fatigue;
+            public float GroundTime;
             public Vector3 CheckpointFeet;
             public float CheckpointYaw;
             private uint _tick;
@@ -76,6 +77,7 @@ namespace HowToHunt.Player
                 Mode = (byte)s.Mode;
                 SlowTime = s.SlowTime;
                 Fatigue = s.Fatigue;
+                GroundTime = s.GroundTime;
                 _tick = 0;
             }
 
@@ -224,6 +226,7 @@ namespace HowToHunt.Player
             _state.Mode = (MoveMode)rd.Mode;
             _state.SlowTime = rd.SlowTime;
             _state.Fatigue = rd.Fatigue;
+            _state.GroundTime = rd.GroundTime;
             _checkpointFeet = rd.CheckpointFeet;
             _checkpointYaw = rd.CheckpointYaw;
             transform.position = rd.Position;

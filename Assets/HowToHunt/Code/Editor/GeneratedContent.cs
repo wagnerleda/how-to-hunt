@@ -16,8 +16,6 @@ namespace HowToHunt.Editor
     {
         public const string ContentDir = GeneratedAssets.ResourcesDir + "/Content";
         private const string ModelsDir = GeneratedAssets.Root + "/Art/Models";
-        /// <summary>Use Kenney Blaster Kit models for the guns (owner trial). False: the Blender revolver.</summary>
-        private const bool KenneyGuns = true;
 
         [MenuItem("How to Hunt/Rebuild Content", priority = 2)]
         public static void Build()
@@ -162,15 +160,7 @@ namespace HowToHunt.Editor
                 t.Cooldown = 0.4f;
                 t.Slot = 3;
                 t.StartOwned = false;
-                // Owner trial (Phase 4): Kenney Blaster Kit pistol. Set KenneyGuns = false to go back to the Blender revolver.
-                t.Viewmodel = KenneyGuns
-                    ? AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.KenneyPistolPrefabPath)
-                    : AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");
-                if (KenneyGuns)
-                {
-                    t.SightOffset = new Vector3(0f, 0.105f, -0.13f);
-                    t.MuzzleOffset = new Vector3(0f, 0.087f, 0.196f);
-                }
+                t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Revolver/Revolver.fbx");
             });
 
             Asset<ToolDefinition>("Tools/Tool_Scout", "tool.scout", "Scout Rifle",
@@ -203,8 +193,8 @@ namespace HowToHunt.Editor
                 t.AdsSpreadFactor = 0.5f;
                 t.AdsZoom = 3.5f;
                 t.ScopeOverlay = true;
-                t.SightOffset = new Vector3(0f, 0.21f, 0.05f);
-                t.MuzzleOffset = new Vector3(0f, 0.09f, 0.69f);
+                t.SightOffset = new Vector3(0f, 0.09f, -0.06f);
+                t.MuzzleOffset = new Vector3(0f, 0.03f, 0.78f);
                 t.Weight = 1; // a little heavy: slows you slightly while held
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ScoutPrefabPath);
             });
@@ -286,6 +276,13 @@ namespace HowToHunt.Editor
                 tool.RestCenter = center;
                 tool.RestSize = size;
                 EditorUtility.SetDirty(tool);
+            }
+
+            // Sounds per weapon, by folder and file name: Art/Weapons/<tool name>/fire*.wav, reload*, dry*, equip*, inspect*.
+            foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))
+            {
+                var tool = AssetDatabase.LoadAssetAtPath<ToolDefinition>(AssetDatabase.GUIDToAssetPath(guid));
+                if (tool != null && WeaponSounds.Link(tool)) EditorUtility.SetDirty(tool);
             }
 
             AssetDatabase.SaveAssets();

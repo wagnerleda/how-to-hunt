@@ -73,6 +73,8 @@ namespace HowToHunt.Sim.Movement
         public float SlowTime;
         /// <summary>Seconds of sprint used up (0 = fresh). Sprint stops at MoveConfig.SprintStamina; it recovers while not sprinting.</summary>
         public float Fatigue;
+        /// <summary>Seconds on the ground since the last landing (landing grace: a late bunny hop keeps most of its speed).</summary>
+        public float GroundTime;
 
         // Derived/feedback fields (not needed to resume simulation).
         /// <summary>Normal of the surface under or against the player (for surf/feel feedback).</summary>
@@ -95,6 +97,10 @@ namespace HowToHunt.Sim.Movement
     {
         public float Gravity = 20.32f;            // sv_gravity 800
         public float Friction = 5.2f;             // sv_friction
+        /// <summary>Just after landing, friction is scaled by LandGraceFriction for LandGraceSeconds: missing a bunny hop by a
+        /// few ticks costs a little speed, not most of it.</summary>
+        public float LandGraceSeconds = 0.2f;
+        public float LandGraceFriction = 0.15f;
         public float StopSpeed = 2.032f;          // sv_stopspeed 80
         public float Accelerate = 5.5f;           // sv_accelerate
         public float AirAccelerate = 250f;        // sv_airaccelerate: forgiving for new players (KZ 100, surf 150, CS:GO MM 12)

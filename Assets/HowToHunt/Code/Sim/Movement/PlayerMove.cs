@@ -87,12 +87,15 @@ namespace HowToHunt.Sim.Movement
             if (s.OnGround)
             {
                 s.Velocity.Y = 0f;
-                ApplyFriction(ref s.Velocity, cfg, dt);
+                float friction = s.GroundTime < cfg.LandGraceSeconds ? cfg.LandGraceFriction : 1f;
+                s.GroundTime += dt;
+                ApplyFriction(ref s.Velocity, cfg, dt, friction);
                 Accelerate(ref s.Velocity, wishDir, wishSpeed, cfg.Accelerate, dt);
                 WalkMove(ref s, ext, cfg, world, dt);
             }
             else
             {
+                s.GroundTime = 0f;
                 AirAccelerate(ref s.Velocity, wishDir, wishSpeed, cfg, dt);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
                 fallSpeed = -s.Velocity.Y; // before the floor clips it away
@@ -188,7 +191,7 @@ namespace HowToHunt.Sim.Movement
             if (duckedOnGround) wishSpeed *= cfg.DuckSpeedFactor;
         }
 
-        private static void ApplyFriction(ref Vector3 vel, MoveConfig cfg, float dt)
+        private static void ApplyFriction(ref Vector3 vel, MoveConfig cfg, float dt, float scale = 1f)
         {
             float speed = vel.Length();
             if (speed < 0.0025f)
@@ -197,7 +200,7 @@ namespace HowToHunt.Sim.Movement
                 return;
             }
             float control = speed < cfg.StopSpeed ? cfg.StopSpeed : speed;
-            float drop = control * cfg.Friction * dt;
+            float drop = control * cfg.Friction * scale * dt;
             float newSpeed = MathF.Max(speed - drop, 0f);
             vel *= newSpeed / speed;
         }

@@ -78,6 +78,17 @@ namespace HowToHunt.Hunting
             AdsSpreadFactor = AdsSpreadFactor,
         };
 
+        [Header("Sounds (linked by the content build from Art/Weapons/<name>/: fire*, reload*, dry*, equip*, inspect*)")]
+        [Tooltip("One is picked at random per shot. Empty: the shared default shot.")]
+        public AudioClip[] FireSounds = Array.Empty<AudioClip>();
+        public AudioClip ReloadSound;
+        public AudioClip DryFireSound;
+        public AudioClip EquipSound;
+        public AudioClip InspectSound;
+
+        /// <summary>A fire sound for this shot (null: use the default).</summary>
+        public AudioClip PickFireSound() => FireSounds != null && FireSounds.Length > 0 ? FireSounds[UnityEngine.Random.Range(0, FireSounds.Length)] : null;
+
         [Header("World item (computed by the content build)")]
         [Tooltip("How it lies when dropped: its natural resting face (lowest centre of mass), and its bounds in that pose.")]
         public Vector3 RestEuler;

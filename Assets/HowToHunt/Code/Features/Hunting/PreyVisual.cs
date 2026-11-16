@@ -75,7 +75,7 @@ namespace HowToHunt.Hunting
         public static void RenderAll()
         {
             if (NetSession.Manager == null) return;
-            double tick = HitClock.ViewTick();
+            double tick = PreyClock.RenderTick(); // smooth, two snapshot gaps behind on clients
             bool host = NetSession.IsServer;
             var all = PreyWorld.All;
             for (int i = 0; i < all.Count; i++)

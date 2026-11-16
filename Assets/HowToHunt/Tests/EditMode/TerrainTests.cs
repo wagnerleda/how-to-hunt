@@ -99,6 +99,26 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void AMissedBunnyHop_CostsALittleSpeed_NotMostOfIt()
+        {
+            var cfg = new MoveConfig();
+            var world = new BrushWorld();
+            world.Add(Brush.Box(new Vector3(0, -0.5f, 0), new Vector3(400, 0.5f, 400)));
+            // Landing at 12 m/s with no input, jumping six ticks (~0.09 s) late.
+            var s = new MoveState { Position = new Vector3(0, cfg.HullHalfExtents.Y + 0.3f, 0), Velocity = new Vector3(0, -2f, 12f) };
+            var idle = new MoveCmd();
+            int ground = 0;
+            for (int i = 0; i < 200 && ground < 6; i++)
+            {
+                PlayerMove.Step(ref s, in idle, cfg, world, Dt);
+                if (s.OnGround) ground++;
+            }
+            Assert.Greater(PlayerMove.HorizontalSpeed(s.Velocity), 12f * 0.9f, "a late hop keeps most of its speed");
+            for (int i = 0; i < 64; i++) PlayerMove.Step(ref s, in idle, cfg, world, Dt);
+            Assert.Less(PlayerMove.HorizontalSpeed(s.Velocity), 6f, "standing still still stops you");
+        }
+
+        [Test]
         public void HitByAThrow_RunsTenPercentSlower_ThenRecovers()
         {
             var cfg = new MoveConfig();

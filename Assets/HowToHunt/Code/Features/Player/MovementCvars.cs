@@ -23,6 +23,8 @@ namespace HowToHunt.Player
         public static readonly FloatCvar AirAccelerate = new FloatCvar("sv_airaccelerate", D.AirAccelerate, "Air acceleration (strafe gain). 250 = forgiving; KZ 100, surf 150, CS:GO 12.", Sv, 0f, 1000f);
         public static readonly FloatCvar AirSpeedCap = new FloatCvar("sv_air_max_wishspeed", D.AirSpeedCap, "Air wish-speed cap, m/s (Source 30 u/s).", Sv, 0f, 20f);
         public static readonly FloatCvar MaxSpeed = new FloatCvar("sv_maxspeed", D.MaxSpeed, "Ground run speed, m/s (Source 250 u/s).", Sv, 0f, 50f);
+        public static readonly FloatCvar LandGrace = new FloatCvar("sv_land_grace", D.LandGraceSeconds, "Seconds after landing with reduced friction (a late bunny hop keeps most of its speed).", Sv, 0f, 1f);
+        public static readonly FloatCvar LandGraceFriction = new FloatCvar("sv_land_grace_friction", D.LandGraceFriction, "Friction multiplier during the landing grace.", Sv, 0f, 1f);
         public static readonly FloatCvar SprintFactor = new FloatCvar("sv_sprint_factor", D.SprintFactor, "Ground speed while sprinting, x sv_maxspeed.", Sv, 1f, 3f);
         public static readonly FloatCvar SprintStamina = new FloatCvar("sv_sprint_stamina", D.SprintStamina, "Seconds of sprint from fresh (the stamina bar).", Sv, 0.1f, 60f);
         public static readonly FloatCvar StaminaRegen = new FloatCvar("sv_stamina_regen", D.StaminaRegen, "Seconds of sprint recovered per second while not sprinting.", Sv, 0f, 10f);
@@ -46,7 +48,7 @@ namespace HowToHunt.Player
 
         public static void Register(ConsoleSystem console)
         {
-            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, SprintFactor, SprintStamina, StaminaRegen, WaterSpeed, ThrowSlow, LoadSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
+            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, LandGrace, LandGraceFriction, SprintFactor, SprintStamina, StaminaRegen, WaterSpeed, ThrowSlow, LoadSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
             {
                 console.Register(c);
                 c.Changed += _ => Apply();
@@ -74,6 +76,8 @@ namespace HowToHunt.Player
             c.MaxSpeed = MaxSpeed;
             c.SprintFactor = SprintFactor;
             c.SprintStamina = SprintStamina;
+            c.LandGraceSeconds = LandGrace;
+            c.LandGraceFriction = LandGraceFriction;
             c.StaminaRegen = StaminaRegen;
             c.WaterSpeedFactor = WaterSpeed;
             c.HitSlowFactor = ThrowSlow;
