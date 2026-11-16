@@ -43,6 +43,8 @@ namespace HowToHunt.Core
 
         private void LateUpdate()
         {
+            // Headless (-nographics, dedicated tests) or very old GPUs: nothing to draw with.
+            if (!SystemInfo.supportsInstancing || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
             Camera cam = Camera.main;
 #if UNITY_EDITOR
             if (!Application.isPlaying && UnityEditor.SceneView.lastActiveSceneView != null) cam = UnityEditor.SceneView.lastActiveSceneView.camera;
