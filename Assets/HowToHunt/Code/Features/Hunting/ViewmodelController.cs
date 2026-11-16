@@ -2,18 +2,28 @@ using System.Collections.Generic;
 using HowToHunt.Core;
 using HowToHunt.Player;
 using HowToHunt.Sim.Hunting;
+using HowToHunt.Sim.Movement;
 using UnityEngine;
 
 namespace HowToHunt.Hunting
 {
     /// <summary>
-    /// The tool in your hands: raised when equipped, bobs with your speed, lags slightly behind the view, and plays
-    /// a procedural swing (blade), scoop (net) or recoil (firearm) when used. Models come from ToolDefinition.Viewmodel
-    /// and are instantiated once per tool, then shown and hidden.
+    /// The tool in your hand. Everything moves on springs so it never looks robotic:
+    /// - body inertia: the arm is pushed by your real acceleration (dips when you land, sinks as you jump, lags when you
+    ///   strafe or turn, floats a little in the air) and settles with a slight overshoot;
+    /// - walk bob, raise on equip;
+    /// - use animations: the net sweeps across the upper screen in a curve, right to left then left to right when
+    ///   spammed; the knife slashes diagonally, alternating; firearms recoil.
+    /// Models (tool + glove) come from ToolDefinition.Viewmodel and are instantiated once per tool.
     /// </summary>
     public sealed class ViewmodelController : MonoBehaviour
     {
         private const float RaiseSeconds = 0.22f;
+        private static readonly Vector3 Rest = new Vector3(0.18f, -0.17f, 0.40f);
+
+        // Inertia spring (position, metres in camera space) and tilt spring (degrees).
+        private const float Stiffness = 140f, Damping = 15f, InertiaScale = 0.0016f, MaxOffset = 0.07f;
+        private const float TiltStiffness = 90f, TiltDamping = 12f;
 
         private readonly Dictionary<ToolDefinition, GameObject> _models = new Dictionary<ToolDefinition, GameObject>();
         private Transform _holder;
@@ -27,17 +37,24 @@ namespace HowToHunt.Hunting
         private Quaternion _lag = Quaternion.identity;
         private Quaternion _lastCameraRotation = Quaternion.identity;
 
+        private Vector3 _lastVelocity;
+        private bool _hasLastVelocity;
+        private Vector3 _springPos, _springVel;
+        private Vector3 _tilt, _tiltVel;
+
         private void Awake()
         {
             _holder = new GameObject("Viewmodel").transform;
             PlayerTools.LocalEquipped += OnEquipped;
             PlayerTools.LocalUse += OnUse;
+            PlayerMotor.MoveFeedback += OnMoveFeedback;
         }
 
         private void OnDestroy()
         {
             PlayerTools.LocalEquipped -= OnEquipped;
             PlayerTools.LocalUse -= OnUse;
+            PlayerMotor.MoveFeedback -= OnMoveFeedback;
             if (_holder != null) Destroy(_holder.gameObject);
         }
 
@@ -47,6 +64,7 @@ namespace HowToHunt.Hunting
             if (_shown != null) _shown.SetActive(false);
             _shown = null;
             _raise = 0f;
+            _side = 1f;
             if (tool == null || tool.Viewmodel == null) return;
             if (!_models.TryGetValue(tool, out GameObject model) || model == null)
             {
@@ -57,7 +75,8 @@ namespace HowToHunt.Hunting
             }
             model.SetActive(true);
             _shown = model;
-            Sfx.Play2D(tool.Archetype == ToolArchetype.Blade ? "Kenney/drawKnife" : "Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
+            if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Shing, 0.22f, Random.Range(0.97f, 1.04f));
+            else Sfx.Play2D("Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
         }
 
         private void OnUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
@@ -65,11 +84,16 @@ namespace HowToHunt.Hunting
             _useTime = Time.time;
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
-            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(ProceduralSwoosh, 0.25f, Random.Range(0.9f, 1.1f));
+            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.3f, Random.Range(0.92f, 1.12f));
         }
 
-        private static AudioClip _swoosh;
-        private static AudioClip ProceduralSwoosh => _swoosh != null ? _swoosh : _swoosh = ProceduralSounds.Whoosh();
+        /// <summary>A hard landing gives the arm an extra downward kick on top of the inertia (it reads better).</summary>
+        private void OnMoveFeedback(PlayerMotor motor, MoveEvents events, float landSpeed)
+        {
+            if (motor != PlayerMotor.Local) return;
+            if ((events & MoveEvents.Landed) != 0) _springVel.y -= Mathf.Clamp(landSpeed, 0f, 16f) * 0.045f;
+            if ((events & MoveEvents.Jumped) != 0) _springVel.y -= 0.25f;
+        }
 
         private void LateUpdate()
         {
@@ -83,29 +107,49 @@ namespace HowToHunt.Hunting
                     _lastCameraRotation = cam.transform.rotation;
                 }
             }
-            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != HowToHunt.Sim.Movement.MoveMode.Noclip;
+            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
-            if (!visible || _tool == null) return;
+            if (!visible || _tool == null) { _hasLastVelocity = false; return; }
 
-            float dt = Time.deltaTime;
+            float dt = Mathf.Min(Time.deltaTime, 0.05f);
+            if (dt <= 0f) return;
             _raise = Mathf.Min(1f, _raise + dt / RaiseSeconds);
             float raise = 1f - (1f - _raise) * (1f - _raise);
+            MoveState s = PlayerMotor.Local.State;
+            Transform ct = cam.transform;
 
-            // Bob with horizontal speed while grounded.
-            var s = PlayerMotor.Local.State;
-            float speed = s.OnGround ? new Vector2(s.Velocity.X, s.Velocity.Z).magnitude : 0f;
+            // Body inertia: the arm is "left behind" by acceleration, in camera space.
+            Vector3 velocity = s.Velocity.ToUnity();
+            if (!_hasLastVelocity) { _lastVelocity = velocity; _hasLastVelocity = true; }
+            Vector3 accel = (velocity - _lastVelocity) / dt;
+            _lastVelocity = velocity;
+            Vector3 localAccel = ct.InverseTransformDirection(accel);
+            Vector3 force = -localAccel * InertiaScale * Stiffness;
+            // In the air the arm floats up a little while rising and sinks while falling.
+            Vector3 target = s.OnGround ? Vector3.zero : new Vector3(0f, Mathf.Clamp(-velocity.y * 0.002f, -0.02f, 0.02f), 0f);
+            _springVel += (force + (target - _springPos) * Stiffness - _springVel * Damping) * dt;
+            _springPos += _springVel * dt;
+            _springPos = Vector3.ClampMagnitude(_springPos, MaxOffset);
+
+            // Tilt: roll into strafes, pitch with vertical speed; springy too.
+            Vector3 localVel = ct.InverseTransformDirection(velocity);
+            var tiltTarget = new Vector3(Mathf.Clamp(-velocity.y * 0.35f, -6f, 6f), 0f, Mathf.Clamp(-localVel.x * 0.9f, -7f, 7f));
+            _tiltVel += ((tiltTarget - _tilt) * TiltStiffness - _tiltVel * TiltDamping) * dt;
+            _tilt += _tiltVel * dt;
+
+            // Walk bob while grounded.
+            float speed = s.OnGround ? new Vector2(velocity.x, velocity.z).magnitude : 0f;
             _bobAmount = Mathf.Lerp(_bobAmount, Mathf.Clamp01(speed / 7f), dt * 8f);
             _bobPhase += dt * Mathf.Lerp(6f, 11f, Mathf.Clamp01(speed / 10f));
             Vector3 bob = new Vector3(Mathf.Sin(_bobPhase) * 0.012f, -Mathf.Abs(Mathf.Cos(_bobPhase)) * 0.014f, 0f) * _bobAmount;
 
-            // Lag: the model trails view rotation a little, then catches up.
-            Quaternion camRot = cam.transform.rotation;
+            // Look lag: the model trails view rotation a little, then catches up.
+            Quaternion camRot = ct.rotation;
             Quaternion delta = Quaternion.Inverse(camRot) * _lastCameraRotation;
             _lastCameraRotation = camRot;
             _lag = Quaternion.Slerp(_lag * delta, Quaternion.identity, dt * 12f);
             _lag = Quaternion.RotateTowards(Quaternion.identity, _lag, 6f);
 
-            Vector3 rest = new Vector3(0.18f, -0.17f, 0.40f);
             Vector3 offset;
             Quaternion use;
             if (_tool.Archetype == ToolArchetype.Firearm)
@@ -118,59 +162,63 @@ namespace HowToHunt.Hunting
                 Sweep(dt, out offset, out use);
             }
 
-            _holder.localPosition = rest + bob + offset + new Vector3(0f, -0.25f * (1f - raise), 0f);
-            _holder.localRotation = _lag * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
+            _holder.localPosition = Rest + bob + _springPos + offset + new Vector3(0f, -0.25f * (1f - raise), 0f);
+            _holder.localRotation = _lag * Quaternion.Euler(_tilt) * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
         }
 
         // --- melee sweeps -----------------------------------------------------------------------------------
-        // A continuous "side" value: +1 = tool held to the right, -1 = to the left, 0 = centred rest. Each use sweeps
-        // from the current side to the other one, so spamming alternates right->left, left->right with no snapping.
-        private float _side;
+        // A continuous "side" value: +1 = tool held to the right (rest), -1 = to the left. Each use sweeps to the other
+        // side, so spamming alternates right->left, left->right with no snapping; idle drifts back to the right.
+        private float _side = 1f;
         private float _sweepFrom, _sweepTo;
         private float _sweepStart = -10f, _sweepSeconds = 0.3f;
 
         private void StartSweep()
         {
-            float from = Mathf.Abs(_side) < 0.3f ? 1f : Mathf.Sign(_side);
             _sweepFrom = _side;
-            _sweepTo = -from;
+            _sweepTo = _side > 0f ? -1f : 1f;
             _sweepStart = Time.time;
             bool net = _tool != null && _tool.Archetype == ToolArchetype.Net;
-            _sweepSeconds = Mathf.Clamp((_tool != null ? _tool.Cooldown : 0.5f) * (net ? 0.85f : 0.7f), 0.18f, 0.6f);
+            _sweepSeconds = Mathf.Clamp((_tool != null ? _tool.Cooldown : 0.5f) * (net ? 0.8f : 0.7f), 0.18f, 0.6f);
         }
 
         private void Sweep(float dt, out Vector3 offset, out Quaternion rotation)
         {
             bool net = _tool.Archetype == ToolArchetype.Net;
             float t = (Time.time - _sweepStart) / _sweepSeconds;
-            float dip = 0f;
+            float arc = 0f;       // 0 at the ends of a sweep, 1 in the middle
+            float direction = 0f; // which way we're moving (for leaning into the motion)
             if (t >= 0f && t < 1f)
             {
-                // Knife: a short wind-up past the start side, then a fast cut. Net: one smooth scoop.
                 float u;
-                if (!net && t < 0.2f) u = -0.25f * Mathf.Sin(t / 0.2f * Mathf.PI * 0.5f);
-                else u = Mathf.SmoothStep(net ? 0f : -0.25f, 1f, net ? t : (t - 0.2f) / 0.8f);
+                if (!net && t < 0.2f) u = -0.25f * Mathf.Sin(t / 0.2f * Mathf.PI * 0.5f); // knife wind-up
+                else
+                {
+                    float k = net ? t : (t - 0.2f) / 0.8f;
+                    u = Mathf.Lerp(net ? 0f : -0.25f, 1f, k * k * k * (k * (k * 6f - 15f) + 10f)); // smootherstep
+                }
                 _side = Mathf.LerpUnclamped(_sweepFrom, _sweepTo, u);
-                dip = Mathf.Sin(Mathf.Clamp01(net ? t : (t - 0.2f) / 0.8f) * Mathf.PI);
+                arc = Mathf.Sin(Mathf.Clamp01(net ? t : (t - 0.2f) / 0.8f) * Mathf.PI);
+                direction = Mathf.Sign(_sweepTo - _sweepFrom);
             }
-            else if (Time.time - _sweepStart > _sweepSeconds + 0.6f)
+            else if (Time.time - _sweepStart > _sweepSeconds + 0.8f)
             {
-                _side = Mathf.MoveTowards(_side, 0f, dt * 2.5f); // drift back to rest when idle
+                _side = Mathf.MoveTowards(_side, 1f, dt * 1.6f); // back to resting on the right
             }
 
             float s = _side;
             if (net)
             {
-                // The hoop crosses the screen low and forward, tilted into the sweep.
-                offset = new Vector3(s * 0.2f - 0.04f, 0.05f - 0.09f * dip, 0.12f * dip);
-                rotation = Quaternion.Euler(-14f + 40f * dip, s * 38f, -s * 18f);
+                // Owner's sketch + note: hoop held on the right at eye level; a swing carries it across the middle of
+                // the screen in a gentle curve (a little higher mid-swing), leaning into the direction of travel.
+                offset = new Vector3(s * 0.11f - 0.05f, 0.03f + 0.02f * arc, 0.05f * arc);
+                rotation = Quaternion.Euler(-13f - 4f * arc, s * 42f - 12f, -s * 10f + direction * 14f * arc);
             }
             else
             {
-                // Diagonal slashes: high on the right, low on the left; blade edge leads.
-                // Held blade-up (so it reads at rest), then cut down through the diagonal.
-                offset = new Vector3(s * 0.16f - 0.03f, s * 0.05f - 0.03f * dip + 0.02f, 0.1f * dip);
-                rotation = Quaternion.Euler(-38f + 55f * dip - s * 10f, s * 32f - 8f, -s * 45f + 12f);
+                // Diagonal slashes: high on the right, low on the left; held blade-up at rest.
+                offset = new Vector3(s * 0.16f - 0.03f, s * 0.05f - 0.03f * arc + 0.02f, 0.1f * arc);
+                rotation = Quaternion.Euler(-38f + 55f * arc - s * 10f, s * 32f - 8f, -s * 45f + 12f);
             }
         }
 

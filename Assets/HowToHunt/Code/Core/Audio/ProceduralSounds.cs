@@ -147,6 +147,64 @@ namespace HowToHunt.Core
             });
         }
 
+        /// <summary>
+        /// Blade swing: a bright, airy "fwish" (band-passed noise sweeping up through 3-7 kHz, then down) with a faint
+        /// metallic ring underneath, short and high like classic FPS knife swings.
+        /// </summary>
+        public static AudioClip KnifeSwish()
+        {
+            var rng = new System.Random(57);
+            float lp1 = 0f, lp2 = 0f;
+            const float len = 0.2f;
+            return Make("knife_swish", len, (t, i) =>
+            {
+                float u = t / len;
+                float centre = Mathf.Lerp(0.18f, 0.55f, Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.3f)));
+                float n = Noise(rng);
+                lp1 += (n - lp1) * centre;          // low-pass at the moving centre
+                lp2 += (lp1 - lp2) * centre * 0.35f; // a second, lower one
+                float band = lp1 - lp2;               // = band-pass around the centre
+                float env = Mathf.Pow(Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.15f)), 1.6f);
+                float ring = (Mathf.Sin(2f * Mathf.PI * 3150f * t) + 0.6f * Mathf.Sin(2f * Mathf.PI * 4720f * t) + 0.35f * Mathf.Sin(2f * Mathf.PI * 6290f * t)) * Mathf.Exp(-t * 28f) * 0.05f;
+                return band * env * 3f + ring;
+            });
+        }
+
+        /// <summary>Blade drawn or hitting: a quick metallic "shing" (inharmonic partials with a fast decay).</summary>
+        public static AudioClip KnifeShing()
+        {
+            var rng = new System.Random(58);
+            float lp = 0f;
+            return Make("knife_shing", 0.35f, (t, i) =>
+            {
+                float scrape = 0f;
+                if (t < 0.07f)
+                {
+                    float n = Noise(rng);
+                    lp += (n - lp) * 0.6f;
+                    scrape = (n - lp) * (1f - t / 0.07f) * 0.6f; // high-passed scrape
+                }
+                float ring = Mathf.Sin(2f * Mathf.PI * 2480f * t) + 0.7f * Mathf.Sin(2f * Mathf.PI * 3710f * t)
+                             + 0.45f * Mathf.Sin(2f * Mathf.PI * 5230f * t) + 0.25f * Mathf.Sin(2f * Mathf.PI * 7110f * t);
+                return scrape + ring * Mathf.Min(1f, t * 400f) * Mathf.Exp(-t * 14f) * 0.35f;
+            });
+        }
+
+        /// <summary>Blade hitting flesh: a short wet "thwack" (low thump plus a bright tick).</summary>
+        public static AudioClip BladeHit()
+        {
+            var rng = new System.Random(59);
+            float lp = 0f;
+            return Make("blade_hit", 0.18f, (t, i) =>
+            {
+                float n = Noise(rng);
+                lp += (n - lp) * 0.12f;
+                float thump = lp * Mathf.Exp(-t * 30f) * 2.2f + Mathf.Sin(2f * Mathf.PI * 140f * t) * Mathf.Exp(-t * 35f) * 0.5f;
+                float tick = (n - lp) * Mathf.Exp(-t * 90f) * 0.5f;
+                return thump + tick;
+            });
+        }
+
         public static AudioClip Zap()
         {
             return Make("zap", 0.32f, (t, i) =>

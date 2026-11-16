@@ -97,11 +97,13 @@ namespace HowToHunt.Hunting
                         ? $"Killed {prey.Noun}, but that was overkill: the carcass is ruined."
                         : $"Killed {prey.Noun}.", quality == CarcassQuality.Ruined ? Warning : Neutral);
                     HitFeedback.Confirm(point, damage, weak, true, -1, default, 0f, 0f);
-                    Sfx.Play2D(tool == ToolArchetype.Blade ? "Kenney/knifeSlice" : "Kenney/impactPunch_heavy", 0.45f, Random.Range(0.9f, 1.05f));
+                    if (tool == ToolArchetype.Blade) { Sfx.Play2D(KnifeSounds.Hit, 0.5f, Random.Range(0.9f, 1.05f)); Sfx.Play2D(KnifeSounds.Shing, 0.18f, Random.Range(1.05f, 1.15f)); }
+                    else Sfx.Play2D("Kenney/impactPunch_heavy", 0.45f, Random.Range(0.9f, 1.05f));
                     break;
                 case TakedownOutcome.Damaged:
                     HitFeedback.Confirm(point, damage, weak, false, -1, default, 0f, 0f);
-                    Sfx.Play2D(tool == ToolArchetype.Blade ? "Kenney/knifeSlice" : "Kenney/impactSoft_medium", 0.3f, Random.Range(1f, 1.15f));
+                    if (tool == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Hit, 0.4f, Random.Range(1f, 1.15f));
+                    else Sfx.Play2D("Kenney/impactSoft_medium", 0.3f, Random.Range(1f, 1.15f));
                     break;
                 case TakedownOutcome.Rejected:
                     Message(RejectLine(reason, prey, tool), warning: true);

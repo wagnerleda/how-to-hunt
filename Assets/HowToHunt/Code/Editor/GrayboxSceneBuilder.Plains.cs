@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HowToHunt.Editor
 {
     /// <summary>
-    /// The Plains test zone (owner layout, M3 feedback): a rolling low-poly meadow (260 m square, rounded corners)
+    /// The Plains test zone (owner layout, M3 feedback): a rolling low-poly meadow (200 m square, rounded corners)
     /// ringed by a forest you can't get through, a river, a camp by the south corridor to the movement lab, and a
     /// clearing on the east side that will open onto the next zone (blocked for now). Dense instanced grass and
     /// flowers, tree clusters, rocks, low-poly mountains and clouds on the horizon. Deterministic: rebuilding gives
@@ -17,16 +17,16 @@ namespace HowToHunt.Editor
     public static partial class GrayboxSceneBuilder
     {
         // Play area (inside the forest ring) and the forest band around it.
-        private const float PlayMinX = -130f, PlayMaxX = 130f, PlayMinZ = 115f, PlayMaxZ = 375f, CornerRadius = 40f;
+        private const float PlayMinX = -100f, PlayMaxX = 100f, PlayMinZ = 115f, PlayMaxZ = 315f, CornerRadius = 34f;
         private const float Band = 30f;
         private const float TerrainCell = 5f;
         private const float GateX = -30f;
-        private const float ClearingZ = 245f;
+        private const float ClearingZ = 215f;
         public static readonly Vector3 CampCenter = new Vector3(GateX, 0f, 135f);
         private const string KenneyDir = GeneratedAssets.Root + "/Art/ThirdParty/KenneyNatureKit/";
 
-        private static readonly Vector3[] FlowerFields = { new Vector3(-75f, 0f, 175f), new Vector3(62f, 0f, 190f), new Vector3(-30f, 0f, 320f), new Vector3(85f, 0f, 300f) };
-        private static readonly Vector3[] Warrens = { new Vector3(75f, 0f, 140f), new Vector3(-95f, 0f, 255f), new Vector3(30f, 0f, 340f), new Vector3(5f, 0f, 205f) };
+        private static readonly Vector3[] FlowerFields = { new Vector3(-62f, 0f, 168f), new Vector3(52f, 0f, 175f), new Vector3(-25f, 0f, 282f), new Vector3(62f, 0f, 268f) };
+        private static readonly Vector3[] Warrens = { new Vector3(62f, 0f, 138f), new Vector3(-72f, 0f, 228f), new Vector3(18f, 0f, 296f), new Vector3(12f, 0f, 172f) };
 
         private static SimTerrain _terrain;
 
@@ -61,16 +61,32 @@ namespace HowToHunt.Editor
 
             // Tree groves and lone trees in the meadow (collide), big rocks (collide).
             string[] trees = { "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_tall", "tree_pineRoundA", "tree_pineRoundC" };
-            for (int grove = 0; grove < 14; grove++)
+            // Cover for players who want to fight each other (not the core of the design): boulder clusters you can
+            // crouch behind and fallen trees lying across the grass. All collide.
+            for (int i = 0; i < 9; i++)
+            {
+                Vector3 c = OpenPoint(rng, 6f);
+                int n = 2 + rng.Next(3);
+                for (int k = 0; k < n; k++)
+                    Prop(props, rng.Next(3) == 0 ? "rock_tallA" : (rng.Next(2) == 0 ? "rock_largeA" : "rock_largeC"), c + Disc(rng, 3.5f), Range(rng, 3.2f, 4.8f), rng, collide: true);
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                Vector3 c = OpenPoint(rng, 5f);
+                Prop(props, "log_large", c, Range(rng, 4f, 5.5f), rng, collide: true);
+                if (rng.Next(2) == 0) Prop(props, "stump_old", c + Ring(rng, 3f, 5f), 3.5f, rng, collide: true);
+            }
+
+            for (int grove = 0; grove < 10; grove++)
             {
                 Vector3 c = OpenPoint(rng, 14f);
                 int n = 3 + rng.Next(5);
                 for (int i = 0; i < n; i++) Prop(props, trees[rng.Next(trees.Length)], c + Disc(rng, 7f), Range(rng, 4f, 5.4f), rng, collide: true, trunkOnly: true);
                 Prop(props, rng.Next(2) == 0 ? "rock_largeA" : "rock_largeB", c + Ring(rng, 6f, 9f), Range(rng, 2.5f, 3.5f), rng, collide: true);
             }
-            for (int i = 0; i < 25; i++) Prop(props, trees[rng.Next(trees.Length)], OpenPoint(rng, 8f), Range(rng, 4f, 5.4f), rng, collide: true, trunkOnly: true);
+            for (int i = 0; i < 18; i++) Prop(props, trees[rng.Next(trees.Length)], OpenPoint(rng, 8f), Range(rng, 4f, 5.4f), rng, collide: true, trunkOnly: true);
             string[] rocks = { "rock_largeA", "rock_largeB", "rock_largeC", "rock_tallA", "stone_tallA" };
-            for (int i = 0; i < 40; i++) Prop(props, rocks[rng.Next(rocks.Length)], OpenPoint(rng, 5f), Range(rng, 2.5f, 4f), rng, collide: true);
+            for (int i = 0; i < 26; i++) Prop(props, rocks[rng.Next(rocks.Length)], OpenPoint(rng, 5f), Range(rng, 2.5f, 4f), rng, collide: true);
             for (int i = 0; i < 18; i++) Prop(props, rng.Next(2) == 0 ? "log" : "stump_round", OpenPoint(rng, 4f), 3f, rng, collide: true);
 
             BuildScatter(plains, rng);
@@ -89,7 +105,7 @@ namespace HowToHunt.Editor
             return outside + Mathf.Min(Mathf.Max(dx, dz), 0f) - CornerRadius;
         }
 
-        private static float RiverZ(float x) => 255f + 38f * Mathf.Sin(x / 58f + 0.6f) + 14f * Mathf.Sin(x / 21f);
+        private static float RiverZ(float x) => 222f + 28f * Mathf.Sin(x / 50f + 0.6f) + 10f * Mathf.Sin(x / 19f);
 
         private static float RiverDistance(float x, float z)
         {
@@ -510,7 +526,7 @@ namespace HowToHunt.Editor
             string[] grass = { "grass", "grass_large", "grass_leafs", "grass_leafsLarge" };
             var grassLists = new List<Matrix4x4>[grass.Length];
             for (int k = 0; k < grass.Length; k++) grassLists[k] = new List<Matrix4x4>();
-            for (int i = 0; i < 26000; i++)
+            for (int i = 0; i < 20000; i++)
             {
                 var p = new Vector3(Range(rng, PlayMinX - 6f, PlayMaxX + 6f), 0f, Range(rng, PlayMinZ - 6f, PlayMaxZ + 6f));
                 if (OutsidePlay(p.x, p.z) > 6f || FlatMask(p.x, p.z) > 0.6f || RiverDistance(p.x, p.z) < 3.5f) continue;
@@ -526,7 +542,7 @@ namespace HowToHunt.Editor
             for (int k = 0; k < flowers.Length; k++) flowerLists[k] = new List<Matrix4x4>();
             foreach (Vector3 field in FlowerFields)
                 for (int i = 0; i < 420; i++) flowerLists[rng.Next(flowers.Length)].Add(Instance(field + Disc(rng, 14f), Range(rng, 1.8f, 2.6f), rng));
-            for (int i = 0; i < 2600; i++)
+            for (int i = 0; i < 1800; i++)
             {
                 var p = new Vector3(Range(rng, PlayMinX, PlayMaxX), 0f, Range(rng, PlayMinZ, PlayMaxZ));
                 if (OutsidePlay(p.x, p.z) > 0f || FlatMask(p.x, p.z) > 0.5f || RiverDistance(p.x, p.z) < 4f) continue;
@@ -733,7 +749,7 @@ namespace HowToHunt.Editor
                 foreach (Vector3 w in Warrens) if ((p - w).sqrMagnitude < (6f + clearance) * (6f + clearance)) blocked = true;
                 if (!blocked) return p;
             }
-            return new Vector3(Range(rng, -60f, 60f), 0f, Range(rng, 280f, 340f));
+            return new Vector3(Range(rng, -50f, 50f), 0f, Range(rng, 250f, 290f));
         }
     }
 }
