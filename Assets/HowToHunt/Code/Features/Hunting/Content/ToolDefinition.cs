@@ -25,6 +25,14 @@ namespace HowToHunt.Hunting
         public float ArcDegrees = 70f;
         [Tooltip("Prey one swing can reach (nets scoop several; knives and guns hit one).")]
         public int MaxTargets = 1;
+        [Tooltip("Shove given to prey and items it hits, m/s.")]
+        public float Knockback;
+        [Tooltip("Firearms: degrees the aim kicks up per shot.")]
+        public float RecoilUp;
+        [Tooltip("Firearms: degrees of random sideways kick per shot (biased right).")]
+        public float RecoilSide;
+        [Tooltip("Firearms: fraction of the kick that comes back down by itself (the rest you pull down).")]
+        [Range(0f, 1f)] public float RecoilRecover = 0.5f;
         [Tooltip("Seconds between uses.")]
         public float Cooldown = 0.5f;
         [Tooltip("Hotbar slot 1-9.")]

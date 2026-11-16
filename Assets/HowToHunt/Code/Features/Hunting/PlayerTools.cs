@@ -33,6 +33,12 @@ namespace HowToHunt.Hunting
         /// <summary>Host: does this client carry this tool? Set by the economy feature (inventory). Null = upgrades decide.</summary>
         public static Func<int, uint, bool> HostHasTool;
 
+        /// <summary>
+        /// Host: a tool was used (tool, origin, direction, how far it reached: the hit point for a shot, the reach for
+        /// a swing). The economy feature shoves the world items it passes through.
+        /// </summary>
+        public static event Action<ToolDefinition, Vector3, Vector3, float> HostToolReached;
+
         public static event Action<PlayerTools, ToolDefinition, Vector3, Vector3> LocalUse;
         public static event Action<ToolDefinition> LocalEquipped;
 
@@ -124,7 +130,15 @@ namespace HowToHunt.Hunting
             bool trigger = tool.Archetype == ToolArchetype.Firearm ? KeyBindings.WasPressedThisFrame(GameAction.Fire) : KeyBindings.IsPressed(GameAction.Fire);
             if (!trigger || Time.time < _cooldownUntil[_equipped]) return;
             Camera cam = Camera.main;
-            if (cam != null) Use(cam.transform.position, cam.transform.forward);
+            if (cam == null) return;
+            Use(cam.transform.position, cam.transform.forward);
+            if (tool.RecoilUp > 0f || tool.RecoilSide > 0f)
+            {
+                // Severe kick: up and a little sideways (mostly right). Part of it settles back, the rest you pull down.
+                float scale = HuntingCvars.RecoilScale.Value;
+                float side = UnityEngine.Random.Range(-0.4f, 1f) * tool.RecoilSide;
+                _motor.Input.Kick(tool.RecoilUp * scale, side * scale, tool.RecoilRecover);
+            }
         }
 
         private void AutoFire()
@@ -190,6 +204,7 @@ namespace HowToHunt.Hunting
                 // net's strength: a stunned or slowed rabbit still needs a net strong enough to hold it.
                 int n = ToolResolver.FindAll(tool, range, origin, dir, t, _sweep);
                 HitLog($"{tool.Key} sweep -> {n} prey");
+                HostToolReached?.Invoke(tool, origin, dir, range);
                 for (int i = 0; i < n; i++) ResolvePrey(tool, stats, _sweep[i], (float)(now - t));
                 return;
             }
@@ -227,6 +242,7 @@ namespace HowToHunt.Hunting
                     }
                     break;
             }
+            HostToolReached?.Invoke(tool, origin, dir, ToolResolver.SweepsSeveral(tool) || tool.ArcDegrees > 0f && tool.Archetype != ToolArchetype.Firearm ? range : (end - origin).magnitude);
             if (tool.Archetype == ToolArchetype.Firearm)
             {
                 RpcShotFx(origin, end);
@@ -248,8 +264,13 @@ namespace HowToHunt.Hunting
             switch (r.Outcome)
             {
                 case TakedownOutcome.Damaged:
-                    PreyWorld.HostDamage(prey, r.HealthAfter);
+                {
+                    Vector3 push = target.Point - transform.position;
+                    push.y = 0f;
+                    push = push.sqrMagnitude > 1e-4f ? push.normalized * tool.Knockback : Vector3.zero;
+                    PreyWorld.HostDamage(prey, r.HealthAfter, push);
                     break;
+                }
                 case TakedownOutcome.Killed:
                 case TakedownOutcome.Captured:
                     PreyWorld.HostRemove(prey);

@@ -61,6 +61,27 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void AHitShovesThePrey_ItSlidesToAStop_AndWallsStopIt()
+        {
+            BrushWorld world = Flat();
+            PreyBehavior b = Rabbit();
+            var s = new PreyState { Rng = 1, Stamina = 3f };
+            PreyBrain.Stun(ref s, in b);
+            PreyBrain.Knock(ref s, new Vector3(6f, 3f, 0f));
+            for (int i = 0; i < 64; i++) PreyBrain.Step(ref s, in b, default, false, world, i * Dt, Dt);
+            Assert.That(s.Position.X, Is.InRange(0.4f, 1.5f), "slid a short way");
+            Assert.AreEqual(Vector3.Zero, s.Knock, "and stopped");
+            Assert.AreEqual(0f, s.Position.Y, 0.05f, "on the ground (no vertical shove)");
+
+            world.Add(Brush.Box(new Vector3(s.Position.X + 0.5f, 1f, 0f), new Vector3(0.1f, 1f, 2f)));
+            float before = s.Position.X;
+            PreyBrain.Stun(ref s, in b);
+            PreyBrain.Knock(ref s, new Vector3(20f, 0f, 0f));
+            for (int i = 0; i < 64; i++) PreyBrain.Step(ref s, in b, default, false, world, i * Dt, Dt);
+            Assert.Less(s.Position.X, before + 0.5f, "a rock stops the slide");
+        }
+
+        [Test]
         public void GunshotsStartleHarmlessPrey_NotDeafOnes()
         {
             BrushWorld world = Flat();

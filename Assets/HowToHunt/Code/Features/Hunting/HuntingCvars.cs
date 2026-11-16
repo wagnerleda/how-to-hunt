@@ -10,6 +10,7 @@ namespace HowToHunt.Hunting
         public static readonly BoolCvar AllTools = new BoolCvar("sv_alltools", false, "Everyone owns every tool (tests, sv_cheats 1).", Sv);
         public static readonly FloatCvar DamageScale = new FloatCvar("sv_damage_scale", 1f, "Multiplies all tool damage (tests, sv_cheats 1).", Sv, 0f, 100f);
         public static readonly FloatCvar CrouchSight = new FloatCvar("sv_crouch_sight", 0.5f, "Prey spot crouching players at this fraction of their sight range.", Sv, 0f, 1f);
+        public static readonly FloatCvar RecoilScale = new FloatCvar("sv_recoil_scale", 1f, "Multiplies every firearm's aim kick (0 = none).", Sv, 0f, 5f);
         public static readonly BoolCvar HitDebug = new BoolCvar("sv_hitdebug", false, "Host: log every tool use (dropped, missed, what it hit).", CvarFlags.None);
         public static readonly BoolCvar LagComp = new BoolCvar("sv_lagcomp", true, "Rewind targets to what the shooter saw (lag compensation).", Sv);
         public static readonly FloatCvar MaxUnlag = new FloatCvar("sv_maxunlag", 0.25f, "Max rewind for lag compensation, seconds.", Sv, 0f, 1f);

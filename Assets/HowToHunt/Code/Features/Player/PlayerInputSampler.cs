@@ -31,10 +31,33 @@ namespace HowToHunt.Player
         public float Yaw { get; set; }
         public float Pitch { get; set; }
 
+        // Recoil still to settle back by itself, degrees.
+        private float _settlePitch, _settleYaw;
+
+        /// <summary>Weapon kick: the aim jumps up (and sideways) now; <paramref name="recover"/> of it settles back over a moment.</summary>
+        public void Kick(float up, float side, float recover)
+        {
+            Pitch = Mathf.Clamp(Pitch - up, -89f, 89f);
+            Yaw = Mathf.Repeat(Yaw + side, 360f);
+            _settlePitch += up * recover;
+            _settleYaw += side * recover;
+        }
+
         /// <summary>Call every frame.</summary>
         public void UpdateFrame()
         {
-            if (Playback != null || Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
+            if (Playback != null) return;
+            if (_settlePitch != 0f || _settleYaw != 0f)
+            {
+                float k = 1f - Mathf.Exp(-MovementCvars.RecoilSettleSpeed.Value * Time.deltaTime);
+                float p = _settlePitch * k, y = _settleYaw * k;
+                Pitch = Mathf.Clamp(Pitch + p, -89f, 89f);
+                Yaw = Mathf.Repeat(Yaw - y, 360f);
+                _settlePitch -= p;
+                _settleYaw -= y;
+                if (Mathf.Abs(_settlePitch) < 0.01f && Mathf.Abs(_settleYaw) < 0.01f) _settlePitch = _settleYaw = 0f;
+            }
+            if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) return;
             Mouse mouse = Mouse.current;
             Keyboard kb = Keyboard.current;
             if (mouse != null)

@@ -24,6 +24,10 @@ MonoBehaviour:
   Range: 150
   ArcDegrees: 0
   MaxTargets: 1
+  Knockback: 6
+  RecoilUp: 7
+  RecoilSide: 2.2
+  RecoilRecover: 0.5
   Cooldown: 0.4
   Slot: 3
   StartOwned: 0

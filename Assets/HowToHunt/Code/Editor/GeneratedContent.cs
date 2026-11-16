@@ -114,6 +114,7 @@ namespace HowToHunt.Editor
                 t.Mode = ToolMode.Kill;
                 t.Tier = 1;
                 t.Damage = 6f;
+                t.Knockback = 2.5f;
                 t.HeadshotMultiplier = 2f;
                 t.Range = 2.0f;
                 t.ArcDegrees = 60f;
@@ -130,6 +131,11 @@ namespace HowToHunt.Editor
                 t.Mode = ToolMode.Kill;
                 t.Tier = 2;
                 t.Damage = 25f;
+                t.Knockback = 6f;
+                // Severe kick (owner, Phase 3): 7 degrees up per shot, about half settles back, the rest you pull down.
+                t.RecoilUp = 7f;
+                t.RecoilSide = 2.2f;
+                t.RecoilRecover = 0.5f;
                 t.HeadshotMultiplier = 2f;
                 t.Range = 150f;
                 t.ArcDegrees = 0f;

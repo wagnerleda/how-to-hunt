@@ -27,12 +27,18 @@ namespace HowToHunt.Economy
         public bool Resting;
     }
 
-    /// <summary>Host → everyone: an item came to rest here (corrects any drift), or was removed (picked up, rotted).</summary>
+    /// <summary>
+    /// Host → everyone: an item came to rest here (corrects any drift), was removed (picked up, rotted), or was
+    /// shoved by a hit (Moving: starts from Position with Velocity at Tick).
+    /// </summary>
     public struct WorldItemUpdateBroadcast : IBroadcast
     {
         public ushort Id;
         public bool Removed;
         public Vector3 Position;
+        public bool Moving;
+        public Vector3 Velocity;
+        public uint Tick;
     }
 
     public sealed class WorldItem
@@ -72,10 +78,13 @@ namespace HowToHunt.Economy
             m.ClientManager.RegisterBroadcast<WorldItemSpawnBroadcast>(OnSpawn);
             m.ClientManager.RegisterBroadcast<WorldItemUpdateBroadcast>(OnUpdate);
             m.SceneManager.OnClientLoadedStartScenes += OnClientLoaded;
+            PlayerTools.HostToolReached -= OnToolReached;
+            PlayerTools.HostToolReached += OnToolReached;
         }
 
         public static void Detach()
         {
+            PlayerTools.HostToolReached -= OnToolReached;
             _manager = null;
             Clear();
         }
@@ -114,6 +123,51 @@ namespace HowToHunt.Economy
             Items.Add(w);
             WorldItemRenderer.Create(w);
             SendToReady(SpawnMessage(w));
+        }
+
+        /// <summary>Host: shove an item (a hit, a blast). Everyone re-simulates it from the new motion.</summary>
+        public static void HostPush(WorldItem w, Vector3 velocity)
+        {
+            if (!IsHost || velocity.sqrMagnitude < 1e-4f) return;
+            w.Body.Velocity += velocity.ToSim();
+            w.Body.Resting = false;
+            w.ExpireAt = Mathf.Max(w.ExpireAt, Time.time + 10f);
+            SendToReady(new WorldItemUpdateBroadcast
+            {
+                Id = w.Id, Position = w.Body.Position.ToUnity(), Moving = true, Velocity = w.Body.Velocity.ToUnity(), Tick = _manager.TimeManager.Tick,
+            });
+        }
+
+        /// <summary>Host: a tool reached this far. A shot shoves the first item on its line; a swing shoves items in its arc.</summary>
+        private static void OnToolReached(ToolDefinition tool, Vector3 origin, Vector3 dir, float reach)
+        {
+            if (!IsHost || tool.Knockback <= 0f) return;
+            // Items hit get a little lift so they hop rather than slide.
+            Vector3 lift = Vector3.up * (tool.Knockback * 0.35f);
+            if (tool.Archetype == ToolArchetype.Firearm || tool.ArcDegrees <= 0f)
+            {
+                WorldItem first = null;
+                float best = reach;
+                for (int i = 0; i < Items.Count; i++)
+                {
+                    WorldItem w = Items[i];
+                    var bounds = new Bounds(w.Body.Position.ToUnity(), w.HalfExtents.ToUnity() * 2f + Vector3.one * 0.1f);
+                    if (bounds.IntersectRay(new Ray(origin, dir), out float d) && d < best) { best = d; first = w; }
+                }
+                if (first != null) HostPush(first, dir * tool.Knockback + lift);
+                return;
+            }
+            float half = tool.ArcDegrees * 0.5f;
+            for (int i = 0; i < Items.Count; i++)
+            {
+                WorldItem w = Items[i];
+                Vector3 to = w.Body.Position.ToUnity() - origin;
+                float dist = to.magnitude;
+                if (dist > reach + 0.3f || dist < 1e-3f || Vector3.Angle(dir, to) > half) continue;
+                Vector3 flat = new Vector3(to.x, 0f, to.z);
+                Vector3 push = flat.sqrMagnitude > 1e-4f ? flat.normalized : new Vector3(dir.x, 0f, dir.z).normalized;
+                HostPush(w, push * tool.Knockback + lift);
+            }
         }
 
         public static void HostRemove(WorldItem w)
@@ -200,6 +254,17 @@ namespace HowToHunt.Economy
                 return;
             }
             w.Body.Position = msg.Position.ToSim();
+            if (msg.Moving)
+            {
+                // Shoved: re-simulate from the host's motion at that tick, catching up to now.
+                w.Body.Velocity = msg.Velocity.ToSim();
+                w.Body.Resting = false;
+                int behind = Mathf.Clamp((int)(_manager.TimeManager.Tick - msg.Tick), 0, 256);
+                float dt = (float)_manager.TimeManager.TickDelta;
+                for (int i = 0; i < behind && !w.Body.Resting; i++) ItemPhysics.Step(ref w.Body, SimWorld.Current, w.HalfExtents, dt);
+                w.PreviousPosition = w.Body.Position;
+                return;
+            }
             w.Body.Velocity = Vec3.Zero;
             w.Body.Resting = true;
         }

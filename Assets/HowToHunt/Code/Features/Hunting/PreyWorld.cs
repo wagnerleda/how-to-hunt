@@ -255,14 +255,15 @@ namespace HowToHunt.Hunting
             }
         }
 
-        /// <summary>Host: damaged but alive (ground prey get stunned, then flee).</summary>
-        public static void HostDamage(PreyInstance p, float healthAfter)
+        /// <summary>Host: damaged but alive (ground prey get stunned and shoved by the hit, then flee).</summary>
+        public static void HostDamage(PreyInstance p, float healthAfter, Vector3 push = default)
         {
             p.Health = healthAfter;
             if (!p.IsFlyer)
             {
                 p.State.Health = healthAfter;
                 PreyBrain.Stun(ref p.State, p.Def.Behavior);
+                PreyBrain.Knock(ref p.State, push.ToSim());
             }
         }
 

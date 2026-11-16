@@ -42,6 +42,7 @@ namespace HowToHunt.Sim.Hunting
         public float Speed;        // current horizontal speed (animation)
         public float Stamina;      // seconds of sprint left
         public float JinkTimer;    // seconds until the next sharp turn while fleeing
+        public Vector3 Knock;      // horizontal shove from a hit, m/s, fades quickly
     }
 
     /// <summary>
@@ -52,6 +53,8 @@ namespace HowToHunt.Sim.Hunting
     {
         private const float Gravity = 20f;
         private const float StepHeight = 0.45f;
+        private const float KnockDrag = 7f;       // per second
+        private const float KnockStopSpeed = 0.1f;
 
         public static void Step(ref PreyState s, in PreyBehavior b, Vector3 nearestThreat, bool hasThreat, ICollisionWorld world, float time, float dt)
             => Step(ref s, in b, nearestThreat, hasThreat, false, world, time, dt);
@@ -119,6 +122,9 @@ namespace HowToHunt.Sim.Hunting
 
         public static void Stun(ref PreyState s, in PreyBehavior b) => Enter(ref s, PreyAiState.Stunned, b.StunSeconds);
 
+        /// <summary>A hit shoves the prey along the ground (m/s, horizontal); it slides to a stop within half a second.</summary>
+        public static void Knock(ref PreyState s, Vector3 velocity) => s.Knock += Horizontal(velocity);
+
         /// <summary>Eye height above the feet.</summary>
         public static float EyeHeight(in PreyBehavior b) => b.HalfExtents.Y * 2f + 0.05f;
 
@@ -153,22 +159,30 @@ namespace HowToHunt.Sim.Hunting
         {
             Vector3 ext = b.HalfExtents;
             Vector3 center = s.Position + new Vector3(0f, ext.Y + 0.02f, 0f);
-            if (s.Speed > 0f && s.MoveDir.LengthSquared() > 1e-4f)
+            bool walking = s.Speed > 0f && s.MoveDir.LengthSquared() > 1e-4f;
+            bool knocked = s.Knock.LengthSquared() > KnockStopSpeed * KnockStopSpeed;
+            if (walking || knocked)
             {
                 // Step up first (hills, small ledges), move, then drop back onto the ground below.
                 TraceResult up = world.TraceBox(center, center + new Vector3(0f, StepHeight, 0f), ext);
                 center = up.EndPosition;
-                Vector3 delta = s.MoveDir * (s.Speed * dt);
+                Vector3 delta = (walking ? s.MoveDir * s.Speed : Vector3.Zero) * dt + (knocked ? s.Knock * dt : Vector3.Zero);
                 TraceResult tr = world.TraceBox(center, center + delta, ext);
                 if (tr.Hit)
                 {
-                    // Blocked: turn away from the wall for next time.
-                    s.MoveDir = Vector3.Normalize(Horizontal(Vector3.Reflect(s.MoveDir, tr.Normal)) + new Vector3(0.001f, 0f, 0f));
+                    // Blocked: turn away from the wall for next time; a knock stops dead.
+                    if (walking) s.MoveDir = Vector3.Normalize(Horizontal(Vector3.Reflect(s.MoveDir, tr.Normal)) + new Vector3(0.001f, 0f, 0f));
+                    s.Knock = Vector3.Zero;
                 }
                 center = tr.EndPosition;
-                float targetYaw = MathF.Atan2(s.MoveDir.X, s.MoveDir.Z) * 180f / MathF.PI;
-                s.Yaw = LerpAngle(s.Yaw, targetYaw, Math.Min(1f, dt * 10f));
+                if (walking)
+                {
+                    float targetYaw = MathF.Atan2(s.MoveDir.X, s.MoveDir.Z) * 180f / MathF.PI;
+                    s.Yaw = LerpAngle(s.Yaw, targetYaw, Math.Min(1f, dt * 10f));
+                }
             }
+            if (knocked) s.Knock *= MathF.Max(0f, 1f - KnockDrag * dt);
+            else s.Knock = Vector3.Zero;
             // Ground snap / fall.
             TraceResult down = world.TraceBox(center, center - new Vector3(0f, 2f + StepHeight + Gravity * dt, 0f), ext);
             if (down.Hit && !down.StartSolid) center = down.EndPosition;
