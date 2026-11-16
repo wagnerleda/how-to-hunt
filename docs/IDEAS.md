@@ -24,3 +24,5 @@ Not approved for building. Each needs the owner's yes before work starts.
 - A recorded CC0 knife swish if the synthesized one never sounds right.
 - Cash burst seen by the whole party (now only the seller sees it), with a coin sound at the trader.
 - Thrown items bouncing off what they hit (now they fly on through after slowing it).
+- A scope that renders a true magnified picture-in-picture (now the whole view zooms behind a scope mask).
+- Bullets that ricochet off rock at shallow angles; per-surface impact effects (wood chips, grass, water splash).

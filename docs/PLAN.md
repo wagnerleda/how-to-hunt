@@ -35,7 +35,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 6 | **Economy pace ~15 min** for all Plains upgrades (first upgrade still a few minutes); pacing test retuned | 27 min is too much |
 | 7 | **3 inventory slots to start**; slot upgrades leave the Plains shop and unlock later in the game (later areas, quests) | too many slots early |
 
-## Phase 4: gun overhaul
+## Phase 4: gun overhaul (done 2026-11-16 except real weapon models; awaiting the owner's play test)
 - **Physical recoil** (replaces the instant camera kick): each shot kicks the gun in the hand first; the camera follows loosely with spring lag, so a fast-firing SMG climbs on screen and the view trails it.
 - **Physical aim, like How to Fish**: bullets leave along the barrel, not the crosshair; no crosshair (the weapon itself aims). Hit registration and lag compensation use the barrel ray the client sends.
 - **Inspect key** (F by default, rebindable): the hands bring the held weapon or tool up and turn it to show it off, like a CS-style inspect. Any action (fire, switch, throw) cancels it.
@@ -46,7 +46,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 - Aim down sights.
 - Bullet impacts on the environment (dust, chips, decals by surface).
 - Heavy weapons slow you down while held. Light prey, the knife, nets, traps and tools never slow you.
-- Better weapon models: the owner provides them, or we fetch CC0 models from a repository after the owner approves the source.
+- Better weapon models: the owner provides them, or we fetch CC0 models from a repository after the owner approves the source. **Open**: the scout rifle is a stand-in built from boxes and cylinders.
 
 ## Phase 5: gun workshop and attachments
 - Workshop screen modelled on Battlefield 6's weapon customization (owner reference screenshot): the gun in the middle, slots around it joined by leader lines (muzzle, barrel, underbarrel, magazine, ammo, optic, top, stock), locked slots shown, stat bars (hip fire, precision, control, mobility) plus damage, fire rate and magazine size. Redone in our low-poly look.
