@@ -15,6 +15,9 @@ namespace HowToHunt.Hunting
         Ground,
     }
 
+    /// <summary>The sound a prey makes when hit (synthesized, see PreySounds).</summary>
+    public enum PreyVoice { Squeak, Flutter, Grunt }
+
     [Serializable]
     public struct HitboxShape
     {

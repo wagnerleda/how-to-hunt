@@ -26,7 +26,7 @@
 ## Movement lab
 - Rebuild the map: `HowToHunt.Editor.GrayboxSceneBuilder.Build()` (also exports collision to Tests/Data/Worlds).
 - Regenerate scripted demos after an intended physics/map change: `HowToHunt.Editor.MovementLabTools.GenerateScriptedDemos()`. ReplayTests replays every demo in Tests/Data/Demos (including ones recorded in the editor with `record`/`stop`).
-- Always leave Play mode when done testing: an Editor in Play mode registers with Steam as app 480, and closing Spacewar on the same account kills the Editor.
+- Editor Play mode runs offline (no Steam) unless How to Hunt > Use Steam in Play Mode is ticked: an Editor registered as app 480 is closed by Steam whenever another app-480 instance (test builds, bots-test) exits. Always leave Play mode when done testing.
 
 ## Network tests (M2)
 - `tools/bots-test.ps1` (host + 7 bots + refused 9th, bandwidth vs budgets), `tools/lagcomp-test.ps1` (hit registration under fake latency), `tools/build-installer.ps1 -TestInstall`.

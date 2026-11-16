@@ -172,6 +172,55 @@ namespace HowToHunt.Core
             });
         }
 
+        /// <summary>Small mammal hit: a short high squeak sliding down, with a little vibrato.</summary>
+        public static AudioClip Squeak()
+        {
+            float phase = 0f;
+            const float len = 0.17f;
+            return Make("squeak", len, (t, i) =>
+            {
+                float u = t / len;
+                float f = Mathf.Lerp(2600f, 1500f, u) * (1f + 0.035f * Mathf.Sin(2f * Mathf.PI * 38f * t));
+                phase += 2f * Mathf.PI * f / Rate;
+                float env = Mathf.Min(1f, t * 300f) * Mathf.Pow(1f - u, 1.6f);
+                return (Mathf.Sin(phase) + 0.35f * Mathf.Sin(2f * phase) + 0.15f * Mathf.Sin(3f * phase)) * env * 0.6f;
+            });
+        }
+
+        /// <summary>Insect hit: a papery flutter, quick bursts of bright noise like wings beating against the air.</summary>
+        public static AudioClip Flutter()
+        {
+            var rng = new System.Random(61);
+            var band = new BandPass();
+            const float len = 0.2f;
+            return Make("flutter", len, (t, i) =>
+            {
+                float u = t / len;
+                float beats = Mathf.Pow(Mathf.Abs(Mathf.Sin(2f * Mathf.PI * 34f * t)), 6f);
+                float n = band.Process(Noise(rng), 5200f, 1.2f);
+                return n * beats * (1f - u) * 2.2f;
+            });
+        }
+
+        /// <summary>Big animal hit: a low, rough grunt (for wolves, boars, bears later).</summary>
+        public static AudioClip Grunt()
+        {
+            var rng = new System.Random(62);
+            var band = new BandPass();
+            float phase = 0f;
+            const float len = 0.32f;
+            return Make("grunt", len, (t, i) =>
+            {
+                float u = t / len;
+                float f = Mathf.Lerp(150f, 95f, u);
+                phase += 2f * Mathf.PI * f / Rate;
+                float voice = Mathf.Sin(phase) + 0.5f * Mathf.Sin(2f * phase) + 0.3f * Mathf.Sin(3f * phase);
+                float rasp = band.Process(Noise(rng), 600f, 1.5f) * 2f;
+                float env = Mathf.Min(1f, t * 60f) * Mathf.Pow(1f - u, 1.2f);
+                return (voice * 0.5f + rasp * (0.6f + 0.4f * Mathf.Sin(2f * Mathf.PI * 22f * t))) * env;
+            });
+        }
+
         /// <summary>RBJ cookbook band-pass (constant peak gain), coefficients recomputed per sample for sweeps.</summary>
         private sealed class BandPass
         {

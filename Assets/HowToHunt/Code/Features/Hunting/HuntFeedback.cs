@@ -31,7 +31,7 @@ namespace HowToHunt.Hunting
         private void Awake()
         {
             _instance = this;
-            _toast = Hud.Text("Hunt Toast", new Vector2(0.5f, 0.5f), new Vector2(0f, -110f), 30f, TextAlignmentOptions.Center, Neutral);
+            _toast = Hud.Text("Hunt Toast", new Vector2(0.5f, 0.5f), new Vector2(0f, -100f), 26f, TextAlignmentOptions.Center, Neutral);
             _toast.rectTransform.sizeDelta = new Vector2(1200f, 60f);
             _toast.fontStyle = FontStyles.Bold;
             _toast.gameObject.SetActive(false);
@@ -86,16 +86,14 @@ namespace HowToHunt.Hunting
             switch (outcome)
             {
                 case TakedownOutcome.Captured:
-                    f.ShowToast($"Caught {prey.Noun}!", Good);
+                    f.ShowToast("Caught!", Good);
                     HitFeedback.Marker(new Color(0.55f, 1f, 0.5f), 0.3f);
                     Sfx.Play2D("Kenney/cloth", 0.7f, Random.Range(0.95f, 1.08f));
                     Sfx.Play2D("Kenney/pluck_001", 0.35f, 1.2f);
                     f.PlayChime();
                     break;
                 case TakedownOutcome.Killed:
-                    f.ShowToast(quality == CarcassQuality.Ruined
-                        ? $"Killed {prey.Noun}, but that was overkill: the carcass is ruined."
-                        : $"Killed {prey.Noun}.", quality == CarcassQuality.Ruined ? Warning : Neutral);
+                    f.ShowToast(quality == CarcassQuality.Ruined ? "Ruined (overkill)" : "Killed!", quality == CarcassQuality.Ruined ? Warning : Neutral);
                     HitFeedback.Confirm(point, damage, weak, true, -1, default, 0f, 0f);
                     if (tool == ToolArchetype.Blade) { Sfx.Play2D(KnifeSounds.Hit, 0.5f, Random.Range(0.9f, 1.05f)); Sfx.Play2D(KnifeSounds.Shing, 0.18f, Random.Range(1.05f, 1.15f)); }
                     else Sfx.Play2D("Kenney/impactPunch_heavy", 0.45f, Random.Range(0.9f, 1.05f));
@@ -119,13 +117,13 @@ namespace HowToHunt.Hunting
             switch (reason)
             {
                 case RejectReason.TooWeakToHold:
-                    return $"Your net is too flimsy to hold {noun}. Upgrade it at camp.";
+                    return "Net too weak";
                 case RejectReason.TooWeakToHurt:
-                    return $"That barely scratches {noun}. You need a stronger weapon.";
+                    return "Too weak to hurt it";
                 case RejectReason.MethodNotAllowed:
                     return tool == ToolArchetype.Net || tool == ToolArchetype.Trap
-                        ? $"You can't catch {noun}. It has to be killed."
-                        : $"You can't hurt {noun}. Try to catch it instead.";
+                        ? "Can't be caught"
+                        : "Can't be hurt";
                 default:
                     return "That didn't work.";
             }

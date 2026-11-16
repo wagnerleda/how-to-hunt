@@ -49,6 +49,7 @@ namespace HowToHunt.Hunting
         [Tooltip("Colour of the chunks a kill leaves (fur, feathers, wings).")]
         public Color GibColor = new Color(0.62f, 0.5f, 0.38f);
         public int GibCount = 4;
+        public PreyVoice Voice = PreyVoice.Squeak;
 
         [Header("Inventory")]
         [Tooltip("How many fit in one inventory slot (small prey stack, big prey take a slot each).")]

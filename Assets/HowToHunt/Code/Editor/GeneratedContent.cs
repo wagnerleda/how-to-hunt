@@ -46,6 +46,7 @@ namespace HowToHunt.Editor
                 p.GibColor = new Color(0.96f, 0.58f, 0.18f);
                 p.GibCount = 3;
                 p.StackSize = 10;
+                p.Voice = PreyVoice.Flutter;
             });
 
             Asset<PreyDefinition>("Prey/Prey_Rabbit", "prey.rabbit", "Plains Rabbit",
@@ -82,6 +83,7 @@ namespace HowToHunt.Editor
                 p.GibColor = new Color(0.6f, 0.45f, 0.31f);
                 p.GibCount = 5;
                 p.StackSize = 1;
+                p.Voice = PreyVoice.Squeak;
             });
 
             ToolDefinition net = Asset<ToolDefinition>("Tools/Tool_Net", "tool.net", "Butterfly Net",

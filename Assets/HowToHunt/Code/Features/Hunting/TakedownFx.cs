@@ -159,10 +159,12 @@ namespace HowToHunt.Hunting
                 case TakedownOutcome.Damaged:
                     _instance.Gore(prey, point, direction, 0.35f);
                     PreyVisual.FlashNear(prey, point);
+                    PreySounds.PlayHit(prey, point, killed: false);
                     break;
                 case TakedownOutcome.Killed:
                     bool ruined = quality == CarcassQuality.Ruined;
                     _instance.Gore(prey, point, direction, ruined ? 3f : 1f);
+                    PreySounds.PlayHit(prey, point, killed: true);
                     Sfx.PlayAt(ruined ? "Kenney/impactPunch_heavy" : "Kenney/impactSoft_heavy", point, ruined ? 0.9f : 0.6f, Random.Range(0.85f, 1f));
                     break;
             }

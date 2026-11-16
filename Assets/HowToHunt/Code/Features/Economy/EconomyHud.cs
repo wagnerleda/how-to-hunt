@@ -61,22 +61,22 @@ namespace HowToHunt.Economy
                     var e = (EconomyEvent)msg.Event;
                     if (e == EconomyEvent.Caught)
                     {
-                        HuntFeedback.Feed($"+ {name} (caught)  ~{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
+                        HuntFeedback.Feed($"+ {name} · {BigDouble.Deserialize(msg.EventCoins).ToShortString()}c");
                         Sfx.Play2D("Kenney/handleSmallLeather", 0.35f, Random.Range(0.95f, 1.05f));
                     }
                     else if (e == EconomyEvent.Killed)
-                        HuntFeedback.Feed($"{name} ({how}) dropped: go pick it up  ~{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins", item.Quality != CarcassQuality.Ruined);
+                        HuntFeedback.Feed($"{name} down · pick it up", item.Quality != CarcassQuality.Ruined);
                     else if (e == EconomyEvent.PickedUp)
                     {
-                        HuntFeedback.Feed($"+ {name} ({how})");
+                        HuntFeedback.Feed($"+ {name}");
                         Sfx.Play2D("Kenney/handleSmallLeather", 0.4f, Random.Range(0.9f, 1.05f));
                     }
                     else
-                        HuntFeedback.Message($"No room in your inventory: the {name.ToLowerInvariant()} fell at your feet. Sell at the trader.", warning: true);
+                        HuntFeedback.Message("Inventory full", warning: true);
                     break;
                 }
                 case EconomyEvent.Sold:
-                    HuntFeedback.Feed($"Sold {msg.EventCount} {(msg.EventCount == 1 ? "catch" : "catches")} for {BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
+                    HuntFeedback.Feed($"Sold {msg.EventCount} · {BigDouble.Deserialize(msg.EventCoins).ToShortString()}c");
                     HuntFeedback.Message($"+{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
                     Sfx.Play2D("Kenney/handleCoins", 0.6f);
                     break;

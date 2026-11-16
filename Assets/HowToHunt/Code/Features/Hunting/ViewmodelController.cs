@@ -135,7 +135,7 @@ namespace HowToHunt.Hunting
             _useTime = Time.time;
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
-            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.55f, Random.Range(0.9f, 1.12f));
+            else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.28f, Random.Range(0.9f, 1.12f));
         }
 
         /// <summary>A hard landing gives the arm an extra downward kick on top of the inertia (it reads better).</summary>
