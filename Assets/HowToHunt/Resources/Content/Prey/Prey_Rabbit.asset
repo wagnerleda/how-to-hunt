@@ -29,7 +29,7 @@ MonoBehaviour:
     B: {x: 0, y: 0.3, z: 0.24}
     Radius: 0.1
     WeakPoint: 1
-  BaseValue: 12
+  BaseValue: 7
   TrophiesOnKill: 1
   Movement: 1
   WalkSpeed: 1.1

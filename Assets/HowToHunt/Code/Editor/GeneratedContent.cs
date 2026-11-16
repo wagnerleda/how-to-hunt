@@ -36,7 +36,7 @@ namespace HowToHunt.Editor
                 p.MinKillTier = 0;
                 p.OverkillRatio = 2.5f;
                 p.Hitboxes = new List<HitboxShape> { new HitboxShape { A = new Vector3(0f, -0.05f, 0f), B = new Vector3(0f, 0.05f, 0f), Radius = 0.22f } };
-                p.BaseValue = 4;
+                p.BaseValue = 2; // Phase 3 rebalance: nets catch several per sweep, so each pays less
                 p.TrophiesOnKill = 0;
                 p.Movement = PreyMovement.Flyer;
                 p.Visual = butterflyPrefab;
@@ -63,7 +63,7 @@ namespace HowToHunt.Editor
                     new HitboxShape { A = new Vector3(0f, 0.16f, -0.1f), B = new Vector3(0f, 0.18f, 0.08f), Radius = 0.15f },
                     new HitboxShape { A = new Vector3(0f, 0.28f, 0.17f), B = new Vector3(0f, 0.3f, 0.24f), Radius = 0.1f, WeakPoint = true },
                 };
-                p.BaseValue = 12;
+                p.BaseValue = 7;
                 p.TrophiesOnKill = 1;
                 p.Movement = PreyMovement.Ground;
                 p.WalkSpeed = 1.1f;
@@ -100,6 +100,7 @@ namespace HowToHunt.Editor
                 t.CaptureStrength = 1f;
                 t.Range = 2.4f;
                 t.ArcDegrees = 70f;
+                t.MaxTargets = 3; // one sweep scoops up to three (each checked against net strength)
                 t.Cooldown = 0.55f;
                 t.Slot = 1;
                 t.StartOwned = true;
@@ -143,7 +144,7 @@ namespace HowToHunt.Editor
                 u.Tool = net;
                 u.Effect = UpgradeEffect.CaptureStrength;
                 u.Value = 1f;
-                u.CostCoins = 60;
+                u.CostCoins = 140;
                 u.SortOrder = 10;
                 u.Requires = null;
             });
@@ -154,7 +155,7 @@ namespace HowToHunt.Editor
                 u.Tool = knife;
                 u.Effect = UpgradeEffect.DamageMultiplier;
                 u.Value = 1.6f;
-                u.CostCoins = 45;
+                u.CostCoins = 110;
                 u.SortOrder = 20;
                 u.Requires = null;
             });
@@ -165,7 +166,7 @@ namespace HowToHunt.Editor
                 u.Tool = net;
                 u.Effect = UpgradeEffect.Range;
                 u.Value = 0.8f;
-                u.CostCoins = 90;
+                u.CostCoins = 220;
                 u.SortOrder = 30;
                 u.Requires = sturdy;
             });
@@ -176,7 +177,7 @@ namespace HowToHunt.Editor
                 u.Tool = revolver;
                 u.Effect = UpgradeEffect.UnlockTool;
                 u.Value = 0f;
-                u.CostCoins = 150;
+                u.CostCoins = 340;
                 u.SortOrder = 40;
                 u.Requires = null;
             });
@@ -187,7 +188,7 @@ namespace HowToHunt.Editor
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
                 u.Value = 2f;
-                u.CostCoins = 70;
+                u.CostCoins = 180;
                 u.SortOrder = 50;
                 u.Requires = null;
             });
@@ -198,7 +199,7 @@ namespace HowToHunt.Editor
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
                 u.Value = 2f;
-                u.CostCoins = 160;
+                u.CostCoins = 360;
                 u.SortOrder = 60;
                 u.Requires = pack;
             });

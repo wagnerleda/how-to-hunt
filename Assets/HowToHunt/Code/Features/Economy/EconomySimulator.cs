@@ -17,6 +17,8 @@ namespace HowToHunt.Economy
             public PreyDefinition Def;
             /// <summary>Seconds to find and reach one (plus one more swing per extra hit needed).</summary>
             public float SecondsToReach;
+            /// <summary>How many usually sit close enough together for one sweep (butterflies drift in groups). Default 1.</summary>
+            public float Group;
         }
 
         public struct Unlock
@@ -51,6 +53,7 @@ namespace HowToHunt.Economy
                 double bestRate = 0;
                 ItemStack bestItem = default;
                 double bestTime = 0;
+                int bestCount = 1;
                 foreach (Prey p in prey)
                 {
                     foreach (ToolDefinition tool in tools)
@@ -62,11 +65,14 @@ namespace HowToHunt.Economy
                         CatchReward r = Rewards.Compute(p.Def.Economy, rules, captured, quality, profile.ResearchOf(p.Def.Id.Value), scratch);
                         // Kills drop a carcass that has to be fetched (owner rule): a few seconds more than a catch.
                         double seconds = p.SecondsToReach + Math.Max(tool.Cooldown, secondsPerSwing) * hits + (captured ? 0.0 : 3.0);
-                        double rate = r.Coins.ToDouble() / seconds;
+                        // A net sweep scoops a whole group (up to the net's MaxTargets).
+                        int count = captured ? Math.Max(1, Math.Min(tool.MaxTargets, (int)Math.Round(Math.Max(1f, p.Group)))) : 1;
+                        double rate = r.Coins.ToDouble() * count / seconds;
                         if (rate > bestRate)
                         {
                             bestRate = rate;
                             bestTime = seconds;
+                            bestCount = count;
                             bestItem = ItemStack.Prey(p.Def.Id.Value, captured, quality);
                         }
                     }
@@ -74,9 +80,12 @@ namespace HowToHunt.Economy
                 if (bestRate <= 0) break;
 
                 t += bestTime;
-                carried.Add(bestItem);
-                result.Catches++;
-                if (bestItem.Captured) profile.Research[bestItem.Content] = profile.ResearchOf(bestItem.Content) + 1;
+                for (int k = 0; k < bestCount; k++)
+                {
+                    carried.Add(bestItem);
+                    result.Catches++;
+                    if (bestItem.Captured) profile.Research[bestItem.Content] = profile.ResearchOf(bestItem.Content) + 1;
+                }
 
                 if (carried.Count >= catchesPerTrip)
                 {

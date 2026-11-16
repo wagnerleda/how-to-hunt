@@ -28,6 +28,7 @@ namespace HowToHunt.Hunting
         private readonly float[] _serverCooldownUntil = new float[MaxTools];
         private int _equipped = -1;
         private int _previous = -1;
+        private static readonly ToolResolver.Target[] _sweep = new ToolResolver.Target[ToolResolver.MaxSweepTargets];
 
         /// <summary>Host: does this client carry this tool? Set by the economy feature (inventory). Null = upgrades decide.</summary>
         public static Func<int, uint, bool> HostHasTool;
@@ -183,6 +184,15 @@ namespace HowToHunt.Hunting
             if (t > now) t = now;
 
             ToolStats stats = loadout.StatsFor(tool, out float range);
+            if (ToolResolver.SweepsSeveral(tool))
+            {
+                // A net sweep scoops every prey in its arc (up to MaxTargets). Each one is still checked against the
+                // net's strength: a stunned or slowed rabbit still needs a net strong enough to hold it.
+                int n = ToolResolver.FindAll(tool, range, origin, dir, t, _sweep);
+                HitLog($"{tool.Key} sweep -> {n} prey");
+                for (int i = 0; i < n; i++) ResolvePrey(tool, stats, _sweep[i], (float)(now - t));
+                return;
+            }
             ToolResolver.Target target = ToolResolver.Find(tool, range, origin, dir, t);
             Vector3 end = target.Kind == ToolResolver.TargetKind.None ? origin + dir * range : target.Point;
             if (HuntingCvars.HitDebug.Value)
@@ -302,6 +312,39 @@ namespace HowToHunt.Hunting
             public Vector3 Point;
             public bool WeakPoint;
             public EntityPose Pose;
+            /// <summary>Sweeps: angle from the crosshair (lower = better).</summary>
+            public float Score;
+        }
+
+        public const int MaxSweepTargets = 8;
+
+        /// <summary>Does one use of this tool reach several prey (a net sweep)?</summary>
+        public static bool SweepsSeveral(ToolDefinition tool) =>
+            tool.MaxTargets > 1 && tool.Archetype != ToolArchetype.Firearm && tool.ArcDegrees > 0f;
+
+        /// <summary>
+        /// Every prey inside the arc and reach with line of sight, up to the tool's MaxTargets, nearest the crosshair
+        /// first. Allocation free: fills <paramref name="into"/>.
+        /// </summary>
+        public static int FindAll(ToolDefinition tool, float range, Vector3 origin, Vector3 dir, double tick, Target[] into)
+        {
+            int max = Mathf.Min(Mathf.Max(1, tool.MaxTargets), into.Length);
+            int n = 0;
+            var prey = PreyWorld.All;
+            for (int i = 0; i < prey.Count; i++)
+            {
+                PreyInstance p = prey[i];
+                if (!p.TryPoseAt(tick, true, out EntityPose pose)) continue;
+                Vector3 center = pose.Position.ToUnity() + Vector3.up * CapsuleMidHeight(p.Def.Capsules);
+                float angle = tool.ArcDegrees * 0.5f;
+                if (!Consider(origin, dir, center, range + 0.3f, ref angle)) continue;
+                var t = new Target { Kind = TargetKind.Prey, PreyId = p.Id, Point = center, Pose = pose, Score = angle };
+                if (n < max) { into[n++] = t; continue; }
+                int worst = 0;
+                for (int k = 1; k < n; k++) if (into[k].Score > into[worst].Score) worst = k;
+                if (angle < into[worst].Score) into[worst] = t;
+            }
+            return n;
         }
 
         public static Target Find(ToolDefinition tool, float range, Vector3 origin, Vector3 dir, double tick)

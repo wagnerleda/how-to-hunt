@@ -23,6 +23,7 @@ MonoBehaviour:
   HeadshotMultiplier: 2
   Range: 150
   ArcDegrees: 0
+  MaxTargets: 1
   Cooldown: 0.4
   Slot: 3
   StartOwned: 0

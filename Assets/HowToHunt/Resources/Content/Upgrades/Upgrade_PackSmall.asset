@@ -18,7 +18,7 @@ MonoBehaviour:
   Tool: {fileID: 0}
   Effect: 4
   Value: 2
-  CostCoins: 70
+  CostCoins: 180
   CostTrophies: 0
   Requires: {fileID: 0}
   SortOrder: 50

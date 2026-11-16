@@ -23,6 +23,8 @@ namespace HowToHunt.Hunting
         public float Range = 2.2f;
         [Tooltip("Melee arc, degrees (0 for hitscan).")]
         public float ArcDegrees = 70f;
+        [Tooltip("Prey one swing can reach (nets scoop several; knives and guns hit one).")]
+        public int MaxTargets = 1;
         [Tooltip("Seconds between uses.")]
         public float Cooldown = 0.5f;
         [Tooltip("Hotbar slot 1-9.")]
