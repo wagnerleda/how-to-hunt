@@ -41,35 +41,39 @@ MonoBehaviour:
   MaxSpreadDegrees: 0.15
   AdsSpreadFactor: 0.5
   AdsZoom: 3.5
-  SightOffset: {x: 0, y: 0.09, z: -0.06}
-  MuzzleOffset: {x: 0, y: 0.03, z: 0.78}
+  SightOffset: {x: 0, y: 0.19286579, z: -0.05}
+  MuzzleOffset: {x: 0, y: 0.09232515, z: 0.7665}
   ScopeOverlay: 1
   Weight: 1
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
   AttachmentAnchors:
   - Slot: 0
-    Position: {x: 0, y: 0.03, z: 0.78}
+    Position: {x: 0, y: 0.09232515, z: 0.7665}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: -0.025, z: 0.36}
+    Position: {x: 0, y: 0.036840975, z: 0.421575}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
-    Position: {x: 0, y: -0.01, z: 0.1}
+    Position: {x: 0, y: -0.049665254, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.02, z: 0.05}
+    Position: {x: 0, y: 0.046162575, z: 0.05}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 7
-    Position: {x: 0, y: -0.035, z: -0.39}
+    Position: {x: 0, y: 0.019623943, z: -0.2835}
     Euler: {x: 0, y: 0, z: 0}
-  FireSounds: []
+  FireSounds:
+  - {fileID: 8300000, guid: 89fc5305aa597724299e83dbfd426426, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
   InspectSound: {fileID: 0}
-  RestEuler: {x: 0.13285479, y: 0.13302769, z: 90.074524}
-  RestCenter: {x: -0.004780516, y: 0.01795841, z: 0.19492692}
-  RestSize: {x: 0.20671687, y: 0.084149614, z: 1.1703483}
+  RestEuler: {x: 359.3829, y: 359.37396, z: 90.82453}
+  RestCenter: {x: -0.055332527, y: 0.0008398555, z: 0.24079019}
+  RestSize: {x: 0.27298707, y: 0.08797392, z: 1.0500519}
   Cooldown: 1.1
   Slot: 4
   StartOwned: 0
-  Viewmodel: {fileID: 342496969449241297, guid: 8edddd5e98ce6cc4caf074c84d73762b, type: 3}
+  Viewmodel: {fileID: 1269302119556946276, guid: 3fe7e3d0ec6a1d04b8ddc110b87e8508, type: 3}

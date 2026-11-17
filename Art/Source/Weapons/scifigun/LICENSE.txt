@@ -1,0 +1,3 @@
+CGTrader acquisition-specific license
+
+The license shown on CGTrader at acquisition governs. The platform may offer free or subscription downloads under Royalty Free, No AI. If this same asset is acquired inside a paid companion bundle, the license shown for that paid bundle governs that acquisition. This file routes to those terms; it does not override them or grant AI-training permission regardless of the selected license. Standalone redistribution or resale of the source assets is not granted.

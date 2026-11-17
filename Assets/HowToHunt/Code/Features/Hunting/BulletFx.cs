@@ -25,6 +25,7 @@ namespace HowToHunt.Hunting
         private readonly GunBallistics[] _ballistics = new GunBallistics[BulletPool];
         private readonly LineRenderer[] _lines = new LineRenderer[BulletPool];
         private readonly bool[] _live = new bool[BulletPool];
+        private readonly bool[] _explosive = new bool[BulletPool]; // the host announces the blast; no bullet impact
         private int _nextBullet;
 
         private readonly Transform[] _marks = new Transform[MarkPool];
@@ -109,6 +110,15 @@ namespace HowToHunt.Hunting
             if (_instance == this) _instance = null;
         }
 
+        /// <summary>One shot: a single tracer, or a fan of pellets (the same fan as the host's, from the shot seed).</summary>
+        public static void FireVolley(ToolDefinition tool, Vector3 origin, Vector3 dir, ushort seed)
+        {
+            if (tool == null) return;
+            int pellets = Mathf.Max(1, tool.Pellets);
+            if (pellets == 1) { Fire(tool, origin, dir); return; }
+            for (int p = 0; p < pellets; p++) Fire(tool, origin, GunMath.PelletDir(dir.ToSim(), tool.PelletSpreadDegrees, seed, p).ToUnity());
+        }
+
         /// <summary>A shot left this muzzle in this direction: fly its tracer (with the gun's speed and drop).</summary>
         public static void Fire(ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
@@ -119,6 +129,7 @@ namespace HowToHunt.Hunting
             f._ballistics[i] = tool.Ballistics;
             f._bullets[i] = GunMath.Fire(origin.ToSim(), dir.ToSim(), f._ballistics[i], tool.Range);
             f._live[i] = true;
+            f._explosive[i] = tool.ExplosionRadius > 0f;
             f._lines[i].enabled = false; // shown from the first step (no zero-length line)
         }
 
@@ -138,7 +149,7 @@ namespace HowToHunt.Hunting
                     if (tr.Hit && !tr.StartSolid)
                     {
                         _bullets[i].Position = tr.EndPosition;
-                        Impact(tr.EndPosition.ToUnity(), tr.Normal.ToUnity(), d.ToUnity());
+                        if (!_explosive[i]) Impact(tr.EndPosition.ToUnity(), tr.Normal.ToUnity(), d.ToUnity());
                         end = true;
                     }
                 }
@@ -160,6 +171,32 @@ namespace HowToHunt.Hunting
                 if (_markLife[i] <= 0f) continue;
                 _markLife[i] -= dt;
                 if (_markLife[i] <= 0f) _marks[i].gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>An explosive round went off: a burst of dust and debris, a boom, and a shake when it's close.</summary>
+        public static void Explosion(Vector3 point, float radius)
+        {
+            if (_instance == null) return;
+            BulletFx f = _instance;
+            int count = Mathf.Clamp(Mathf.RoundToInt(radius * 14f), 20, 120);
+            for (int k = 0; k < count; k++)
+            {
+                Vector3 dir = Random.insideUnitSphere;
+                dir.y = Mathf.Abs(dir.y) * 1.4f + 0.2f;
+                f._emit.position = point + Random.insideUnitSphere * 0.3f;
+                f._emit.velocity = dir.normalized * Random.Range(2f, 4f + radius * 1.6f);
+                f._emit.startSize = Random.Range(0.25f, 0.6f) * Mathf.Max(1f, radius * 0.35f);
+                f._emit.startLifetime = Random.Range(0.6f, 1.4f);
+                f._emit.startColor = Color.Lerp(new Color(0.55f, 0.5f, 0.42f), new Color(0.32f, 0.29f, 0.25f), Random.value);
+                f._dust.Emit(f._emit, 1);
+            }
+            Sfx.PlayAt("Kenney/impactPunch_heavy", point, 1f, Random.Range(0.45f, 0.6f));
+            Camera cam = Camera.main;
+            if (cam != null)
+            {
+                float near = 1f - Mathf.Clamp01(Vector3.Distance(cam.transform.position, point) / (radius * 6f));
+                if (near > 0f && HowToHunt.Player.PlayerCamera.Instance != null) HowToHunt.Player.PlayerCamera.Instance.Kick(4f * near);
             }
         }
 

@@ -1,0 +1,57 @@
+{
+  "product": "GL-11 Gunlance",
+  "version": "1.0",
+  "unique_weapons": 1,
+  "model_files": [
+    "model/gunlance-animated.glb",
+    "model/gunlance-baked.blend",
+    "model/gunlance-controls.blend",
+    "model/gunlance-closed-static.fbx"
+  ],
+  "lod_triangles": {
+    "LOD0": 22128,
+    "LOD1": 6976,
+    "LOD2": 1994
+  },
+  "lower_lods_in": "controls BLEND only",
+  "glb_vertices": 46856,
+  "lod0_mesh_objects": 10,
+  "glb_materials": 3,
+  "textures": [
+    {
+      "file": "textures/GL11_BASECOLOR_2048.png",
+      "resolution": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "file": "textures/GL11_NORMAL_2048.png",
+      "resolution": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "file": "textures/GL11_ORM_2048.png",
+      "resolution": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "animation": {
+    "clip": "Gunlance_Deploy",
+    "duration_seconds": 3.3,
+    "frame_range": [
+      1,
+      100
+    ],
+    "fps": 30,
+    "looping": false,
+    "fbx": "static closed pose"
+  },
+  "overlap": "The same complete weapon is intended for a paid companion kitbash collection; not an additional unique weapon when bundled.",
+  "license": "CGTrader license shown at acquisition; free channel may be Royalty Free, No AI",
+  "ai_assisted": true
+}

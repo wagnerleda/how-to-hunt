@@ -42,3 +42,32 @@ the model (`.fbx`, gun only, no hands) and its sounds named by what they are: `f
 random per shot), `reload.wav`, `dry.wav` (empty click), `equip.wav`, `inspect.wav`. The folder name is the link between a
 model and its sounds; no other naming is needed. The content build links the sounds automatically; the model is fitted once
 by hand (orientation, grip, sights, muzzle, attachment mounts). Add a row above for every source and licence.
+
+## Owner gun assets (added 2026-11-17)
+Supplied by the owner. Licences not yet confirmed for most of them: **ask the owner before any public release**.
+Textures import at 1024 px max (`WeaponImportConventions`); sources not needed at runtime (.blend, .glb, zips, previews)
+live in `Art/Source/Weapons/`. Fitted into viewmodels by `DropInWeapons` (turn, length, grip; muzzle, sights and
+attachment mounts measured from the mesh).
+
+| Asset | Folder | Source / licence | Used as |
+|---|---|---|---|
+| Glock 19 model + 4K PBR | `Art/Weapons/Glock` | CGTrader ("cgtrader_optimized"), licence to confirm | `tool.glock` |
+| Glock silenced shot (mp3) | `Art/Weapons/Glock` | unknown, to confirm | Glock fire |
+| Uzi model (UDIM textures, shown untextured) | `Art/Weapons/Uzi` | unknown, to confirm | `tool.uzi` |
+| Uzi shot "universfield gunshot" | `Art/Weapons/Uzi` | Pixabay (universfield), Pixabay licence likely | Uzi fire |
+| Sawed-off model + PBR | `Art/Weapons/Sawed-Off` | unknown, to confirm (no sound supplied) | `tool.sawedoff` |
+| Colt Navy 1851 model (no textures) | `Art/Weapons/Handcannon` | unknown, to confirm | `tool.handcannon` |
+| Revolver shot, cannon fire (mp3) | `Art/Weapons/Handcannon` | Pixabay (diega1241251, lordsonny), Pixabay licence likely | Hand Cannon fire |
+| Low-poly sniper rifle + bakes | `Art/Weapons/ScoutSniper` | unknown, to confirm | `tool.scout` model |
+| Sniper rifle shot (mp3) | `Art/Weapons/ScoutSniper` | Pixabay (freesound_community), to confirm | Scout fire |
+| SCAR-H model + PBR | `Art/Weapons/HeavyAssaultRifle` | unknown, to confirm | `tool.heavyrifle` |
+| G36 fire (mp3) | `Art/Weapons/HeavyAssaultRifle` | Pixabay (freesound_community), to confirm | Heavy rifle fire |
+| CheyTac Intervention model + textures | `Art/Weapons/Intervention` | unknown, to confirm | `tool.intervention` |
+| "MLG intervention MW2" sound | `Art/Weapons/Intervention` | **likely ripped from Call of Duty: MW2 (Activision): not shippable**; replace before release | Intervention fire |
+| GL37 grenade launcher + grenade, textures (zips in Art/Source) | `Art/Weapons/GrenadeLauncher` | unknown, to confirm | `tool.grenadelauncher` |
+| Grenade launcher shot (mp3) | `Art/Weapons/GrenadeLauncher` | Pixabay (freesound_community), to confirm | GL-37 fire |
+| Gunlance (sci-fi) model + textures | `Art/Weapons/scifigun` | CGTrader, royalty-free, no AI training, no redistribution of sources (LICENSE.txt kept) | `tool.gunlance` |
+| Sci-fi single shot (mp3) | `Art/Weapons/scifigun` | Pixabay (daviddumaisaudio), to confirm | Gunlance fire |
+| Knife V2 model + PBR | `Art/Models/KnifeV2` | unknown, to confirm | knife viewmodel |
+| Red dot sight model + textures | `Art/Models/RedDotSight` | unknown, to confirm | Red Dot attachment |
+| Grenade model | `Art/Models/Grenade` | unknown, to confirm | not used yet (throwables, later) |

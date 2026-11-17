@@ -217,6 +217,136 @@ namespace HowToHunt.Editor
                 t.Viewmodel = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedAssets.ScoutPrefabPath);
             });
 
+            // --- the owner's guns (drop-ins fitted by DropInWeapons; sold at the Gunsmith) -------------------
+            void Fit(ToolDefinition t, string prefab)
+            {
+                var vm = AssetDatabase.LoadAssetAtPath<GameObject>(DropInWeapons.PrefabPath(prefab));
+                if (vm == null) return;
+                t.Viewmodel = vm;
+                var fit = vm.GetComponent<ViewmodelFit>();
+                if (fit == null) return;
+                t.MuzzleOffset = fit.Muzzle;
+                t.SightOffset = fit.Sight;
+                t.AttachmentAnchors = new List<AttachmentAnchor>(fit.Anchors);
+            }
+            ToolDefinition Gun(string id, string name, string description, int slot, string prefab, System.Action<ToolDefinition> stats) =>
+                Asset<ToolDefinition>("Tools/Tool_" + id, "tool." + id, name, description, t =>
+                {
+                    t.Archetype = ToolArchetype.Firearm;
+                    t.Mode = ToolMode.Kill;
+                    t.ArcDegrees = 0f;
+                    t.Slot = slot;
+                    t.StartOwned = false;
+                    t.HeadshotMultiplier = 2f;
+                    t.Automatic = false;
+                    t.Pellets = 1;
+                    t.ExplosionRadius = 0f;
+                    t.ScopeOverlay = false;
+                    t.AdsSpreadFactor = 0.3f;
+                    t.BulletGravity = 4f;
+                    stats(t);
+                    Fit(t, prefab);
+                });
+            void GunsmithSells(ToolDefinition t, double cost, int order) =>
+                Asset<UpgradeDefinition>("Upgrades/Upgrade_Gun_" + t.Key.Substring(5), "upgrade.gun_" + t.Key.Substring(5), t.DisplayName,
+                    "Sold at the Gunsmith.", u =>
+                {
+                    u.Tool = t;
+                    u.Effect = UpgradeEffect.UnlockTool;
+                    u.Value = 0f;
+                    u.CostCoins = cost;
+                    u.SortOrder = order;
+                    u.Requires = null;
+                    u.Unlisted = false;
+                    u.SoldByGunsmith = true;
+                });
+
+            // The scout keeps its key and numbers; the owner's model replaces the stand-in.
+            Fit(scout, "ScoutSniper");
+            scout.SightOffset = new Vector3(0f, scout.SightOffset.y, -0.05f);
+            scout.AttachmentAnchors.RemoveAll(a => a.Slot == AttachmentSlot.Optic); // the scope is built in
+            EditorUtility.SetDirty(scout);
+            GunsmithSells(scout, 1100, 140);
+
+            ToolDefinition glock = Gun("glock", "Glock 19", "Light, quick and accurate. Fifteen rounds.", 4, "Glock", t =>
+            {
+                t.Tier = 2; t.Damage = 16f; t.Range = 120f; t.Cooldown = 0.15f; t.Knockback = 3f;
+                t.RecoilUp = 3.5f; t.RecoilSide = 1.2f; t.RecoilRecover = 0.55f;
+                t.MagazineSize = 15; t.ReloadSeconds = 1.5f; t.BulletSpeed = 375f;
+                t.FalloffStart = 20f; t.FalloffEnd = 55f; t.MinDamageFraction = 0.5f;
+                t.SpreadDegrees = 1f; t.MoveSpreadPerMps = 0.3f; t.MaxSpreadDegrees = 6f; t.AdsZoom = 1.15f; t.Weight = 0;
+            });
+            GunsmithSells(glock, 300, 100);
+            ToolDefinition uzi = Gun("uzi", "Uzi", "Hold the trigger: 800 rounds a minute, and it climbs.", 5, "Uzi", t =>
+            {
+                t.Tier = 2; t.Damage = 8f; t.Range = 100f; t.Cooldown = 0.075f; t.Automatic = true; t.Knockback = 1.5f;
+                t.RecoilUp = 1.6f; t.RecoilSide = 1.2f; t.RecoilRecover = 0.35f;
+                t.MagazineSize = 25; t.ReloadSeconds = 1.9f; t.BulletSpeed = 330f;
+                t.FalloffStart = 12f; t.FalloffEnd = 40f; t.MinDamageFraction = 0.4f;
+                t.SpreadDegrees = 2.2f; t.MoveSpreadPerMps = 0.5f; t.MaxSpreadDegrees = 9f; t.AdsZoom = 1.15f; t.Weight = 0;
+            });
+            GunsmithSells(uzi, 700, 110);
+            ToolDefinition sawedOff = Gun("sawedoff", "Sawed-Off", "Eight pellets per barrel, two barrels. Devastating up close, useless far away.", 6, "SawedOff", t =>
+            {
+                t.Tier = 2; t.Damage = 6f; t.Range = 60f; t.Cooldown = 0.35f; t.Pellets = 8; t.PelletSpreadDegrees = 6f; t.Knockback = 2f;
+                t.RecoilUp = 10f; t.RecoilSide = 2.5f; t.RecoilRecover = 0.5f;
+                t.MagazineSize = 2; t.ReloadSeconds = 2.4f; t.BulletSpeed = 300f;
+                t.FalloffStart = 6f; t.FalloffEnd = 22f; t.MinDamageFraction = 0.2f;
+                t.SpreadDegrees = 0.5f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.1f; t.Weight = 1;
+            });
+            GunsmithSells(sawedOff, 600, 120);
+            ToolDefinition handCannon = Gun("handcannon", "Hand Cannon", "An 1851 navy revolver loaded like a cannon. Massive kick.", 7, "HandCannon", t =>
+            {
+                t.Tier = 3; t.Damage = 45f; t.Range = 150f; t.Cooldown = 0.6f; t.Knockback = 8f;
+                t.RecoilUp = 12f; t.RecoilSide = 3f; t.RecoilRecover = 0.4f;
+                t.MagazineSize = 6; t.ReloadSeconds = 3f; t.BulletSpeed = 420f;
+                t.FalloffStart = 30f; t.FalloffEnd = 80f; t.MinDamageFraction = 0.6f;
+                t.SpreadDegrees = 1f; t.MoveSpreadPerMps = 0.45f; t.MaxSpreadDegrees = 7f; t.AdsZoom = 1.2f; t.Weight = 1;
+            });
+            GunsmithSells(handCannon, 900, 130);
+            ToolDefinition heavyRifle = Gun("heavyrifle", "Heavy Assault Rifle", "Full-auto battle rifle: hits hard and far, slows you down.", 8, "HeavyRifle", t =>
+            {
+                t.Tier = 3; t.Damage = 16f; t.Range = 250f; t.Cooldown = 0.1f; t.Automatic = true; t.Knockback = 4f;
+                t.RecoilUp = 2.6f; t.RecoilSide = 1.4f; t.RecoilRecover = 0.4f;
+                t.MagazineSize = 20; t.ReloadSeconds = 2.5f; t.BulletSpeed = 700f;
+                t.FalloffStart = 50f; t.FalloffEnd = 150f; t.MinDamageFraction = 0.6f;
+                t.SpreadDegrees = 1.6f; t.MoveSpreadPerMps = 0.45f; t.MaxSpreadDegrees = 8f; t.AdsZoom = 1.4f; t.Weight = 2;
+            });
+            GunsmithSells(heavyRifle, 1400, 150);
+            ToolDefinition intervention = Gun("intervention", "Intervention", "A .408 anti-materiel rifle. One shot, very heavy, deadly from far away.", 9, "Intervention", t =>
+            {
+                t.Tier = 4; t.Damage = 120f; t.Range = 500f; t.Cooldown = 1.4f; t.Knockback = 12f;
+                t.RecoilUp = 14f; t.RecoilSide = 2f; t.RecoilRecover = 0.6f;
+                t.MagazineSize = 5; t.ReloadSeconds = 3.4f; t.BulletSpeed = 900f; t.BulletGravity = 6f;
+                t.FalloffStart = 200f; t.FalloffEnd = 500f; t.MinDamageFraction = 0.8f;
+                t.SpreadDegrees = 2f; t.MoveSpreadPerMps = 0.6f; t.MaxSpreadDegrees = 12f; t.AdsSpreadFactor = 0.02f;
+                t.AdsZoom = 6f; t.ScopeOverlay = true; t.Weight = 3;
+            });
+            intervention.AttachmentAnchors.RemoveAll(a => a.Slot == AttachmentSlot.Optic);
+            GunsmithSells(intervention, 2000, 160);
+            ToolDefinition grenadeLauncher = Gun("grenadelauncher", "GL-37", "Lobs a grenade that explodes on impact. Ruins whatever it does not scare away.", 9, "GrenadeLauncher", t =>
+            {
+                t.Tier = 4; t.Damage = 90f; t.Range = 200f; t.Cooldown = 0.9f; t.ExplosionRadius = 4.5f; t.Knockback = 10f;
+                t.RecoilUp = 9f; t.RecoilSide = 1.5f; t.RecoilRecover = 0.5f;
+                t.MagazineSize = 1; t.ReloadSeconds = 2.2f; t.BulletSpeed = 45f; t.BulletGravity = 9.8f;
+                t.FalloffStart = 200f; t.FalloffEnd = 400f; t.MinDamageFraction = 1f;
+                t.SpreadDegrees = 0.6f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.2f; t.Weight = 2;
+            });
+            GunsmithSells(grenadeLauncher, 2500, 170);
+            ToolDefinition gunlance = Gun("gunlance", "Gunlance", "Something not from around here. Near-instant bolts that do not drop.", 9, "Gunlance", t =>
+            {
+                t.Tier = 4; t.Damage = 30f; t.Range = 300f; t.Cooldown = 0.25f; t.Knockback = 6f;
+                t.RecoilUp = 3f; t.RecoilSide = 0.8f; t.RecoilRecover = 0.7f;
+                t.MagazineSize = 12; t.ReloadSeconds = 2.2f; t.BulletSpeed = 1500f; t.BulletGravity = 0f;
+                t.FalloffStart = 80f; t.FalloffEnd = 250f; t.MinDamageFraction = 0.7f;
+                t.SpreadDegrees = 0.4f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 4f; t.AdsZoom = 1.5f; t.Weight = 2;
+            });
+            GunsmithSells(gunlance, 3000, 180);
+
+            // The owner's knife model replaces the Blender one.
+            var knifeV2 = AssetDatabase.LoadAssetAtPath<GameObject>(DropInWeapons.PrefabPath("KnifeV2"));
+            if (knifeV2 != null) { knife.Viewmodel = knifeV2; EditorUtility.SetDirty(knife); }
+
             UpgradeDefinition sturdy = Asset<UpgradeDefinition>("Upgrades/Upgrade_SturdyNet", "upgrade.net_sturdy", "Sturdy Net",
                 "Strong enough to hold a rabbit.", u =>
             {
@@ -290,12 +420,14 @@ namespace HowToHunt.Editor
             GameObject AttachmentModel(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"{GeneratedAssets.AttachmentsDir}/{name}.prefab");
             Attach("muzzle_brake", "Muzzle Brake", "Tames the kick (recoil -25 %). A little louder.", AttachmentSlot.Muzzle, 450, 10, a =>
             {
+                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, sawedOff, handCannon, scout, heavyRifle, intervention };
                 a.RecoilMultiplier = 0.75f;
                 a.NoiseMultiplier = 1.15f;
                 a.Visual = AttachmentModel("MuzzleBrake");
             });
             Attach("suppressor", "Suppressor", "Prey hear the shot from a third as far. Slightly shorter reach.", AttachmentSlot.Muzzle, 700, 20, a =>
             {
+                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, handCannon, scout, heavyRifle, intervention };
                 a.NoiseMultiplier = 0.35f;
                 a.RangeMultiplier = 0.9f;
                 a.RecoilMultiplier = 0.9f;
@@ -304,47 +436,51 @@ namespace HowToHunt.Editor
             });
             Attach("laser", "Laser Sight", "Steadier from the hip and on the move.", AttachmentSlot.Underbarrel, 500, 30, a =>
             {
-                a.Tools = new List<ToolDefinition> { revolver };
+                a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, uzi };
                 a.SpreadMultiplier = 0.6f;
                 a.MoveSpreadMultiplier = 0.75f;
                 a.Visual = AttachmentModel("Laser");
             });
             Attach("foregrip", "Foregrip", "Recoil -20 %, tighter down the scope.", AttachmentSlot.Underbarrel, 450, 31, a =>
             {
-                a.Tools = new List<ToolDefinition> { scout };
+                a.Tools = new List<ToolDefinition> { scout, heavyRifle, intervention, uzi, grenadeLauncher };
                 a.RecoilMultiplier = 0.8f;
                 a.AdsSpreadMultiplier = 0.8f;
                 a.Visual = AttachmentModel("Foregrip");
             });
             Attach("speed_loader", "Speed Loader", "Reloads almost twice as fast.", AttachmentSlot.Magazine, 400, 40, a =>
             {
-                a.Tools = new List<ToolDefinition> { revolver };
+                a.Tools = new List<ToolDefinition> { revolver, handCannon };
                 a.ReloadMultiplier = 0.55f;
             });
             Attach("extended_mag", "Extended Magazine", "Three more rounds; a slower reload.", AttachmentSlot.Magazine, 550, 41, a =>
             {
-                a.Tools = new List<ToolDefinition> { scout };
+                a.Tools = new List<ToolDefinition> { scout, glock, uzi, heavyRifle, intervention };
                 a.MagazineAdd = 3;
                 a.ReloadMultiplier = 1.1f;
                 a.Visual = AttachmentModel("ExtendedMag");
             });
             Attach("ammo_hollow", "Hollow Points", "Damage +25 %, but it falls off sooner.", AttachmentSlot.Ammo, 650, 50, a =>
             {
+                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, handCannon, scout, heavyRifle, intervention };
                 a.DamageMultiplier = 1.25f;
                 a.RangeMultiplier = 0.8f;
             });
             Attach("ammo_match", "Match Rounds", "Keeps its damage a third further; a tighter group.", AttachmentSlot.Ammo, 550, 51, a =>
             {
+                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, handCannon, scout, heavyRifle, intervention, gunlance };
                 a.RangeMultiplier = 1.35f;
                 a.SpreadMultiplier = 0.85f;
                 a.AdsSpreadMultiplier = 0.85f;
             });
             Attach("red_dot", "Red Dot", "A clear dot to aim with and a little zoom.", AttachmentSlot.Optic, 500, 60, a =>
             {
+                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, sawedOff, handCannon, heavyRifle, grenadeLauncher };
                 a.AdsZoom = 1.35f;
                 a.AdsSpreadMultiplier = 0.75f;
                 a.SightLift = 0.03f;
-                a.Visual = AttachmentModel("RedDot");
+                var owned = AssetDatabase.LoadAssetAtPath<GameObject>(DropInWeapons.RedDotPrefab);
+                a.Visual = owned != null ? owned : AttachmentModel("RedDot"); // the owner's sight, else the stand-in
             });
             Attach("padded_stock", "Padded Stock", "Recoil -30 %.", AttachmentSlot.Stock, 550, 70, a =>
             {

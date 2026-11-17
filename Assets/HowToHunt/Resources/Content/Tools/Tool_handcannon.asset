@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_handcannon
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.handcannon
+  _displayName: Hand Cannon
+  _description: An 1851 navy revolver loaded like a cannon. Massive kick.
+  Archetype: 2
+  Mode: 1
+  Tier: 3
+  Damage: 45
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 150
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 8
+  RecoilUp: 12
+  RecoilSide: 3
+  RecoilRecover: 0.4
+  MagazineSize: 6
+  ReloadSeconds: 3
+  Automatic: 0
+  BulletSpeed: 420
+  BulletGravity: 4
+  FalloffStart: 30
+  FalloffEnd: 80
+  MinDamageFraction: 0.6
+  SpreadDegrees: 1
+  MoveSpreadPerMps: 0.45
+  MaxSpreadDegrees: 7
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.2
+  SightOffset: {x: 0, y: 0.09326705, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.07708426, z: 0.3168}
+  ScopeOverlay: 0
+  Weight: 1
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.07708426, z: 0.3168}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 5
+    Position: {x: 0, y: 0.08926705, z: 0.12672}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: 0.038315598, z: 0.17424001}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.041003708, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.03854213, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds:
+  - {fileID: 8300000, guid: 0d73f8bcdd22ab8478aca3d4dcf23033, type: 3}
+  - {fileID: 8300000, guid: 0a692e328a02004418ce1c9441c2755f, type: 3}
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 0.13238886, y: 0.12173674, z: 85.19951}
+  RestCenter: {x: -0.027179971, y: 0.005371252, z: 0.13685165}
+  RestSize: {x: 0.13666824, y: 0.041045055, z: 0.3602778}
+  Cooldown: 0.6
+  Slot: 7
+  StartOwned: 0
+  Viewmodel: {fileID: 7293916305289541949, guid: f3eb953c5ab77d944a0922f7eb8fb101, type: 3}

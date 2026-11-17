@@ -45,6 +45,9 @@ MonoBehaviour:
   MuzzleOffset: {x: 0, y: 0.04, z: 0.29}
   ScopeOverlay: 0
   Weight: 0
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
   AttachmentAnchors:
   - Slot: 0
     Position: {x: 0, y: 0.04, z: 0.29}

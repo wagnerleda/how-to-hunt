@@ -37,6 +37,8 @@ namespace HowToHunt.Hunting
         public int SortOrder;
         [Tooltip("Not sold yet: unlocked later in the game (later areas, quests). Hidden from the shop.")]
         public bool Unlisted;
+        [Tooltip("Sold at the Gunsmith (guns) instead of the Outfitter.")]
+        public bool SoldByGunsmith;
 
         public override void Validate(List<string> errors)
         {

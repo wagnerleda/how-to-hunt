@@ -18,7 +18,15 @@ namespace HowToHunt.Editor
     {
         public const string Root = GeneratedAssets.Root + "/Art/Weapons/";
 
-        public static string FolderFor(ToolDefinition tool) => Root + tool.Key.Substring(tool.Key.IndexOf('.') + 1);
+        /// <summary>Folders named differently from the tool key (the owner's drop-ins).</summary>
+        private static readonly System.Collections.Generic.Dictionary<string, string> Folders = new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "tool.glock", "Glock" }, { "tool.uzi", "Uzi" }, { "tool.sawedoff", "Sawed-Off" }, { "tool.handcannon", "Handcannon" },
+            { "tool.scout", "ScoutSniper" }, { "tool.heavyrifle", "HeavyAssaultRifle" }, { "tool.intervention", "Intervention" },
+            { "tool.grenadelauncher", "GrenadeLauncher" }, { "tool.gunlance", "scifigun" },
+        };
+
+        public static string FolderFor(ToolDefinition tool) => Root + (Folders.TryGetValue(tool.Key, out string f) ? f : tool.Key.Substring(tool.Key.IndexOf('.') + 1));
 
         /// <summary>True if the tool's folder exists and its sounds were (re)linked.</summary>
         public static bool Link(ToolDefinition tool)
@@ -35,12 +43,12 @@ namespace HowToHunt.Editor
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
                 if (clip == null) continue;
                 string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
-                if (name.StartsWith("fire") || name.StartsWith("shot")) fire.Add(clip);
-                else if (name.StartsWith("reload")) reload ??= clip;
-                else if (name.StartsWith("dry")) dry ??= clip;
-                else if (name.StartsWith("equip") || name.StartsWith("draw")) equip ??= clip;
-                else if (name.StartsWith("inspect")) inspect ??= clip;
-                else Debug.LogWarning($"[HowToHunt] {path}: unknown sound name (use fire*, reload*, dry*, equip*, inspect*).");
+                // Named by what it is anywhere in the name (downloads keep their source names): anything else is a shot.
+                if (name.Contains("reload")) reload ??= clip;
+                else if (name.Contains("dry") || name.Contains("empty")) dry ??= clip;
+                else if (name.Contains("equip") || name.Contains("draw")) equip ??= clip;
+                else if (name.Contains("inspect")) inspect ??= clip;
+                else fire.Add(clip);
             }
             tool.FireSounds = fire.ToArray();
             tool.ReloadSound = reload;

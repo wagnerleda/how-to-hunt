@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_sawedoff
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.sawedoff
+  _displayName: Sawed-Off
+  _description: Eight pellets per barrel, two barrels. Devastating up close, useless far away.
+  Archetype: 2
+  Mode: 1
+  Tier: 2
+  Damage: 6
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 60
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 2
+  RecoilUp: 10
+  RecoilSide: 2.5
+  RecoilRecover: 0.5
+  MagazineSize: 2
+  ReloadSeconds: 2.4
+  Automatic: 0
+  BulletSpeed: 300
+  BulletGravity: 4
+  FalloffStart: 6
+  FalloffEnd: 22
+  MinDamageFraction: 0.2
+  SpreadDegrees: 0.5
+  MoveSpreadPerMps: 0.2
+  MaxSpreadDegrees: 3
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.1
+  SightOffset: {x: 0, y: 0.114671856, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.07921784, z: 0.48399994}
+  ScopeOverlay: 0
+  Weight: 1
+  Pellets: 8
+  PelletSpreadDegrees: 6
+  ExplosionRadius: 0
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.07921784, z: 0.48399994}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 5
+    Position: {x: 0, y: 0.110671856, z: 0.17261946}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: 0.016337967, z: 0.26619998}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.023989253, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.03960892, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds: []
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 0.8820012, y: 0.92457265, z: 92.69993}
+  RestCenter: {x: -0.023156434, y: -0.0023431145, z: 0.20952277}
+  RestSize: {x: 0.17148417, y: 0.058928728, z: 0.5522403}
+  Cooldown: 0.35
+  Slot: 6
+  StartOwned: 0
+  Viewmodel: {fileID: 8972724678688560604, guid: 2c5b3bb37eadb8c4d870f46aff2ad901, type: 3}

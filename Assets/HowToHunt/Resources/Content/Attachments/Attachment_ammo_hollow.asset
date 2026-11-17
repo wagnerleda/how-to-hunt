@@ -16,7 +16,14 @@ MonoBehaviour:
   _displayName: Hollow Points
   _description: Damage +25 %, but it falls off sooner.
   Slot: 4
-  Tools: []
+  Tools:
+  - {fileID: 11400000, guid: 1b0a0891b7fae754db187a4e5eb33a70, type: 2}
+  - {fileID: 11400000, guid: 30c18a25fa0a82440a05514a807d8721, type: 2}
+  - {fileID: 11400000, guid: 517dd1cd50c9df742a7e9201980b9584, type: 2}
+  - {fileID: 11400000, guid: d313892cdac476b4b894442c4b455bf4, type: 2}
+  - {fileID: 11400000, guid: c8748dc2584035a4e93830151cd25bac, type: 2}
+  - {fileID: 11400000, guid: 25be77ac6b8d15149a488fb2061b9c3b, type: 2}
+  - {fileID: 11400000, guid: b65affc065fbe3045b95c7199b46e687, type: 2}
   CostCoins: 650
   SortOrder: 50
   RecoilMultiplier: 1

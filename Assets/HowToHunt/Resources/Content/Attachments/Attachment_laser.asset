@@ -18,6 +18,9 @@ MonoBehaviour:
   Slot: 2
   Tools:
   - {fileID: 11400000, guid: 1b0a0891b7fae754db187a4e5eb33a70, type: 2}
+  - {fileID: 11400000, guid: 30c18a25fa0a82440a05514a807d8721, type: 2}
+  - {fileID: 11400000, guid: d313892cdac476b4b894442c4b455bf4, type: 2}
+  - {fileID: 11400000, guid: 517dd1cd50c9df742a7e9201980b9584, type: 2}
   CostCoins: 500
   SortOrder: 30
   RecoilMultiplier: 1

@@ -138,7 +138,7 @@ namespace HowToHunt.Economy
             for (int i = 0; i < all.Count; i++)
             {
                 UpgradeDefinition u = all[i];
-                if (u.Unlisted) continue; // not sold yet (later areas, quests)
+                if (u.Unlisted || u.SoldByGunsmith) continue; // not sold here (later areas, quests; guns at the Gunsmith)
                 float y = -(shown++) * (RowHeight + 8f);
                 Image bg = Hud.Rect($"Row {u.Key}", new Vector2(0.5f, 1f), Vector2.zero, new Vector2(860f, RowHeight), RowColor);
                 RectTransform rt = bg.rectTransform;

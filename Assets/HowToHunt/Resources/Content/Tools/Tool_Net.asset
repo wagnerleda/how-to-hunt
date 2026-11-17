@@ -45,6 +45,9 @@ MonoBehaviour:
   MuzzleOffset: {x: 0, y: 0.07, z: 0.26}
   ScopeOverlay: 0
   Weight: 0
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
   AttachmentAnchors: []
   FireSounds: []
   ReloadSound: {fileID: 0}

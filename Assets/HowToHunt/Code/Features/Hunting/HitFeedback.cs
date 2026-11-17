@@ -28,6 +28,7 @@ namespace HowToHunt.Hunting
         private float _debugLife;
         private AudioSource _audio;
         private AudioSource _remoteAudio;
+        private AudioSource _autoAudio, _remoteAutoAudio; // full-auto: each shot restarts the sound (long recordings would pile up)
         private AudioClip _shot, _tick, _kill;
 
         private void Awake()
@@ -72,6 +73,14 @@ namespace HowToHunt.Hunting
             _remoteAudio.spatialBlend = 1f;
             _remoteAudio.minDistance = 3f;
             _remoteAudio.maxDistance = 80f;
+            _autoAudio = gameObject.AddComponent<AudioSource>();
+            _autoAudio.playOnAwake = false;
+            _autoAudio.spatialBlend = 0f;
+            _remoteAutoAudio = remote.AddComponent<AudioSource>();
+            _remoteAutoAudio.playOnAwake = false;
+            _remoteAutoAudio.spatialBlend = 1f;
+            _remoteAutoAudio.minDistance = 3f;
+            _remoteAutoAudio.maxDistance = 80f;
             _shot = ProceduralSounds.Shot();
             _tick = ProceduralSounds.HitTick();
             _kill = ProceduralSounds.KillThunk();
@@ -111,17 +120,27 @@ namespace HowToHunt.Hunting
         {
             if (tool.Archetype != Sim.Hunting.ToolArchetype.Firearm) return;
             // The bullet leaves the barrel (origin is the muzzle) and flies; its tracer and any impact are drawn by BulletFx.
-            BulletFx.Fire(tool, origin, dir);
-            _audio.pitch = Random.Range(0.96f, 1.04f);
-            _audio.PlayOneShot(tool.PickFireSound() ?? _shot, 0.35f);
+            BulletFx.FireVolley(tool, origin, dir, PlayerTools.LastShotSeed);
+            Shot(tool.Automatic ? _autoAudio : _audio, tool, tool.PickFireSound() ?? _shot, 0.35f);
         }
 
-        public static void RemoteShot(Vector3 shooter, ToolDefinition tool, Vector3 origin, Vector3 dir)
+        /// <summary>A shot sound: layered for single shots (the tail rings on), restarted for full-auto fire.</summary>
+        private static void Shot(AudioSource source, ToolDefinition tool, AudioClip clip, float volume)
+        {
+            source.pitch = Random.Range(0.96f, 1.04f);
+            if (!tool.Automatic) { source.PlayOneShot(clip, volume); return; }
+            source.Stop();
+            source.clip = clip;
+            source.volume = volume;
+            source.Play();
+        }
+
+        public static void RemoteShot(Vector3 shooter, ToolDefinition tool, Vector3 origin, Vector3 dir, ushort seed)
         {
             if (_instance == null) return;
-            BulletFx.Fire(tool, origin, dir);
-            _instance._remoteAudio.transform.position = shooter;
-            _instance._remoteAudio.PlayOneShot(tool.PickFireSound() ?? _instance._shot, 0.4f);
+            BulletFx.FireVolley(tool, origin, dir, seed);
+            _instance._remoteAudio.transform.position = shooter; // (the auto source shares this object)
+            Shot(tool.Automatic ? _instance._remoteAutoAudio : _instance._remoteAudio, tool, tool.PickFireSound() ?? _instance._shot, 0.4f);
         }
 
         public static void Confirm(Vector3 point, float damage, bool head, bool killed, int target, Vector3 checkedFeet, float checkedYaw, float rewoundTicks)

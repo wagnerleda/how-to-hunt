@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_gunlance
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.gunlance
+  _displayName: Gunlance
+  _description: Something not from around here. Near-instant bolts that do not drop.
+  Archetype: 2
+  Mode: 1
+  Tier: 4
+  Damage: 30
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 300
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 6
+  RecoilUp: 3
+  RecoilSide: 0.8
+  RecoilRecover: 0.7
+  MagazineSize: 12
+  ReloadSeconds: 2.2
+  Automatic: 0
+  BulletSpeed: 1500
+  BulletGravity: 0
+  FalloffStart: 80
+  FalloffEnd: 250
+  MinDamageFraction: 0.7
+  SpreadDegrees: 0.4
+  MoveSpreadPerMps: 0.2
+  MaxSpreadDegrees: 4
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.5
+  SightOffset: {x: 0, y: 0.15290906, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.05611615, z: 0.65}
+  ScopeOverlay: 0
+  Weight: 2
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.05611615, z: 0.65}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 5
+    Position: {x: 0, y: 0.14890906, z: 0.06863637}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: 0.0034545388, z: 0.3575}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.06381818, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.028058074, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: 0.070272714, z: -0.35}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds:
+  - {fileID: 8300000, guid: a174a2be5487047429cc064d6b9e7fae, type: 3}
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 357.87454, y: 2.091349, z: 270.92685}
+  RestCenter: {x: 0.047217038, y: 0.01120089, z: 0.14672887}
+  RestSize: {x: 0.21770355, y: 0.1654642, z: 1.0006227}
+  Cooldown: 0.25
+  Slot: 9
+  StartOwned: 0
+  Viewmodel: {fileID: 8021940124361401177, guid: f49afb723f198ca488d1c1d63d73fdc6, type: 3}

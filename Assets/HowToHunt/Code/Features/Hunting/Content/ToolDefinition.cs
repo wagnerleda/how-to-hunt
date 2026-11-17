@@ -64,6 +64,12 @@ namespace HowToHunt.Hunting
         public bool ScopeOverlay;
         [Tooltip("Weight class 0-3: heavy weapons slow you while held (sv_load_slow per class). Light tools are 0.")]
         [Range(0, 3)] public int Weight;
+        [Tooltip("Pellets per shot (shotguns). Each pellet deals Damage.")]
+        public int Pellets = 1;
+        [Tooltip("Cone the pellets spread over, degrees.")]
+        public float PelletSpreadDegrees = 5f;
+        [Tooltip("Explosive rounds (grenade launcher): blast radius, metres. 0 = a normal bullet. Damage falls off to the edge.")]
+        public float ExplosionRadius;
 
         public GunBallistics Ballistics => new GunBallistics
         {

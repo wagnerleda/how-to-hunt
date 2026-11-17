@@ -71,6 +71,26 @@ namespace HowToHunt.Sim.Combat
             return Vector3.Normalize(f + right * (r * MathF.Cos(a)) + up * (r * MathF.Sin(a)));
         }
 
+        /// <summary>Direction of pellet <paramref name="index"/> of a shot: the same on every machine for the same seed.</summary>
+        public static Vector3 PelletDir(Vector3 dir, float spreadDeg, uint seed, int index)
+        {
+            if (index == 0 && spreadDeg <= 0f) return Vector3.Normalize(dir);
+            uint s = seed * 2654435761u + (uint)index * 40503u + 1u;
+            float u1 = Next(ref s), u2 = Next(ref s);
+            return InCone(dir, spreadDeg, u1, u2);
+        }
+
+        private static float Next(ref uint s)
+        {
+            s ^= s << 13;
+            s ^= s >> 17;
+            s ^= s << 5;
+            return (s & 0xFFFFFF) / 16777216f;
+        }
+
+        /// <summary>Explosion damage share at this distance from the blast: 1 at the centre, 0 at the edge.</summary>
+        public static float Blast(float distance, float radius) => radius <= 0f ? 0f : Math.Clamp(1f - distance / radius, 0f, 1f);
+
         public static Bullet Fire(Vector3 origin, Vector3 dir, in GunBallistics g, float range) => new Bullet
         {
             Position = origin,

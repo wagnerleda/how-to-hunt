@@ -72,6 +72,29 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void Pellets_FanTheSameWayForTheSameSeed_AndStayInTheCone()
+        {
+            Vector3 dir = Vector3.UnitZ;
+            for (int p = 0; p < 8; p++)
+            {
+                Vector3 a = GunMath.PelletDir(dir, 6f, 1234u, p), b = GunMath.PelletDir(dir, 6f, 1234u, p);
+                Assert.AreEqual(a, b, "host and clients agree");
+                float angle = MathF.Acos(Math.Clamp(Vector3.Dot(a, dir), -1f, 1f)) * 180f / MathF.PI;
+                Assert.LessOrEqual(angle, 6.001f);
+            }
+            Assert.AreNotEqual(GunMath.PelletDir(dir, 6f, 1234u, 0), GunMath.PelletDir(dir, 6f, 1234u, 1), "pellets spread");
+            Assert.AreNotEqual(GunMath.PelletDir(dir, 6f, 1234u, 0), GunMath.PelletDir(dir, 6f, 99u, 0), "another shot fans differently");
+        }
+
+        [Test]
+        public void Blast_FullAtTheCentre_NothingPastTheEdge()
+        {
+            Assert.AreEqual(1f, GunMath.Blast(0f, 4.5f));
+            Assert.AreEqual(0.5f, GunMath.Blast(2.25f, 4.5f), 1e-4f);
+            Assert.AreEqual(0f, GunMath.Blast(5f, 4.5f));
+        }
+
+        [Test]
         public void HeavyWeapons_SlowYouDown_LightOnesDont()
         {
             var cfg = new MoveConfig();

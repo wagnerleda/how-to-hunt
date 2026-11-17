@@ -294,7 +294,7 @@ namespace HowToHunt.Economy
         {
             UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(new ContentId(upgradeId));
             EconomyRefusal why = CanBuy(p, u);
-            if (why == EconomyRefusal.None && !NearStation(conn, CampStationKind.Shop)) why = EconomyRefusal.NotAtStation;
+            if (why == EconomyRefusal.None && !NearStation(conn, u.SoldByGunsmith ? CampStationKind.Workshop : CampStationKind.Shop)) why = EconomyRefusal.NotAtStation;
             if (why != EconomyRefusal.None) { Refuse(conn, p, why, upgradeId); return; }
             p.Coins -= u.CostCoins;
             p.Trophies -= u.CostTrophies;

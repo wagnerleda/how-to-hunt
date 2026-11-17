@@ -45,16 +45,19 @@ MonoBehaviour:
   MuzzleOffset: {x: 0, y: 0.07, z: 0.26}
   ScopeOverlay: 0
   Weight: 0
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
   AttachmentAnchors: []
   FireSounds: []
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
   InspectSound: {fileID: 0}
-  RestEuler: {x: 0, y: 0, z: 358.5}
-  RestCenter: {x: 0.000000007450581, y: 0.003998628, z: 0.10399999}
-  RestSize: {x: 0.07628316, y: 0.05997944, z: 0.36799997}
+  RestEuler: {x: 2.9042397, y: 0.0017478208, z: 0.06894838}
+  RestCenter: {x: -0.0000063683838, y: -0.00008768868, z: 0.08988495}
+  RestSize: {x: 0.059714083, y: 0.024900552, z: 0.2996142}
   Cooldown: 0.45
   Slot: 2
   StartOwned: 1
-  Viewmodel: {fileID: 919132149155446097, guid: 099ea6e21e2e4d5419e1f804ce184e3c, type: 3}
+  Viewmodel: {fileID: 7179150680199120315, guid: 6af5d2fa5d6337f409382730767ba965, type: 3}

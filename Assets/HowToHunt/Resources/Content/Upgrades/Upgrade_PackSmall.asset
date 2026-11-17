@@ -23,3 +23,4 @@ MonoBehaviour:
   Requires: {fileID: 0}
   SortOrder: 50
   Unlisted: 1
+  SoldByGunsmith: 0

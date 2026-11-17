@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_grenadelauncher
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.grenadelauncher
+  _displayName: GL-37
+  _description: Lobs a grenade that explodes on impact. Ruins whatever it does not scare away.
+  Archetype: 2
+  Mode: 1
+  Tier: 4
+  Damage: 90
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 200
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 10
+  RecoilUp: 9
+  RecoilSide: 1.5
+  RecoilRecover: 0.5
+  MagazineSize: 1
+  ReloadSeconds: 2.2
+  Automatic: 0
+  BulletSpeed: 45
+  BulletGravity: 9.8
+  FalloffStart: 200
+  FalloffEnd: 400
+  MinDamageFraction: 1
+  SpreadDegrees: 0.6
+  MoveSpreadPerMps: 0.2
+  MaxSpreadDegrees: 3
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.2
+  SightOffset: {x: 0, y: 0.16796494, z: -0.0251482}
+  MuzzleOffset: {x: 0, y: 0.118772954, z: 0.435}
+  ScopeOverlay: 0
+  Weight: 2
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 4.5
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.118772954, z: 0.435}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 5
+    Position: {x: 0, y: 0.16396494, z: -0.0251482}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: 0.034033842, z: 0.23925}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.05417156, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.059386477, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: 0.050864197, z: -0.315}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds:
+  - {fileID: 8300000, guid: 2b4ad8dc7c25da2438128435a44e9b89, type: 3}
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 358.93256, y: 1.0755305, z: 269.568}
+  RestCenter: {x: 0.05871391, y: 0.004961312, z: 0.05818066}
+  RestSize: {x: 0.22194795, y: 0.082508594, z: 0.7508856}
+  Cooldown: 0.9
+  Slot: 9
+  StartOwned: 0
+  Viewmodel: {fileID: 7266607805737344246, guid: b3895e53311d43548951b4e0b1b0947b, type: 3}

@@ -257,15 +257,26 @@ namespace HowToHunt.Economy
             for (int i = 0; i < tools.Count; i++)
             {
                 ToolDefinition tool = tools[i];
-                if (tool.Archetype != ToolArchetype.Firearm || !Loadouts.Local.Owns(tool)) continue;
+                if (tool.Archetype != ToolArchetype.Firearm || (!Loadouts.Local.Owns(tool) && GunUnlock(tool) == null)) continue;
                 var tab = new Tab { Tool = tool };
-                tab.Image = Panel($"Tab {tool.Key}", new Vector2(0.5f, 1f), new Vector2(-40f + _tabs.Count * 316f, -112f), new Vector2(300f, 50f), Box);
+                // Two rows of five to the right of the gun name.
+                int col = _tabs.Count % 5, rowIndex = _tabs.Count / 5;
+                tab.Image = Panel($"Tab {tool.Key}", new Vector2(0.5f, 1f), new Vector2(-150f + col * 232f, -70f - rowIndex * 56f), new Vector2(222f, 48f), Box);
                 tab.Image.raycastTarget = true;
                 tab.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _tool = tool; _selected = null; Sfx.Play2D("Kenney/click_001", 0.4f); Refresh(); });
-                tab.Label = Child(tab.Image.rectTransform, "Label", Vector2.zero, new Vector2(300f, 50f), 22f, Color.white, TextAlignmentOptions.Center);
-                tab.Label.SetText(tool.DisplayName);
+                tab.Label = Child(tab.Image.rectTransform, "Label", Vector2.zero, new Vector2(218f, 48f), 18f, Color.white, TextAlignmentOptions.Center);
+                UpgradeDefinition unlock = Loadouts.Local.Owns(tool) ? null : GunUnlock(tool);
+                tab.Label.SetText(unlock == null ? tool.DisplayName : $"{tool.DisplayName}  <color=#F2C66F>{unlock.CostCoins:0}c</color>");
                 _tabs.Add(tab);
             }
+        }
+
+        /// <summary>The Gunsmith's upgrade that unlocks this gun (null if it isn't sold here).</summary>
+        private static UpgradeDefinition GunUnlock(ToolDefinition tool)
+        {
+            foreach (UpgradeDefinition u in Loadouts.AllUpgrades)
+                if (u.SoldByGunsmith && u.Effect == UpgradeEffect.UnlockTool && u.Tool == tool) return u;
+            return null;
         }
 
         private void SelectSlot(AttachmentSlot slot)
@@ -279,7 +290,9 @@ namespace HowToHunt.Economy
 
         private void OnChanged(EconomyStateBroadcast msg)
         {
-            if (_open) Refresh();
+            if (!_open) return;
+            BuildTabs(); // a gun bought here drops its price tag
+            Refresh();
         }
 
         // --- the picture ------------------------------------------------------------------------------------------
@@ -430,7 +443,13 @@ namespace HowToHunt.Economy
             // The action for the selection: buy it, fit it, or take it off.
             string action = null;
             Color color = Better;
-            if (_selected != null)
+            UpgradeDefinition buyGun = Loadouts.Local.Owns(_tool) ? null : GunUnlock(_tool);
+            if (buyGun != null && _selected == null)
+            {
+                action = $"BUY GUN  {buyGun.CostCoins:0}c";
+                if (EconomyNet.CanBuy(p, buyGun) != EconomyRefusal.None) color = new Color(0.4f, 0.38f, 0.35f);
+            }
+            else if (_selected != null)
             {
                 bool owned = p.Attachments.Contains(_selected.Id.Value), on = p.FittedIn(_tool.Id.Value, _selected.Slot) == _selected;
                 if (on) { action = "REMOVE"; color = new Color(0.45f, 0.45f, 0.5f); }
@@ -484,8 +503,18 @@ namespace HowToHunt.Economy
 
         private void OnAction()
         {
-            if (_tool == null || _selected == null) return;
+            if (_tool == null) return;
             EconomyProfile p = EconomyNet.Local;
+            UpgradeDefinition buyGun = Loadouts.Local.Owns(_tool) ? null : GunUnlock(_tool);
+            if (buyGun != null && _selected == null)
+            {
+                EconomyRefusal gunWhy = EconomyNet.CanBuy(p, buyGun);
+                if (gunWhy != EconomyRefusal.None) { HuntFeedback.Message(EconomyHud.RefusalLine(gunWhy), warning: true); return; }
+                EconomyNet.RequestBuy(buyGun);
+                Sfx.Play2D("Kenney/click_001", 0.45f);
+                return;
+            }
+            if (_selected == null) return;
             bool owned = p.Attachments.Contains(_selected.Id.Value), on = p.FittedIn(_tool.Id.Value, _selected.Slot) == _selected;
             if (on) EconomyNet.RequestUnfitAttachment(_tool.Id.Value, _selected.Slot);
             else if (owned) EconomyNet.RequestFitAttachment(_tool.Id.Value, _selected.Id.Value);

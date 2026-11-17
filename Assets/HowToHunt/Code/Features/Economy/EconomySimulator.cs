@@ -41,7 +41,7 @@ namespace HowToHunt.Economy
         {
             // freeSlots > 0: trips end when the bag is full by real slot and stack rules (tools take the other slots).
             int listed = 0;
-            foreach (UpgradeDefinition u in upgrades) if (!u.Unlisted) listed++;
+            foreach (UpgradeDefinition u in upgrades) if (!u.Unlisted && !u.SoldByGunsmith) listed++;
             var result = new Result();
             var profile = new EconomyProfile();
             var loadout = new Loadout();
@@ -103,7 +103,7 @@ namespace HowToHunt.Economy
                         bought = false;
                         foreach (UpgradeDefinition u in upgrades)
                         {
-                            if (EconomyNet.CanBuy(profile, u) != EconomyRefusal.None) continue;
+                            if (u.SoldByGunsmith || EconomyNet.CanBuy(profile, u) != EconomyRefusal.None) continue;
                             profile.Coins -= u.CostCoins;
                             profile.Upgrades.Add(u.Id.Value);
                             loadout.AddUpgrade(u.Id.Value);

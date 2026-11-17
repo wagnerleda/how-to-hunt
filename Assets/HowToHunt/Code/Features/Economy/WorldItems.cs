@@ -88,11 +88,14 @@ namespace HowToHunt.Economy
             m.SceneManager.OnClientLoadedStartScenes += OnClientLoaded;
             PlayerTools.HostToolReached -= OnToolReached;
             PlayerTools.HostToolReached += OnToolReached;
+            PlayerTools.HostExplosion -= OnExplosion;
+            PlayerTools.HostExplosion += OnExplosion;
         }
 
         public static void Detach()
         {
             PlayerTools.HostToolReached -= OnToolReached;
+            PlayerTools.HostExplosion -= OnExplosion;
             _manager = null;
             Clear();
         }
@@ -192,6 +195,22 @@ namespace HowToHunt.Economy
             {
                 Id = w.Id, Position = w.Body.Position.ToUnity(), Moving = true, Velocity = w.Body.Velocity.ToUnity(), Tick = _manager.TimeManager.Tick,
             });
+        }
+
+        /// <summary>Host: a blast throws nearby items outward and up, harder near the centre.</summary>
+        private static void OnExplosion(Vector3 point, float radius, float force)
+        {
+            if (!IsHost) return;
+            for (int i = 0; i < Items.Count; i++)
+            {
+                WorldItem w = Items[i];
+                Vector3 to = w.Body.Position.ToUnity() - point;
+                float share = Sim.Combat.GunMath.Blast(to.magnitude, radius * 1.5f);
+                if (share <= 0f) continue;
+                Vector3 flat = new Vector3(to.x, 0f, to.z);
+                Vector3 dir = flat.sqrMagnitude > 1e-4f ? flat.normalized : Vector3.forward;
+                HostPush(w, (dir + Vector3.up * 0.8f) * (force * share));
+            }
         }
 
         /// <summary>Host: a tool reached this far. A shot shoves the first item on its line; a swing shoves items in its arc.</summary>

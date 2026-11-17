@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c1d2a303efd2fe4f8e05a06f5ca079f, type: 3}
+  m_Name: Upgrade_Gun_intervention
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
+  _key: upgrade.gun_intervention
+  _displayName: Intervention
+  _description: Sold at the Gunsmith.
+  Tool: {fileID: 11400000, guid: b65affc065fbe3045b95c7199b46e687, type: 2}
+  Effect: 3
+  Value: 0
+  CostCoins: 2000
+  CostTrophies: 0
+  Requires: {fileID: 0}
+  SortOrder: 160
+  Unlisted: 0
+  SoldByGunsmith: 1

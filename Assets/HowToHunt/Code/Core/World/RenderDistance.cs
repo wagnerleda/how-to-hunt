@@ -13,7 +13,7 @@ namespace HowToHunt.Core
     {
         public const string BackdropLayerName = "Backdrop";
 
-        public static readonly FloatCvar DrawDistance = new FloatCvar("r_drawdistance", 220f, "How far the world is drawn, metres (the horizon is always drawn). Lower is faster.", CvarFlags.Archive, 60f, 900f);
+        public static readonly FloatCvar DrawDistance = new FloatCvar("r_drawdistance", 200f, "How far the world is drawn, metres (the horizon is always drawn). Lower is faster.", CvarFlags.Archive, 60f, 900f);
         public static readonly FloatCvar ScatterScale = new FloatCvar("r_scatter_distance", 0.8f, "Grass and flower draw distance, as a multiple of the default. Lower is faster.", CvarFlags.Archive, 0.2f, 2f);
 
         private static readonly float[] Distances = new float[32];

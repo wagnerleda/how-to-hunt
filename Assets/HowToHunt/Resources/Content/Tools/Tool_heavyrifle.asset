@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_heavyrifle
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.heavyrifle
+  _displayName: Heavy Assault Rifle
+  _description: 'Full-auto battle rifle: hits hard and far, slows you down.'
+  Archetype: 2
+  Mode: 1
+  Tier: 3
+  Damage: 16
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 250
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 4
+  RecoilUp: 2.6
+  RecoilSide: 1.4
+  RecoilRecover: 0.4
+  MagazineSize: 20
+  ReloadSeconds: 2.5
+  Automatic: 1
+  BulletSpeed: 700
+  BulletGravity: 4
+  FalloffStart: 50
+  FalloffEnd: 150
+  MinDamageFraction: 0.6
+  SpreadDegrees: 1.6
+  MoveSpreadPerMps: 0.45
+  MaxSpreadDegrees: 8
+  AdsSpreadFactor: 0.3
+  AdsZoom: 1.4
+  SightOffset: {x: 0, y: 0.18903153, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.09496179, z: 0.64989984}
+  ScopeOverlay: 0
+  Weight: 2
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.09496179, z: 0.64989984}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 5
+    Position: {x: 0, y: 0.18503153, z: 0.25995994}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: 0.067839794, z: 0.3574449}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.079662494, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.047480896, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: 0.040514357, z: -0.32010004}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds:
+  - {fileID: 8300000, guid: d5c5d4a2f9beca946b72cfa3d9a2d926, type: 3}
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 0.13238886, y: 0.12173674, z: 85.19951}
+  RestCenter: {x: -0.05216366, y: 0.007559832, z: 0.16498381}
+  RestSize: {x: 0.26671824, y: 0.06396218, z: 0.970333}
+  Cooldown: 0.1
+  Slot: 8
+  StartOwned: 0
+  Viewmodel: {fileID: 2580707941626657923, guid: 26c13fd715dd1844dbcc99f5cf0ff881, type: 3}

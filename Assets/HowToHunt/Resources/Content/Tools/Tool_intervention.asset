@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1114223715a2184193bae52d17b6286, type: 3}
+  m_Name: Tool_intervention
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
+  _key: tool.intervention
+  _displayName: Intervention
+  _description: A .408 anti-materiel rifle. One shot, very heavy, deadly from far away.
+  Archetype: 2
+  Mode: 1
+  Tier: 4
+  Damage: 120
+  CaptureStrength: 0
+  HeadshotMultiplier: 2
+  Range: 500
+  ArcDegrees: 0
+  MaxTargets: 1
+  Knockback: 12
+  RecoilUp: 14
+  RecoilSide: 2
+  RecoilRecover: 0.6
+  MagazineSize: 5
+  ReloadSeconds: 3.4
+  Automatic: 0
+  BulletSpeed: 900
+  BulletGravity: 6
+  FalloffStart: 200
+  FalloffEnd: 500
+  MinDamageFraction: 0.8
+  SpreadDegrees: 2
+  MoveSpreadPerMps: 0.6
+  MaxSpreadDegrees: 12
+  AdsSpreadFactor: 0.02
+  AdsZoom: 6
+  SightOffset: {x: 0, y: 0.2536319, z: 0.05}
+  MuzzleOffset: {x: 0, y: 0.11732133, z: 1.0220001}
+  ScopeOverlay: 1
+  Weight: 3
+  Pellets: 1
+  PelletSpreadDegrees: 5
+  ExplosionRadius: 0
+  AttachmentAnchors:
+  - Slot: 0
+    Position: {x: 0, y: 0.11732133, z: 1.0220001}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 2
+    Position: {x: 0, y: -0.08258811, z: 0.56210005}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 3
+    Position: {x: 0, y: -0.03795688, z: 0.07}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 4
+    Position: {x: 0, y: 0.058660664, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: 0.080201134, z: -0.37800008}
+    Euler: {x: 0, y: 0, z: 0}
+  FireSounds:
+  - {fileID: 8300000, guid: b08d8dced2f3b09429d012d8dba9aff8, type: 3}
+  ReloadSound: {fileID: 0}
+  DryFireSound: {fileID: 0}
+  EquipSound: {fileID: 0}
+  InspectSound: {fileID: 0}
+  RestEuler: {x: 356.664, y: 5.0199575, z: 247.19305}
+  RestCenter: {x: 0.07453458, y: 0.06381251, z: 0.3168282}
+  RestSize: {x: 0.3665717, y: 0.35059643, z: 1.3887577}
+  Cooldown: 1.4
+  Slot: 9
+  StartOwned: 0
+  Viewmodel: {fileID: 5648749387201768965, guid: 4d80a3355420dee489a5ddb9c5f63f88, type: 3}

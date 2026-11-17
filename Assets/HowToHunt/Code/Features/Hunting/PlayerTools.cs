@@ -47,6 +47,8 @@ namespace HowToHunt.Hunting
         public static int AutoFireTarget = -1;
         public static int AutoFireShots;
         public static int ShotsFired, HitsConfirmed;
+        /// <summary>Local: the seed of the last shot (shotgun pellets spread the same way on every machine).</summary>
+        public static ushort LastShotSeed;
 
         public static PlayerTools Local { get; private set; }
         public ToolDefinition Equipped => _equipped >= 0 && _equipped < Loadouts.AllTools.Count ? Loadouts.AllTools[_equipped] : null;
@@ -286,12 +288,13 @@ namespace HowToHunt.Hunting
             ShotsFired++;
             double viewTick = HitClock.ViewTick();
             HitFeedback.RememberSeen(viewTick);
+            LastShotSeed = (ushort)UnityEngine.Random.Range(0, 65536); // pellets fan out the same way everywhere
             LocalUse?.Invoke(this, tool, origin, dir);
-            CmdUse((byte)_equipped, origin, dir, viewTick, PreyClock.RenderTick());
+            CmdUse((byte)_equipped, origin, dir, viewTick, PreyClock.RenderTick(), LastShotSeed);
         }
 
         [ServerRpc]
-        private void CmdUse(byte toolIndex, Vector3 origin, Vector3 dir, double viewTick, double preyTick)
+        private void CmdUse(byte toolIndex, Vector3 origin, Vector3 dir, double viewTick, double preyTick, ushort seed)
         {
             // Prey are drawn a little further behind than the rest (PreyClock): rewind them by that much more.
             double preyLag = HuntingCvars.LagComp.Value ? Math.Max(0.0, Math.Min(32.0, viewTick - preyTick)) : 0.0;
@@ -304,7 +307,8 @@ namespace HowToHunt.Hunting
             bool carried = HostHasTool != null ? HostHasTool(Owner.ClientId, tool.Id.Value) : loadout.Owns(tool);
             if (!carried) { HitLog("tool not carried"); return; }
             if (Time.time < _serverCooldownUntil[toolIndex]) { HitLog("cooldown"); return; }
-            _serverCooldownUntil[toolIndex] = Time.time + tool.Cooldown * 0.8f;
+            // Some slack: packets bunch up over the internet (full-auto guns fire every few ticks).
+            _serverCooldownUntil[toolIndex] = Time.time + tool.Cooldown * (tool.Automatic ? 0.6f : 0.8f);
             if (dir.sqrMagnitude < 0.5f || float.IsNaN(dir.x)) return;
             dir.Normalize();
 
@@ -337,10 +341,15 @@ namespace HowToHunt.Hunting
                 if (!HostTakeRound(toolIndex, tool)) return;
                 GunSetup setup = loadout.Setup(tool);
                 GunBallistics g = setup.Ballistics;
-                var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), dir.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = dir };
-                RpcShotFx(toolIndex, origin, dir);
+                RpcShotFx(toolIndex, origin, dir, seed);
                 PreyWorld.HostGunshot(origin, setup.NoiseMultiplier);
-                if (StepBullet(ref hb, (float)TimeManager.TickDelta)) _bullets.Add(hb);
+                int pellets = Mathf.Max(1, tool.Pellets);
+                for (int p = 0; p < pellets; p++)
+                {
+                    Vector3 d = pellets > 1 ? GunMath.PelletDir(dir.ToSim(), tool.PelletSpreadDegrees, seed, p).ToUnity() : dir;
+                    var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), d.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = d };
+                    if (StepBullet(ref hb, (float)TimeManager.TickDelta)) _bullets.Add(hb);
+                }
                 return;
             }
             ToolResolver.Target target = ToolResolver.Find(tool, range, origin, dir, t);
@@ -432,6 +441,11 @@ namespace HowToHunt.Hunting
                 Vector3 f = from.ToUnity();
                 ToolResolver.PreyLag = hb.PreyLag;
                 ToolResolver.Target target = ToolResolver.Find(hb.Tool, length, f, d.ToUnity(), hb.Tick);
+                if (target.Kind != ToolResolver.TargetKind.None && hb.Tool.ExplosionRadius > 0f)
+                {
+                    Explode(hb, target.Point);
+                    return false;
+                }
                 if (target.Kind != ToolResolver.TargetKind.None)
                 {
                     float distance = hb.Body.Travelled - length + (target.Point - f).magnitude;
@@ -447,12 +461,57 @@ namespace HowToHunt.Hunting
             }
             if (hb.Body.Done)
             {
-                HostToolReached?.Invoke(hb.Tool, hb.Start, hb.Dir, hb.Body.Travelled);
+                if (hb.Tool.ExplosionRadius > 0f) Explode(hb, hb.Body.Position.ToUnity()); // airburst at the end of its range
+                else HostToolReached?.Invoke(hb.Tool, hb.Start, hb.Dir, hb.Body.Travelled);
                 return false;
             }
             hb.Tick = Math.Min(hb.Tick + 1, TimeManager.Tick);
             return true;
         }
+
+        /// <summary>Host: an explosive round goes off. Everything in the radius is hit, harder near the centre.</summary>
+        public static event Action<Vector3, float, float> HostExplosion;
+
+        private void Explode(HostBullet hb, Vector3 point)
+        {
+            float radius = hb.Tool.ExplosionRadius;
+            float rewound = (float)(TimeManager.Tick - hb.Tick);
+            double tick = hb.Tick - hb.PreyLag;
+            var prey = PreyWorld.All;
+            for (int i = 0; i < prey.Count; i++)
+            {
+                PreyInstance p = prey[i];
+                if (!p.Alive || !p.TryPoseAt(tick, true, out EntityPose pose)) continue;
+                Vector3 center = pose.Position.ToUnity() + Vector3.up * 0.2f;
+                float share = GunMath.Blast(Vector3.Distance(center, point), radius);
+                if (share <= 0f) continue;
+                // Walls and hills shelter: no blast through solid ground.
+                var los = SimWorld.Current.TraceBox(point.ToSim() + new Vec3(0f, 0.2f, 0f), center.ToSim(), Vec3.Zero);
+                if (los.Hit && los.Fraction < 0.98f) continue;
+                ToolStats st = hb.Stats;
+                st.Damage *= share;
+                ResolvePrey(hb.Tool, st, new ToolResolver.Target { Kind = ToolResolver.TargetKind.Prey, PreyId = p.Id, Point = center, Pose = pose }, rewound);
+            }
+            var dummies = TargetDummy.All;
+            for (int i = 0; i < dummies.Count; i++)
+            {
+                TargetDummy dm = dummies[i];
+                if (dm.IsDown) continue;
+                if (!dm.History.TrySample(hb.Tick, out EntityPose pose)) pose = dm.Path.PoseAt(hb.Tick, HitClock.TickRate);
+                Vector3 center = pose.Position.ToUnity() + Vector3.up;
+                float share = GunMath.Blast(Vector3.Distance(center, point), radius);
+                if (share <= 0f) continue;
+                ToolStats st = hb.Stats;
+                st.Damage *= share;
+                HitDummy(st, new ToolResolver.Target { Kind = ToolResolver.TargetKind.Dummy, Index = i, Point = center, Pose = pose }, rewound);
+            }
+            HostExplosion?.Invoke(point, radius, hb.Tool.Knockback);
+            PreyWorld.HostGunshot(point, 1.5f); // a blast scares everything around
+            RpcExplosion(point, radius);
+        }
+
+        [ObserversRpc]
+        private void RpcExplosion(Vector3 point, float radius) => BulletFx.Explosion(point, radius);
 
         /// <summary>Host: spend a round of that gun's magazine (false: empty or mid-reload).</summary>
         private bool HostTakeRound(int index, ToolDefinition tool)
@@ -559,10 +618,10 @@ namespace HowToHunt.Hunting
         }
 
         [ObserversRpc(ExcludeOwner = true)]
-        private void RpcShotFx(byte toolIndex, Vector3 origin, Vector3 dir)
+        private void RpcShotFx(byte toolIndex, Vector3 origin, Vector3 dir, ushort seed)
         {
             var tools = Loadouts.AllTools;
-            if (toolIndex < tools.Count) HitFeedback.RemoteShot(transform.position, tools[toolIndex], origin, dir);
+            if (toolIndex < tools.Count) HitFeedback.RemoteShot(transform.position, tools[toolIndex], origin, dir, seed);
             GetComponent<ThirdPersonTool>()?.Kick();
         }
     }
