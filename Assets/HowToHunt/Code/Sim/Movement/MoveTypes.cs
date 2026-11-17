@@ -49,6 +49,8 @@ namespace HowToHunt.Sim.Movement
         /// <summary>View pitch in degrees (positive looks down).</summary>
         public float Pitch;
         public MoveButtons Buttons;
+        /// <summary>A gun's shove this tick, m/s backwards along the view (How to Fish knockback). 0 = none.</summary>
+        public float Push;
 
         public bool Has(MoveButtons b) => (Buttons & b) != 0;
 
@@ -75,6 +77,8 @@ namespace HowToHunt.Sim.Movement
         public float Fatigue;
         /// <summary>Seconds on the ground since the last landing (landing grace: a late bunny hop keeps most of its speed).</summary>
         public float GroundTime;
+        /// <summary>Seconds before another gun shove is accepted (so a command can't shove every tick).</summary>
+        public float PushCooldown;
 
         // Derived/feedback fields (not needed to resume simulation).
         /// <summary>Normal of the surface under or against the player (for surf/feel feedback).</summary>
@@ -133,6 +137,9 @@ namespace HowToHunt.Sim.Movement
         public float EyeHeight = 1.6256f;
         public float DuckEyeHeight = 1.1684f;
         public float NoclipSpeed = 19f;
+        /// <summary>Strongest gun shove accepted, m/s, and how often (seconds).</summary>
+        public float MaxPush = 8f;
+        public float PushInterval = 0.15f;
 
         public Vector3 Hull(bool ducked) => ducked ? new Vector3(HullHalfExtents.X, DuckHalfHeight, HullHalfExtents.Z) : HullHalfExtents;
 

@@ -15,6 +15,8 @@ namespace HowToHunt.Hunting
         public int MagazineSize;
         public float ReloadSeconds;
         public float RecoilUp, RecoilSide, RecoilRecover;
+        /// <summary>The gun's handling with attachments applied (model kick, springs, free aim).</summary>
+        public GunHandling Handling;
         public float AdsZoom;
         public UnityEngine.Vector3 SightOffset;
         public UnityEngine.Vector3 SightFront;
@@ -34,6 +36,7 @@ namespace HowToHunt.Hunting
                 RecoilUp = tool.RecoilUp,
                 RecoilSide = tool.RecoilSide,
                 RecoilRecover = tool.RecoilRecover,
+                Handling = tool.Handling,
                 AdsZoom = tool.AdsZoom,
                 SightOffset = tool.SightOffset,
                 SightFront = tool.SightFront.sqrMagnitude > 0f ? tool.SightFront : tool.SightOffset + Vector3.forward * 0.1f,
@@ -45,8 +48,17 @@ namespace HowToHunt.Hunting
             {
                 AttachmentDefinition a = fitted[i];
                 if (a == null) continue;
-                s.RecoilUp *= a.RecoilMultiplier;
-                s.RecoilSide *= a.RecoilMultiplier;
+                if (a.Slot == AttachmentSlot.Muzzle)
+                {
+                    // Only the muzzle device changes the view kick (How to Fish); the rest steady the gun in the hand.
+                    s.RecoilUp *= a.RecoilMultiplier;
+                    s.RecoilSide *= a.RecoilMultiplier;
+                }
+                s.Handling.KickPos *= a.KickMultiplier;
+                s.Handling.KickRot *= a.KickMultiplier;
+                s.Handling.SpringPos *= a.SpringMultiplier;
+                s.Handling.SpringRot *= a.SpringMultiplier;
+                s.Handling.FreeAim *= a.FreeAimMultiplier;
                 s.Ballistics.SpreadDegrees *= a.SpreadMultiplier;
                 s.Ballistics.MaxSpreadDegrees *= a.SpreadMultiplier;
                 s.Ballistics.MoveSpreadPerMps *= a.MoveSpreadMultiplier;
@@ -79,7 +91,7 @@ namespace HowToHunt.Hunting
 
         public float HipFire => Mathf.Clamp(100f - 9f * Ballistics.SpreadDegrees - 60f * Ballistics.MoveSpreadPerMps, 0f, 100f);
         public float Precision => Mathf.Clamp(30f + Ballistics.FalloffEnd / 4f - 40f * Ballistics.SpreadDegrees * Ballistics.AdsSpreadFactor, 0f, 100f);
-        public float Control => Mathf.Clamp(100f - 6f * RecoilUp * (1f - RecoilRecover * 0.5f) - 4f * RecoilSide, 0f, 100f);
+        public float Control => Mathf.Clamp(100f - 7f * RecoilUp * (1f - RecoilRecover * 0.5f) - 4f * RecoilSide - 0.5f * Handling.KickRot.y - 1.5f * Handling.FreeAim.y, 0f, 100f);
         public float Mobility => Mathf.Clamp(100f - 20f * Weight - 6f * ReloadSeconds, 0f, 100f);
         public float RoundsPerMinute => Tool.Cooldown > 0f ? 60f / Tool.Cooldown : 0f;
     }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.muzzle_brake
   _displayName: Muzzle Brake
-  _description: Tames the kick (recoil -25 %). A little louder.
+  _description: View kick -20 %. A little louder.
   Slot: 0
   Tools:
   - {fileID: 11400000, guid: 1b0a0891b7fae754db187a4e5eb33a70, type: 2}
@@ -24,7 +24,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b65affc065fbe3045b95c7199b46e687, type: 2}
   CostCoins: 450
   SortOrder: 10
-  RecoilMultiplier: 0.75
+  RecoilMultiplier: 0.8
+  KickMultiplier: 1
+  SpringMultiplier: 1
+  FreeAimMultiplier: 1
   SpreadMultiplier: 1
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 1

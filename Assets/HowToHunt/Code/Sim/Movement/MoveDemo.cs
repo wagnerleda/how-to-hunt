@@ -53,7 +53,9 @@ namespace HowToHunt.Sim.Movement
             {
                 sb.Append(F(c.Forward)).Append(' ').Append(F(c.Side)).Append(' ')
                   .Append(F(c.Yaw)).Append(' ').Append(F(c.Pitch)).Append(' ')
-                  .Append(((int)c.Buttons).ToString(inv)).Append('\n');
+                  .Append(((int)c.Buttons).ToString(inv));
+                if (c.Push > 0f) sb.Append(' ').Append(F(c.Push)); // older demos have no shove column
+                sb.Append('\n');
             }
             return sb.ToString();
         }
@@ -76,6 +78,7 @@ namespace HowToHunt.Sim.Movement
                     {
                         Forward = P(p[0]), Side = P(p[1]), Yaw = P(p[2]), Pitch = P(p[3]),
                         Buttons = (MoveButtons)int.Parse(p[4], CultureInfo.InvariantCulture),
+                        Push = p.Length > 5 ? P(p[5]) : 0f,
                     });
                     continue;
                 }

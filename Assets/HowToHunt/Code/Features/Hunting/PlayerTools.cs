@@ -196,6 +196,11 @@ namespace HowToHunt.Hunting
         /// <summary>Ammo, reload progress and what the rest of the game needs to know about the held item.</summary>
         private void UpdateGunState(ToolDefinition tool, bool gun)
         {
+            if (_reloadTool >= 0 && _reloadTool < Loadouts.AllTools.Count && ReloadProgress() >= Gun(Loadouts.AllTools[_reloadTool]).Handling.RefillAt)
+            {
+                // Past the refill point the new magazine is in (How to Fish): it counts even if you switch away now.
+                _ammo[_reloadTool] = -1;
+            }
             if (_reloadTool >= 0 && (_reloadTool != _equipped))
             {
                 // Switching away cancels a reload.
@@ -211,7 +216,7 @@ namespace HowToHunt.Hunting
                 if (reloaded == null || reloaded.ReloadSound == null) Sfx.Play2D("Kenney/close_001", 0.4f, 1.15f); // a recorded reload has its own end
 
             }
-            LocalReload = _reloadTool >= 0 ? Mathf.Clamp01((Time.time - _reloadStart) / Mathf.Max(0.01f, _reloadUntil - _reloadStart)) : -1f;
+            LocalReload = _reloadTool >= 0 ? ReloadProgress() : -1f;
             LocalMagazine = gun ? Gun(tool).MagazineSize : 0;
             LocalAmmo = gun ? AmmoOf(_equipped, tool) : 0;
             PlayerInputSampler.LoadLevel = tool == null ? 0 : gun ? Gun(tool).Weight : tool.Weight;
@@ -221,12 +226,23 @@ namespace HowToHunt.Hunting
             if (!gun) LocalAiming = false;
         }
 
+        private float ReloadProgress() => Mathf.Clamp01((Time.time - _reloadStart) / Mathf.Max(0.01f, _reloadUntil - _reloadStart));
+
+        /// <summary>Local: the reload in progress started with rounds left (no rack at the end).</summary>
+        public static bool LocalReloadTactical { get; private set; }
+
+        /// <summary>Local: the last shot's random kick direction (-1..1), shared by the view and the gun model.</summary>
+        public static float LocalKickDir { get; private set; }
+
         private void StartReload(ToolDefinition tool)
         {
             if (_reloadTool >= 0 || _equipped < 0 || AmmoOf(_equipped, tool) >= Gun(tool).MagazineSize) return;
+            GunSetup setup = Gun(tool);
+            // With rounds still in the gun there's no rack at the end: a quicker reload (How to Fish's Reload vs ReloadLast).
+            LocalReloadTactical = AmmoOf(_equipped, tool) > 0;
             _reloadTool = _equipped;
             _reloadStart = Time.time;
-            _reloadUntil = Time.time + Gun(tool).ReloadSeconds;
+            _reloadUntil = Time.time + setup.ReloadSeconds * (LocalReloadTactical ? setup.Handling.TacticalReload : 1f);
             LocalAiming = false;
             if (tool.ReloadSound != null) Sfx.Play2D(tool.ReloadSound, 0.6f);
             else Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
@@ -270,10 +286,15 @@ namespace HowToHunt.Hunting
             dir = GunMath.InCone(dir.ToSim(), cone, UnityEngine.Random.value, UnityEngine.Random.value).ToUnity();
             if (!HuntingCvars.InfiniteMag.Value) _ammo[_equipped] = AmmoOf(_equipped, tool) - 1;
             Use(origin, dir);
-            // Recoil: the gun kicks in the hand (viewmodel), the view follows loosely (input sampler).
+            // Recoil, How to Fish style: one random direction drives the whole shot (view and gun model). The view
+            // kicks up by the full amount and stays there: you pull it back down. Sideways it is random twice over
+            // (mostly small, now and then wide). Aiming doesn't soften the view kick, only the gun in the hand.
+            LocalKickDir = UnityEngine.Random.Range(-1f, 1f);
             float scale = HuntingCvars.RecoilScale.Value * (LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
-            float side = UnityEngine.Random.Range(-0.4f, 1f) * setup.RecoilSide;
+            float side = UnityEngine.Random.Range(-1f, 1f) * Mathf.Abs(LocalKickDir) * setup.RecoilSide;
             _motor.Input.Kick(setup.RecoilUp * scale, side * scale, setup.RecoilRecover);
+            // A shove backwards along the view (the sawed-off, the launchers).
+            if (setup.Handling.Push > 0f) _motor.Input.AddPush(setup.Handling.Push * HuntingCvars.PushScale.Value);
         }
 
         private void AutoFire()
@@ -601,7 +622,9 @@ namespace HowToHunt.Hunting
             var tools = Loadouts.AllTools;
             if (toolIndex >= tools.Count || toolIndex >= MaxTools || tools[toolIndex].Archetype != ToolArchetype.Firearm) return;
             // A little shorter than the owner's: the owner's next shot must never arrive before the host's reload ends.
-            _serverReloadUntil[toolIndex] = Time.time + Loadouts.ForClient(Owner.ClientId).Setup(tools[toolIndex]).ReloadSeconds * 0.8f;
+            GunSetup setup = Loadouts.ForClient(Owner.ClientId).Setup(tools[toolIndex]);
+            float seconds = setup.ReloadSeconds * (_serverAmmo[toolIndex] > 0 ? setup.Handling.TacticalReload : 1f);
+            _serverReloadUntil[toolIndex] = Time.time + seconds * 0.8f;
         }
 
         private static void HitLog(string line)

@@ -15,6 +15,13 @@ namespace HowToHunt.Player
         public static readonly FloatCvar RollAngle = new FloatCvar("cl_rollangle", 1.2f, "Camera roll when strafing, degrees (0 = off).", CvarFlags.Archive, 0f, 6f);
         public static readonly FloatCvar LandKick = new FloatCvar("cl_landkick", 1f, "Landing camera dip strength (0 = off).", CvarFlags.Archive, 0f, 3f);
         public static readonly FloatCvar SpeedFov = new FloatCvar("cl_speedfov", 6f, "Extra FOV at very high speed, degrees (0 = off).", CvarFlags.Archive, 0f, 20f);
+        public static readonly FloatCvar ViewBob = new FloatCvar("cl_viewbob", 1f, "Head bob while walking and running on the ground (How to Fish), strength (0 = off).", CvarFlags.Archive, 0f, 2f);
+        public static readonly FloatCvar FallTilt = new FloatCvar("cl_falltilt", 0.25f, "Camera pitch per m/s of vertical speed (How to Fish: 0.25; 0 = off).", CvarFlags.Archive, 0f, 1f);
+
+        // How to Fish's head bob: up to 3 strides a second at 7 m/s, a sideways sway and a dip per step, smoothed.
+        private const float BobMaxSpeed = 7f, BobStridesPerSecond = 3f, BobSide = 0.022f, BobDip = 0.03f, BobSmooth = 0.08f, FallTiltSmooth = 0.08f;
+        private float _bobTime, _fallTilt, _fallTiltVel;
+        private Vector3 _bob, _bobVel;
 
         private const float CrouchTime = 0.12f;
 
@@ -41,6 +48,8 @@ namespace HowToHunt.Player
             console.Register(RollAngle);
             console.Register(LandKick);
             console.Register(SpeedFov);
+            console.Register(ViewBob);
+            console.Register(FallTilt);
             RenderDistance.Register(console);
         }
 
@@ -128,10 +137,26 @@ namespace HowToHunt.Player
             _camera.fieldOfView = vfov;
             RenderDistance.Apply(_camera);
 
+            // How to Fish: the head bobs with your steps on the ground and tips with your vertical speed.
+            Vector3 bobTarget = Vector3.zero;
+            if (s.OnGround && speed > 0.1f && ViewBob.Value > 0f)
+            {
+                float k = Mathf.Clamp01(speed / BobMaxSpeed);
+                _bobTime = Mathf.Repeat(_bobTime + dt * Mathf.Lerp(BobStridesPerSecond * 0.5f, BobStridesPerSecond, k), 1f);
+                float a = _bobTime * Mathf.PI * 2f;
+                bobTarget = new Vector3(Mathf.Sin(a) * BobSide, -Mathf.Abs(Mathf.Sin(a)) * BobDip, 0f) * (k * ViewBob.Value);
+            }
+            else
+            {
+                _bobTime = 0f;
+            }
+            _bob = Vector3.SmoothDamp(_bob, bobTarget, ref _bobVel, BobSmooth, Mathf.Infinity, dt);
+            _fallTilt = Mathf.SmoothDamp(_fallTilt, Mathf.Clamp(vel.y, -20f, 20f) * FallTilt.Value, ref _fallTiltVel, FallTiltSmooth, Mathf.Infinity, dt);
+
             Vector3 center = _visual.position;
             float feetY = center.y - cfg.Hull(s.Ducked).Y;
-            transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z),
-                Quaternion.Euler(_target.ViewPitch - _recoil, _target.ViewYaw, -_roll));
+            Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll);
+            transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z) + view * _bob, view);
             _recoil = Mathf.MoveTowards(_recoil, 0f, dt * (6f + _recoil * 8f));
 
             // Click to recapture the mouse after alt-tab or closing the console.

@@ -52,6 +52,18 @@ namespace HowToHunt.Player
             _followYaw += side * keep;
         }
 
+        private float _push;
+
+        /// <summary>A gun shove (m/s backwards along the view) to send with the next command.</summary>
+        public void AddPush(float speed) => _push = Mathf.Max(_push, speed);
+
+        private float TakePush()
+        {
+            float p = _push;
+            _push = 0f;
+            return p;
+        }
+
         /// <summary>Call every frame.</summary>
         public void UpdateFrame()
         {
@@ -100,9 +112,13 @@ namespace HowToHunt.Player
             }
 
             if (MovementCvars.BotForward.Value != 0f || MovementCvars.BotSide.Value != 0f || MovementCvars.BotYawSpeed.Value != 0f || MovementCvars.BotJump.Value)
-                return BuildBotCmd(tickDelta);
+            {
+                MoveCmd bot = BuildBotCmd(tickDelta);
+                bot.Push = TakePush();
+                return bot;
+            }
 
-            var cmd = new MoveCmd { Yaw = Yaw, Pitch = Pitch };
+            var cmd = new MoveCmd { Yaw = Yaw, Pitch = Pitch, Push = TakePush() };
             Keyboard kb = Keyboard.current;
             if (kb == null || Game.UiHasFocus)
             {

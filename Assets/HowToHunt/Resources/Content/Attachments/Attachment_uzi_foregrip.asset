@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.uzi_foregrip
   _displayName: Uzi Foregrip
-  _description: 'A front grip: recoil -20 %, steadier on the move.'
+  _description: 'A front grip: the gun kicks 20 % less in the hand and wanders less from the hip.'
   Slot: 2
   Tools:
   - {fileID: 11400000, guid: 517dd1cd50c9df742a7e9201980b9584, type: 2}
   CostCoins: 400
   SortOrder: 201
   RecoilMultiplier: 0.8
+  KickMultiplier: 0.8
+  SpringMultiplier: 1
+  FreeAimMultiplier: 0.6
   SpreadMultiplier: 1
   MoveSpreadMultiplier: 0.85
   AdsSpreadMultiplier: 1

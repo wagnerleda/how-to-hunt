@@ -28,6 +28,25 @@ MonoBehaviour:
   RecoilUp: 0
   RecoilSide: 0
   RecoilRecover: 0.5
+  Handling:
+    KickPos: {x: 0, y: 0, z: 0}
+    KickRot: {x: 0, y: 0}
+    SpringPos: 0
+    DamperPos: 0
+    SpringRot: 0
+    DamperRot: 0
+    AdsSpring: 0
+    AdsKickPos: 0
+    AdsKickRot: 0
+    FreeAim: {x: 0, y: 0, z: 0}
+    FreeAimSpeed: 0
+    Push: 0
+    SprintPos: {x: 0, y: 0, z: 0}
+    SprintRot: {x: 0, y: 0, z: 0}
+    SprintSeconds: 0
+    StrafeTilt: 0
+    RefillAt: 0
+    TacticalReload: 0
   MagazineSize: 6
   ReloadSeconds: 2
   Automatic: 0

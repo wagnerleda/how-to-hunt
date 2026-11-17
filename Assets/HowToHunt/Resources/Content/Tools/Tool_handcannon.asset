@@ -25,9 +25,28 @@ MonoBehaviour:
   ArcDegrees: 0
   MaxTargets: 1
   Knockback: 8
-  RecoilUp: 12
+  RecoilUp: 7
   RecoilSide: 3
-  RecoilRecover: 0.4
+  RecoilRecover: 0
+  Handling:
+    KickPos: {x: 0, y: 0.05, z: 0.5}
+    KickRot: {x: 20, y: 25}
+    SpringPos: 1500
+    DamperPos: 1
+    SpringRot: 2500
+    DamperRot: 60
+    AdsSpring: 3
+    AdsKickPos: 1
+    AdsKickRot: 1
+    FreeAim: {x: 2, y: 8, z: 5}
+    FreeAimSpeed: 0.25
+    Push: 1.5
+    SprintPos: {x: -0.1, y: -0.1, z: 0}
+    SprintRot: {x: 30, y: -35, z: 25}
+    SprintSeconds: 0.15
+    StrafeTilt: -10
+    RefillAt: 0.8
+    TacticalReload: 0.85
   MagazineSize: 6
   ReloadSeconds: 3
   Automatic: 0

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.foregrip
   _displayName: Foregrip
-  _description: Recoil -20 %, tighter down the scope.
+  _description: The gun kicks 20 % less in the hand and wanders less from the hip; tighter down the sights.
   Slot: 2
   Tools:
   - {fileID: 11400000, guid: 25be77ac6b8d15149a488fb2061b9c3b, type: 2}
@@ -22,6 +22,9 @@ MonoBehaviour:
   CostCoins: 450
   SortOrder: 31
   RecoilMultiplier: 0.8
+  KickMultiplier: 0.8
+  SpringMultiplier: 1
+  FreeAimMultiplier: 0.6
   SpreadMultiplier: 1
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 0.8

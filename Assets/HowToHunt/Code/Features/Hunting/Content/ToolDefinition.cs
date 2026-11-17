@@ -27,12 +27,14 @@ namespace HowToHunt.Hunting
         public int MaxTargets = 1;
         [Tooltip("Shove given to prey and items it hits, m/s.")]
         public float Knockback;
-        [Tooltip("Firearms: degrees the aim kicks up per shot.")]
+        [Tooltip("Firearms: degrees the view kicks up per shot. It stays up: you pull it back down (How to Fish).")]
         public float RecoilUp;
-        [Tooltip("Firearms: degrees of random sideways kick per shot (biased right).")]
+        [Tooltip("Firearms: largest random sideways view kick per shot, degrees.")]
         public float RecoilSide;
-        [Tooltip("Firearms: fraction of the kick that comes back down by itself (the rest you pull down).")]
-        [Range(0f, 1f)] public float RecoilRecover = 0.5f;
+        [Tooltip("Firearms: fraction of the view kick that comes back down by itself (0: none, you pull it down).")]
+        [Range(0f, 1f)] public float RecoilRecover;
+        [Tooltip("Firearms: kick springs, free aim, shove, sprint pose and reload timing.")]
+        public GunHandling Handling;
         [Header("Firearm")]
         [Tooltip("Rounds per magazine. Ammo is infinite; magazines are not (reload with R).")]
         public int MagazineSize = 6;
@@ -142,6 +144,7 @@ namespace HowToHunt.Hunting
             if (Slot < 1 || Slot > 9) errors.Add("Slot must be 1-9.");
             if (Archetype == ToolArchetype.Firearm && (MagazineSize <= 0 || ReloadSeconds <= 0 || BulletSpeed <= 0))
                 errors.Add("Firearms need MagazineSize, ReloadSeconds and BulletSpeed > 0.");
+            if (Archetype == ToolArchetype.Firearm && !Handling.IsSet) errors.Add("Firearms need Handling (kick springs and the rest).");
         }
     }
 

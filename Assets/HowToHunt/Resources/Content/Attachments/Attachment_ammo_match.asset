@@ -28,6 +28,9 @@ MonoBehaviour:
   CostCoins: 550
   SortOrder: 51
   RecoilMultiplier: 1
+  KickMultiplier: 1
+  SpringMultiplier: 1
+  FreeAimMultiplier: 1
   SpreadMultiplier: 0.85
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 0.85

@@ -23,6 +23,24 @@ namespace HowToHunt.Sim.Movement
         /// <summary>1 Source unit/s, used to push off a plane we keep touching.</summary>
         private const float NudgeSpeed = 0.0254f;
 
+        /// <summary>
+        /// A gun's shove (How to Fish's knockback): backwards along the view, part of the command so prediction and the
+        /// host apply it on the same tick. Capped in size and rate here, inside the simulation, so a forged command
+        /// can't fly anyone around. Looking down while firing shoves you up off the ground.
+        /// </summary>
+        private static void ApplyPush(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, float dt)
+        {
+            if (s.PushCooldown > 0f) s.PushCooldown = MathF.Max(0f, s.PushCooldown - dt);
+            if (!(cmd.Push > 0f) || s.PushCooldown > 0f) return;
+            float push = MathF.Min(cmd.Push, cfg.MaxPush);
+            float yaw = cmd.Yaw * Deg2Rad, pitch = cmd.Pitch * Deg2Rad;
+            var forward = new Vector3(MathF.Sin(yaw) * MathF.Cos(pitch), -MathF.Sin(pitch), MathF.Cos(yaw) * MathF.Cos(pitch));
+            Vector3 shove = -forward * push;
+            s.Velocity += shove;
+            if (shove.Y > LeaveGroundUpSpeed) s.OnGround = false;
+            s.PushCooldown = cfg.PushInterval;
+        }
+
         public static void Step(ref MoveState s, in MoveCmd cmd, MoveConfig cfg, ICollisionWorld world, float dt)
         {
             s.Events = MoveEvents.None;
@@ -35,6 +53,7 @@ namespace HowToHunt.Sim.Movement
             }
 
             CategorizePosition(ref s, cfg, world);
+            ApplyPush(ref s, in cmd, cfg, dt);
             bool wasOnGround = s.OnGround;
 
             UpdateDuck(ref s, in cmd, cfg, world);

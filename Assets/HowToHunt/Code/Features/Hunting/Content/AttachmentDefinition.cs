@@ -23,8 +23,14 @@ namespace HowToHunt.Hunting
         public int SortOrder;
 
         [Header("Effects (1 = unchanged)")]
-        [Tooltip("Kick up and sideways.")]
+        [Tooltip("View kick up and sideways. Only muzzle devices change it (How to Fish: the barrel decides the recoil).")]
         public float RecoilMultiplier = 1f;
+        [Tooltip("How far the gun model is thrown by each shot (grips, stocks and bipods steady it).")]
+        public float KickMultiplier = 1f;
+        [Tooltip("How stiffly the gun snaps back after a shot (a stock braces it: above 1).")]
+        public float SpringMultiplier = 1f;
+        [Tooltip("How far the gun drifts in its free-aim box from the hip (a foregrip or laser: below 1).")]
+        public float FreeAimMultiplier = 1f;
         [Tooltip("Hip-fire cone at rest.")]
         public float SpreadMultiplier = 1f;
         [Tooltip("Extra cone from moving.")]
@@ -66,7 +72,7 @@ namespace HowToHunt.Hunting
         {
             base.Validate(errors);
             if (CostCoins <= 0) errors.Add("Attachments need a price.");
-            if (RecoilMultiplier <= 0 || SpreadMultiplier <= 0 || RangeMultiplier <= 0 || DamageMultiplier <= 0 || BulletSpeedMultiplier <= 0 || ReloadMultiplier <= 0)
+            if (RecoilMultiplier <= 0 || KickMultiplier <= 0 || SpringMultiplier <= 0 || FreeAimMultiplier < 0 || SpreadMultiplier <= 0 || RangeMultiplier <= 0 || DamageMultiplier <= 0 || BulletSpeedMultiplier <= 0 || ReloadMultiplier <= 0)
                 errors.Add("Multipliers must be > 0.");
         }
     }

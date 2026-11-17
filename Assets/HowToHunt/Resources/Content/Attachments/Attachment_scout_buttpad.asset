@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.scout_buttpad
   _displayName: Scout Butt Pad
-  _description: Recoil -25 %.
+  _description: The gun kicks 25 % less in the hand and settles faster.
   Slot: 7
   Tools:
   - {fileID: 11400000, guid: c8748dc2584035a4e93830151cd25bac, type: 2}
   CostCoins: 450
   SortOrder: 221
   RecoilMultiplier: 0.75
+  KickMultiplier: 0.75
+  SpringMultiplier: 1.3
+  FreeAimMultiplier: 1
   SpreadMultiplier: 1
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 1

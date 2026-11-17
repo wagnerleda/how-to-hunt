@@ -19,12 +19,13 @@ namespace HowToHunt.Player
     {
         public struct ReplicateData : IReplicateData
         {
-            // Packed to 7 bytes (bandwidth). The owner simulates the unpacked values too, so prediction stays exact.
+            // Packed to 8 bytes (bandwidth). The owner simulates the unpacked values too, so prediction stays exact.
             public sbyte Forward;
             public sbyte Side;
             public ushort Yaw;   // 0..65535 = 0..360°
             public short Pitch;  // -32767..32767 = -90..90°
             public byte Buttons;
+            public byte Push;    // gun shove, 0.1 m/s steps
             private uint _tick;
 
             public ReplicateData(in MoveCmd cmd)
@@ -34,6 +35,7 @@ namespace HowToHunt.Player
                 Yaw = (ushort)(Mathf.RoundToInt(Mathf.Repeat(cmd.Yaw, 360f) / 360f * 65536f) & 0xFFFF);
                 Pitch = (short)Mathf.RoundToInt(Mathf.Clamp(cmd.Pitch, -90f, 90f) / 90f * 32767f);
                 Buttons = (byte)cmd.Buttons;
+                Push = (byte)Mathf.Clamp(Mathf.RoundToInt(cmd.Push * 10f), 0, 255);
                 _tick = 0;
             }
 
@@ -44,6 +46,7 @@ namespace HowToHunt.Player
                 Yaw = Yaw * (360f / 65536f),
                 Pitch = Pitch * (90f / 32767f),
                 Buttons = (MoveButtons)Buttons,
+                Push = Push * 0.1f,
             };
             public void Dispose() { }
             public uint GetTick() => _tick;
@@ -61,6 +64,7 @@ namespace HowToHunt.Player
             public float SlowTime;
             public float Fatigue;
             public float GroundTime;
+            public float PushCooldown;
             public Vector3 CheckpointFeet;
             public float CheckpointYaw;
             private uint _tick;
@@ -78,6 +82,7 @@ namespace HowToHunt.Player
                 SlowTime = s.SlowTime;
                 Fatigue = s.Fatigue;
                 GroundTime = s.GroundTime;
+                PushCooldown = s.PushCooldown;
                 _tick = 0;
             }
 
@@ -227,6 +232,7 @@ namespace HowToHunt.Player
             _state.SlowTime = rd.SlowTime;
             _state.Fatigue = rd.Fatigue;
             _state.GroundTime = rd.GroundTime;
+            _state.PushCooldown = rd.PushCooldown;
             _checkpointFeet = rd.CheckpointFeet;
             _checkpointYaw = rd.CheckpointYaw;
             transform.position = rd.Position;

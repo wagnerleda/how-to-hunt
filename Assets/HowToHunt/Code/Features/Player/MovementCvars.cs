@@ -30,8 +30,10 @@ namespace HowToHunt.Player
         public static readonly FloatCvar StaminaRegen = new FloatCvar("sv_stamina_regen", D.StaminaRegen, "Seconds of sprint recovered per second while not sprinting.", Sv, 0f, 10f);
         public static readonly FloatCvar WaterSpeed = new FloatCvar("sv_water_speed", D.WaterSpeedFactor, "Ground speed while wading, x sv_maxspeed.", Sv, 0.1f, 1f);
         public static readonly FloatCvar ThrowSlow = new FloatCvar("sv_throw_slow", D.HitSlowFactor, "Speed multiplier for a moment after being hit by a thrown item (never a stun).", Sv, 0.1f, 1f);
+        public static readonly FloatCvar MaxPush = new FloatCvar("sv_push_max", D.MaxPush, "Strongest gun shove (knockback) a shot may give its shooter, m/s.", Sv, 0f, 20f);
+        public static readonly FloatCvar PushInterval = new FloatCvar("sv_push_interval", D.PushInterval, "Seconds between gun shoves a player can get.", Sv, 0f, 2f);
         public static readonly FloatCvar LoadSlow = new FloatCvar("sv_load_slow", D.LoadSlowPerLevel, "Ground speed lost per weapon weight class while holding a heavy weapon (fraction).", Sv, 0f, 0.3f);
-        public static readonly FloatCvar RecoilSettleSpeed = new FloatCvar("sv_recoil_follow", 10f, "How fast the view follows a weapon kick (the gun kicks in the hand first), per second.", Sv, 0.5f, 60f);
+        public static readonly FloatCvar RecoilSettleSpeed = new FloatCvar("sv_recoil_follow", 25f, "How fast the view takes up a weapon kick, per second (How to Fish: 25).", Sv, 0.5f, 60f);
         public static readonly FloatCvar JumpSpeed = new FloatCvar("sv_jump_impulse", D.JumpSpeed, "Jump vertical speed, m/s (Source 301.99 u/s).", Sv, 0f, 50f);
         public static readonly FloatCvar MaxVelocity = new FloatCvar("sv_maxvelocity", D.MaxVelocity, "Per-axis speed limit, m/s.", Sv, 1f, 500f);
         public static readonly FloatCvar Standable = new FloatCvar("sv_standable_normal", D.StandableNormalY, "Surfaces with normal.y below this are surfable, not walkable.", Sv, 0f, 1f);
@@ -48,7 +50,7 @@ namespace HowToHunt.Player
 
         public static void Register(ConsoleSystem console)
         {
-            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, LandGrace, LandGraceFriction, SprintFactor, SprintStamina, StaminaRegen, WaterSpeed, ThrowSlow, LoadSlow, JumpSpeed, MaxVelocity, Standable, StepHeight })
+            foreach (FloatCvar c in new[] { Gravity, Friction, StopSpeed, Accelerate, AirAccelerate, AirSpeedCap, MaxSpeed, LandGrace, LandGraceFriction, SprintFactor, SprintStamina, StaminaRegen, WaterSpeed, ThrowSlow, LoadSlow, MaxPush, PushInterval, JumpSpeed, MaxVelocity, Standable, StepHeight })
             {
                 console.Register(c);
                 c.Changed += _ => Apply();
@@ -82,6 +84,8 @@ namespace HowToHunt.Player
             c.WaterSpeedFactor = WaterSpeed;
             c.HitSlowFactor = ThrowSlow;
             c.LoadSlowPerLevel = LoadSlow;
+            c.MaxPush = MaxPush;
+            c.PushInterval = PushInterval;
             c.JumpSpeed = JumpSpeed;
             c.MaxVelocity = MaxVelocity;
             c.StandableNormalY = Standable;

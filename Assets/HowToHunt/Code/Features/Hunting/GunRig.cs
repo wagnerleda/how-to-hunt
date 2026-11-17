@@ -51,7 +51,8 @@ namespace HowToHunt.Hunting
         /// <param name="reload">Reload progress 0..1, or below 0 when not reloading.</param>
         /// <param name="cycleSeconds">Time between shots (a bolt cycles within it).</param>
         /// <param name="charge">Charge 0..1 (the Gunlance opens as it charges).</param>
-        public void Update(float reload, float cycleSeconds, float charge)
+        /// <param name="rack">The reload ends with a rack (slide, charging handle, bolt): only when the gun was empty.</param>
+        public void Update(float reload, float cycleSeconds, float charge, bool rack = true)
         {
             float since = Time.time - _shotAt;
             for (int i = 0; i < _parts.Count; i++)
@@ -67,8 +68,8 @@ namespace HowToHunt.Hunting
                     case RigPartKind.Magazine:
                         if (reload >= 0f)
                         {
-                            // Out (0.12-0.35), gone, back in (0.55-0.8).
-                            float outT = Smooth(Mathf.InverseLerp(0.12f, 0.35f, reload)), inT = Smooth(Mathf.InverseLerp(0.55f, 0.8f, reload));
+                            // Out (0.22-0.36, a flick), gone, back in (0.48-0.6, slapped home): How to Fish's timing.
+                            float outT = Smooth(Mathf.InverseLerp(0.22f, 0.36f, reload)), inT = Smooth(Mathf.InverseLerp(0.48f, 0.6f, reload));
                             float away = outT * (1f - inT);
                             move = new Vector3(0f, -0.22f, -0.03f) * away;
                             visible = away < 0.95f;
@@ -77,18 +78,18 @@ namespace HowToHunt.Hunting
                     case RigPartKind.Slide:
                     {
                         float k = since < 0f ? 0f : since < 0.03f ? since / 0.03f : Mathf.Clamp01(1f - (since - 0.03f) / 0.09f);
-                        float rack = reload >= 0f ? Bump(reload, 0.85f, 0.97f) : 0f;
-                        move = new Vector3(0f, 0f, -0.028f * Mathf.Max(k, rack));
+                        float racked = reload >= 0f && rack ? Bump(reload, 0.76f, 0.88f) : 0f;
+                        move = new Vector3(0f, 0f, -0.028f * Mathf.Max(k, racked));
                         break;
                     }
                     case RigPartKind.ChargingHandle:
-                        move = new Vector3(0f, 0f, -0.07f * (reload >= 0f ? Bump(reload, 0.84f, 0.97f) : 0f));
+                        move = new Vector3(0f, 0f, -0.07f * (reload >= 0f && rack ? Bump(reload, 0.76f, 0.88f) : 0f));
                         break;
                     case RigPartKind.Bolt:
                     {
                         // After each shot (or at the end of a reload): lift, pull back, push forward, lock down.
                         float c = cycleSeconds > 0f ? Mathf.Clamp01((since - 0.08f) / (cycleSeconds * 0.85f)) : 1f;
-                        if (reload >= 0f) c = Mathf.InverseLerp(0.8f, 1f, reload);
+                        if (reload >= 0f) c = rack ? Mathf.InverseLerp(0.72f, 0.92f, reload) : 0f;
                         if (c > 0f && c < 1f)
                         {
                             float lift = Bump(c, 0f, 1f, 0.2f);

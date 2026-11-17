@@ -32,7 +32,7 @@ namespace HowToHunt.Tests
                 Get<AttachmentDefinition>("attachment.red_dot"),
             };
             GunSetup kitted = GunSetup.For(revolver, kit);
-            Assert.AreEqual(bare.RecoilUp * 0.75f, kitted.RecoilUp, 1e-4f, "muzzle brake");
+            Assert.AreEqual(bare.RecoilUp * 0.8f, kitted.RecoilUp, 1e-4f, "muzzle brake (view kick -20 %)");
             Assert.AreEqual(bare.ReloadSeconds * 0.55f, kitted.ReloadSeconds, 1e-4f, "speed loader");
             Assert.AreEqual(1.25f, kitted.DamageMultiplier, 1e-4f, "hollow points");
             Assert.Less(kitted.Ballistics.FalloffEnd, bare.Ballistics.FalloffEnd, "hollow points fall off sooner");

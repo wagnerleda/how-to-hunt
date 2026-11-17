@@ -45,12 +45,19 @@ namespace HowToHunt.Hunting
         private Vector3 _springPos, _springVel;
         private Vector3 _tilt, _tiltVel;
 
-        // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
-        private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
+        // Guns: How to Fish's recoil rig, free-aim box and sprint pose; aim-down-sights blend, inspect.
+        private readonly GunRecoilRig _recoil = new GunRecoilRig();
+        private Vector3 _freeAim;                 // degrees: pitch, yaw, roll of the gun inside its free-aim box
+        private float _lastViewYaw, _lastViewPitch;
+        private bool _hasLastView;
+        private Vector3 _sprintPos, _sprintRot, _sprintPosVel, _sprintRotVel;
+        private float _breath;
+        private const float FreeAimReturn = 14f;  // per second: the box empties while aiming
+        private const float BreathCycle = 2.9f, BreathAmount = 0.0018f, BreathAds = 0.2f; // How to Fish breathing: slow, smaller aimed
         private const float LaserRange = 80f;
         private const float ChargeOrbAhead = 0.06f, ChargeOrbNearer = 0.6f, ChargeOrbMin = 0.03f, ChargeOrbFull = 0.2f;
         private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
-        private Vector3 _kick, _kickVel;
+
         private float _ads;
 
         /// <summary>Local: how far the gun is raised to the eye (0 hip .. 1 aiming down sights).</summary>
@@ -158,7 +165,9 @@ namespace HowToHunt.Hunting
         private void OnEquipped(ToolDefinition tool)
         {
             _inspectStart = -10f;
-            _kick = _kickVel = Vector3.zero;
+            _recoil.Reset();
+            _freeAim = _sprintPos = _sprintRot = _sprintPosVel = _sprintRotVel = Vector3.zero;
+            _hasLastView = false;
             _heldPrey = null;
             _tool = tool;
             if (_shown != null) _shown.SetActive(false);
@@ -189,13 +198,14 @@ namespace HowToHunt.Hunting
             _inspectStart = -10f;
             if (tool.Archetype == ToolArchetype.Firearm)
             {
-                // The gun jumps in the hand first (the view follows loosely, see PlayerInputSampler.Kick).
-                float scale = HuntingCvars.RecoilScale.Value * (PlayerTools.LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
+                // How to Fish: the shot throws the recoil rig (the gun snaps back on springs) and, from the hip, also
+                // pushes the gun up and aside inside its free-aim box by the view kick (bullets follow the barrel).
+                float scale = HuntingCvars.RecoilScale.Value;
                 GunSetup gun = Loadouts.Local.Setup(tool);
-                _kickVel.x += gun.RecoilUp * KickImpulse * scale;
+                float kickDir = PlayerTools.LocalKickDir;
+                _recoil.Kick(gun.Handling, kickDir, PlayerTools.LocalAiming, scale);
+                if (!PlayerTools.LocalAiming) _freeAim += new Vector3(-gun.RecoilUp, kickDir * gun.RecoilSide, 0f) * scale;
                 _rig?.Shot();
-                _kickVel.y += Random.Range(-0.5f, 1f) * gun.RecoilSide * KickImpulse * scale;
-                _kickVel.z += KickBackImpulse * scale;
             }
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
             if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
@@ -263,6 +273,7 @@ namespace HowToHunt.Hunting
             // Tilt: roll into strafes, pitch with vertical speed; springy too.
             Vector3 localVel = ct.InverseTransformDirection(velocity);
             var tiltTarget = new Vector3(Mathf.Clamp(-velocity.y * 0.35f, -6f, 6f), 0f, Mathf.Clamp(-localVel.x * 0.9f, -7f, 7f));
+            if (gunHeld) tiltTarget.z = Mathf.Clamp(localVel.x / MovementCvars.Config.MaxSpeed, -1f, 1f) * Loadouts.Local.Setup(_tool).Handling.StrafeTilt;
             _tiltVel += ((tiltTarget - _tilt) * TiltStiffness - _tiltVel * TiltDamping) * dt;
             _tilt += _tiltVel * dt;
 
@@ -299,7 +310,7 @@ namespace HowToHunt.Hunting
             else if (_tool.Archetype == ToolArchetype.Firearm)
             {
                 GunPose(dt, out offset, out use);
-                _rig?.Update(PlayerTools.LocalReload, _tool.Cooldown, PlayerTools.LocalCharge);
+                _rig?.Update(PlayerTools.LocalReload, _tool.Cooldown, PlayerTools.LocalCharge, !PlayerTools.LocalReloadTactical);
             }
             else if (_tool.Archetype == ToolArchetype.Net)
             {
@@ -317,6 +328,11 @@ namespace HowToHunt.Hunting
             Vector3 grip = Shoulder + shoulder * (rest + offset - Shoulder);
             Vector3 position = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
             Quaternion rotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
+
+            // Free aim from the hip (How to Fish): turning drags the gun around a small box about the eye and shots push
+            // it up and aside in it; it stays there until you turn it back. Bullets leave along the barrel. Aiming down
+            // the sights centres it.
+            if (gunHeld) UpdateFreeAim(dt, ref position, ref rotation);
 
             // Inspect: bring it up and turn it over to show it off (any action cancels it).
             float it = (Time.time - _inspectStart) / InspectSeconds;
@@ -413,15 +429,31 @@ namespace HowToHunt.Hunting
         }
 
         /// <summary>
-        /// Gun in hand: the kick spring (shots push it up, aside and back; it springs home with a little overshoot), a
-        /// reload dip (tilted down and in while PlayerTools.LocalReload runs).
+        /// Gun in hand, How to Fish style: the recoil rig (thrown by shots, sprung back), the sprint pose, breathing,
+        /// and the reload's moves (tilt in, magazine out with a flick, the new one seated with a bump, and on an empty
+        /// gun a rack that jolts the whole gun before it settles).
         /// </summary>
         private void GunPose(float dt, out Vector3 offset, out Quaternion rotation)
         {
-            _kickVel += (-_kick * KickStiffness - _kickVel * KickDamping) * dt;
-            _kick += _kickVel * dt;
-            offset = new Vector3(0f, 0.004f * _kick.x, -_kick.z);
-            rotation = Quaternion.Euler(-_kick.x, _kick.y, 0f);
+            GunSetup setup = Loadouts.Local.Setup(_tool);
+            GunHandling h = setup.Handling;
+            _recoil.Update(dt, in h, PlayerTools.LocalAiming);
+            offset = _recoil.Position;
+            rotation = Quaternion.Euler(_recoil.Euler);
+
+            // Sprinting: the gun drops and turns away (eased like How to Fish's SmoothDamp).
+            MoveState s = PlayerMotor.Local.State;
+            bool sprinting = s.OnGround && !s.Ducked && KeyBindings.IsPressed(GameAction.Sprint) && PlayerMove.HorizontalSpeed(s.Velocity) > 1f
+                && !PlayerTools.LocalAiming && PlayerTools.LocalReload < 0f;
+            float sprintTime = Mathf.Max(0.01f, h.SprintSeconds);
+            _sprintPos = Vector3.SmoothDamp(_sprintPos, sprinting ? h.SprintPos : Vector3.zero, ref _sprintPosVel, sprintTime, Mathf.Infinity, dt);
+            _sprintRot = Vector3.SmoothDamp(_sprintRot, sprinting ? h.SprintRot : Vector3.zero, ref _sprintRotVel, sprintTime, Mathf.Infinity, dt);
+            offset += _sprintPos;
+            rotation *= Quaternion.Euler(_sprintRot);
+
+            // Breathing: a slow rise and fall, a fifth as much down the sights.
+            _breath = Mathf.Repeat(_breath + dt / BreathCycle, 1f);
+            offset.y += Mathf.Sin(_breath * Mathf.PI * 2f) * BreathAmount * (PlayerTools.LocalAiming ? BreathAds : 1f);
             // Charging a plasma weapon: braced in a little and rolled about its own barrel, so you watch the cannon open
             // while it keeps pointing where you aim (the shot leaves along the barrel). No yaw or pitch here.
             float charge = _tool != null && _tool.PlasmaOrb ? Smooth(PlayerTools.LocalCharge) : 0f;
@@ -433,10 +465,48 @@ namespace HowToHunt.Hunting
             float r = PlayerTools.LocalReload;
             if (r >= 0f)
             {
-                float w = Smooth(Mathf.Clamp01(r * 5f)) * Smooth(Mathf.Clamp01((1f - r) * 5f));
-                offset += new Vector3(-0.05f, -0.02f, -0.03f) * w; // brought in and tilted, still in view (the magazine comes out)
-                rotation *= Quaternion.Euler(14f * w, -20f * w, 28f * w + 5f * Mathf.Sin(r * Mathf.PI * 6f) * w);
+                // How to Fish's reload clips, as phases: tilt in (to 20 %), the old magazine flicked out (about 32 %),
+                // the new one slapped home (about 60 %), then on an empty gun the rack (about 82 %) jolts the whole gun
+                // forward and up before it settles back (from 88 %).
+                bool rack = !PlayerTools.LocalReloadTactical;
+                float hold = Smooth(Mathf.Clamp01(r / 0.2f)) * Smooth(Mathf.Clamp01((1f - r) / (rack ? 0.12f : 0.2f)));
+                float flick = Pulse(r, 0.32f, 0.08f), seat = Pulse(r, 0.6f, 0.07f), jolt = rack ? Pulse(r, 0.82f, 0.07f) : 0f;
+                offset += new Vector3(-0.05f, -0.02f, -0.03f) * hold
+                        + new Vector3(0.01f, 0.025f, -0.015f) * flick
+                        + new Vector3(0f, 0.03f, 0.008f) * seat
+                        + new Vector3(0f, 0.02f, 0.04f) * jolt;
+                rotation *= Quaternion.Euler(14f * hold - 14f * flick - 18f * seat - 16f * jolt, -20f * hold + 8f * flick, 28f * hold + 14f * flick - 6f * jolt);
             }
+        }
+
+        private void UpdateFreeAim(float dt, ref Vector3 position, ref Quaternion rotation)
+        {
+            PlayerMotor me = PlayerMotor.Local;
+            GunHandling h = Loadouts.Local.Setup(_tool).Handling;
+            if (!_hasLastView) { _lastViewYaw = me.ViewYaw; _lastViewPitch = me.ViewPitch; _hasLastView = true; }
+            float dYaw = Mathf.DeltaAngle(_lastViewYaw, me.ViewYaw), dPitch = me.ViewPitch - _lastViewPitch;
+            _lastViewYaw = me.ViewYaw;
+            _lastViewPitch = me.ViewPitch;
+            if (PlayerTools.LocalAiming || h.FreeAim.y <= 0f)
+            {
+                _freeAim = Vector3.Lerp(_freeAim, Vector3.zero, 1f - Mathf.Exp(-FreeAimReturn * dt));
+            }
+            else
+            {
+                _freeAim.x = Mathf.Clamp(_freeAim.x + dPitch * h.FreeAimSpeed, -h.FreeAim.x, h.FreeAim.x);
+                _freeAim.y = Mathf.Clamp(_freeAim.y + dYaw * h.FreeAimSpeed, -h.FreeAim.y, h.FreeAim.y);
+                _freeAim.z = -_freeAim.y / h.FreeAim.y * h.FreeAim.z; // rolls as it swings aside
+            }
+            Quaternion swing = Quaternion.Euler(_freeAim);
+            position = swing * position;
+            rotation = swing * rotation;
+        }
+
+        /// <summary>A quick smooth bump centred on <paramref name="at"/>, <paramref name="half"/> wide each side.</summary>
+        private static float Pulse(float t, float at, float half)
+        {
+            float x = 1f - Mathf.Abs(t - at) / half;
+            return x <= 0f ? 0f : Smooth(x);
         }
 
         // --- melee sweeps -----------------------------------------------------------------------------------

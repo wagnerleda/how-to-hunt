@@ -11,7 +11,8 @@ namespace HowToHunt.Hunting
         public static readonly FloatCvar DamageScale = new FloatCvar("sv_damage_scale", 1f, "Multiplies all tool damage (tests, sv_cheats 1).", Sv, 0f, 100f);
         public static readonly FloatCvar CrouchSight = new FloatCvar("sv_crouch_sight", 0.5f, "Prey spot crouching players at this fraction of their sight range.", Sv, 0f, 1f);
         public static readonly FloatCvar RecoilScale = new FloatCvar("sv_recoil_scale", 1f, "Multiplies every firearm's aim kick (0 = none).", Sv, 0f, 5f);
-        public static readonly FloatCvar AdsRecoil = new FloatCvar("sv_ads_recoil", 0.7f, "Recoil multiplier while aiming down sights.", Sv, 0f, 2f);
+        public static readonly FloatCvar AdsRecoil = new FloatCvar("sv_ads_recoil", 1f, "View kick multiplier while aiming down sights (How to Fish: 1, aiming steadies the gun, not the kick).", Sv, 0f, 2f);
+        public static readonly FloatCvar PushScale = new FloatCvar("sv_push_scale", 1f, "Multiplies every gun's shove on its shooter (0 = none).", Sv, 0f, 3f);
         public static readonly BoolCvar InfiniteMag = new BoolCvar("sv_infinite_mag", false, "Guns never need reloading (tests, sv_cheats 1).", Sv);
         public static readonly BoolCvar ForceAim = new BoolCvar("cl_force_aim", false, "Test: aim down sights as if Aim were held.", CvarFlags.None);
         public static readonly BoolCvar HitDebug = new BoolCvar("sv_hitdebug", false, "Host: log every tool use (dropped, missed, what it hit).", CvarFlags.None);
@@ -33,6 +34,7 @@ namespace HowToHunt.Hunting
             c.Register(CrouchSight);
             c.Register(RecoilScale);
             c.Register(AdsRecoil);
+            c.Register(PushScale);
             c.Register(InfiniteMag);
             c.Register(ForceAim);
         }

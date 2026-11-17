@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.uzi_stock
   _displayName: Uzi Folding Stock
-  _description: Recoil -30 %, a tighter spray.
+  _description: 'Braced on the shoulder: the gun kicks 30 % less and settles faster; a tighter spray.'
   Slot: 7
   Tools:
   - {fileID: 11400000, guid: 517dd1cd50c9df742a7e9201980b9584, type: 2}
   CostCoins: 450
   SortOrder: 202
   RecoilMultiplier: 0.7
+  KickMultiplier: 0.7
+  SpringMultiplier: 1.5
+  FreeAimMultiplier: 1
   SpreadMultiplier: 0.85
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 1

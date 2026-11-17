@@ -132,10 +132,11 @@ namespace HowToHunt.Editor
                 t.Tier = 2;
                 t.Damage = 25f;
                 t.Knockback = 6f;
-                // Severe kick (owner, Phase 3): 7 degrees up per shot, about half settles back, the rest you pull down.
-                t.RecoilUp = 7f;
-                t.RecoilSide = 2.2f;
-                t.RecoilRecover = 0.5f;
+                // How to Fish handling: the view kicks and stays (you pull it down); the gun snaps back on springs.
+                t.RecoilUp = 5f;
+                t.RecoilSide = 2.5f;
+                t.RecoilRecover = 0f;
+                t.Handling = Handling.Pistol();
                 // Phase 4: a real six-shooter. Bullets fly at 360 m/s with a little drop, lose damage past 25 m, and
                 // spray when you shoot on the run; aim down the sights to tighten it.
                 t.MagazineSize = 6;
@@ -186,9 +187,10 @@ namespace HowToHunt.Editor
                 t.Slot = 4;
                 t.StartOwned = false; // no shop yet: sv_alltools 1 (cheats) until the workshop and later areas (Phase 5)
                 t.Knockback = 9f;
-                t.RecoilUp = 10f;
-                t.RecoilSide = 1.2f;
-                t.RecoilRecover = 0.65f;
+                t.RecoilUp = 5f;
+                t.RecoilSide = 5f;
+                t.RecoilRecover = 0f;
+                t.Handling = Handling.Sniper();
                 t.MagazineSize = 5;
                 t.ReloadSeconds = 2.8f;
                 t.BulletSpeed = 820f;
@@ -275,7 +277,7 @@ namespace HowToHunt.Editor
             ToolDefinition glock = Gun("glock", "Glock 19", "Light, quick and accurate. Fifteen rounds.", 4, "Glock", t =>
             {
                 t.Tier = 2; t.Damage = 16f; t.Range = 120f; t.Cooldown = 0.15f; t.Knockback = 3f;
-                t.RecoilUp = 3.5f; t.RecoilSide = 1.2f; t.RecoilRecover = 0.55f;
+                t.RecoilUp = 4f; t.RecoilSide = 2f; t.RecoilRecover = 0f; t.Handling = Handling.Pistol();
                 t.MagazineSize = 15; t.ReloadSeconds = 1.5f; t.BulletSpeed = 375f;
                 t.FalloffStart = 20f; t.FalloffEnd = 55f; t.MinDamageFraction = 0.5f;
                 t.SpreadDegrees = 1f; t.MoveSpreadPerMps = 0.3f; t.MaxSpreadDegrees = 6f; t.AdsZoom = 1.15f; t.Weight = 0;
@@ -284,7 +286,7 @@ namespace HowToHunt.Editor
             ToolDefinition uzi = Gun("uzi", "Uzi", "Hold the trigger: 800 rounds a minute, and it climbs.", 5, "Uzi", t =>
             {
                 t.Tier = 2; t.Damage = 8f; t.Range = 100f; t.Cooldown = 0.075f; t.Automatic = true; t.Knockback = 1.5f;
-                t.RecoilUp = 1.6f; t.RecoilSide = 1.2f; t.RecoilRecover = 0.35f;
+                t.RecoilUp = 3f; t.RecoilSide = 5f; t.RecoilRecover = 0f; t.Handling = Handling.Smg();
                 t.MagazineSize = 25; t.ReloadSeconds = 1.9f; t.BulletSpeed = 330f;
                 t.FalloffStart = 12f; t.FalloffEnd = 40f; t.MinDamageFraction = 0.4f;
                 t.SpreadDegrees = 2.2f; t.MoveSpreadPerMps = 0.5f; t.MaxSpreadDegrees = 9f; t.AdsZoom = 1.15f; t.Weight = 0;
@@ -293,7 +295,7 @@ namespace HowToHunt.Editor
             ToolDefinition sawedOff = Gun("sawedoff", "Sawed-Off", "Eight pellets per barrel, two barrels. Devastating up close, useless far away.", 6, "SawedOff", t =>
             {
                 t.Tier = 2; t.Damage = 6f; t.Range = 60f; t.Cooldown = 0.35f; t.Pellets = 8; t.PelletSpreadDegrees = 6f; t.Knockback = 2f;
-                t.RecoilUp = 10f; t.RecoilSide = 2.5f; t.RecoilRecover = 0.5f;
+                t.RecoilUp = 6f; t.RecoilSide = 6f; t.RecoilRecover = 0f; t.Handling = Handling.Shotgun();
                 t.MagazineSize = 2; t.ReloadSeconds = 2.4f; t.BulletSpeed = 300f;
                 t.FalloffStart = 6f; t.FalloffEnd = 22f; t.MinDamageFraction = 0.2f;
                 t.SpreadDegrees = 0.5f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.1f; t.Weight = 1;
@@ -302,7 +304,7 @@ namespace HowToHunt.Editor
             ToolDefinition handCannon = Gun("handcannon", "Hand Cannon", "An 1851 navy revolver loaded like a cannon. Massive kick.", 7, "HandCannon", t =>
             {
                 t.Tier = 3; t.Damage = 45f; t.Range = 150f; t.Cooldown = 0.6f; t.Knockback = 8f;
-                t.RecoilUp = 12f; t.RecoilSide = 3f; t.RecoilRecover = 0.4f;
+                t.RecoilUp = 7f; t.RecoilSide = 3f; t.RecoilRecover = 0f; t.Handling = Handling.HandCannon();
                 t.MagazineSize = 6; t.ReloadSeconds = 3f; t.BulletSpeed = 420f;
                 t.FalloffStart = 30f; t.FalloffEnd = 80f; t.MinDamageFraction = 0.6f;
                 t.SpreadDegrees = 1f; t.MoveSpreadPerMps = 0.45f; t.MaxSpreadDegrees = 7f; t.AdsZoom = 1.2f; t.Weight = 1;
@@ -311,7 +313,7 @@ namespace HowToHunt.Editor
             ToolDefinition heavyRifle = Gun("heavyrifle", "Heavy Assault Rifle", "Full-auto battle rifle: hits hard and far, slows you down.", 8, "HeavyRifle", t =>
             {
                 t.Tier = 3; t.Damage = 16f; t.Range = 250f; t.Cooldown = 0.1f; t.Automatic = true; t.Knockback = 4f;
-                t.RecoilUp = 2.6f; t.RecoilSide = 1.4f; t.RecoilRecover = 0.4f;
+                t.RecoilUp = 3f; t.RecoilSide = 1.5f; t.RecoilRecover = 0f; t.Handling = Handling.Rifle();
                 t.MagazineSize = 20; t.ReloadSeconds = 2.5f; t.BulletSpeed = 700f;
                 t.FalloffStart = 50f; t.FalloffEnd = 150f; t.MinDamageFraction = 0.6f;
                 t.SpreadDegrees = 1.6f; t.MoveSpreadPerMps = 0.45f; t.MaxSpreadDegrees = 8f; t.AdsZoom = 1.4f; t.Weight = 2;
@@ -320,7 +322,7 @@ namespace HowToHunt.Editor
             ToolDefinition intervention = Gun("intervention", "Intervention", "A .408 anti-materiel rifle. One shot, very heavy, deadly from far away.", 9, "Intervention", t =>
             {
                 t.Tier = 4; t.Damage = 120f; t.Range = 500f; t.Cooldown = 1.4f; t.Knockback = 12f;
-                t.RecoilUp = 14f; t.RecoilSide = 2f; t.RecoilRecover = 0.6f;
+                t.RecoilUp = 6f; t.RecoilSide = 5f; t.RecoilRecover = 0f; t.Handling = Handling.Sniper(push: 1.5f);
                 t.MagazineSize = 5; t.ReloadSeconds = 3.4f; t.BulletSpeed = 900f; t.BulletGravity = 6f;
                 t.FalloffStart = 200f; t.FalloffEnd = 500f; t.MinDamageFraction = 0.8f;
                 t.SpreadDegrees = 2f; t.MoveSpreadPerMps = 0.6f; t.MaxSpreadDegrees = 12f; t.AdsSpreadFactor = 0.02f;
@@ -331,7 +333,7 @@ namespace HowToHunt.Editor
             ToolDefinition grenadeLauncher = Gun("grenadelauncher", "GL-37", "Lobs a grenade that explodes on impact. Ruins whatever it does not scare away.", 9, "GrenadeLauncher", t =>
             {
                 t.Tier = 4; t.Damage = 90f; t.Range = 200f; t.Cooldown = 0.9f; t.ExplosionRadius = 4.5f; t.Knockback = 10f;
-                t.RecoilUp = 9f; t.RecoilSide = 1.5f; t.RecoilRecover = 0.5f;
+                t.RecoilUp = 5f; t.RecoilSide = 4f; t.RecoilRecover = 0f; t.Handling = Handling.Shotgun(push: 2f);
                 t.MagazineSize = 1; t.ReloadSeconds = 2.2f; t.BulletSpeed = 45f; t.BulletGravity = 9.8f;
                 t.FalloffStart = 200f; t.FalloffEnd = 400f; t.MinDamageFraction = 1f;
                 t.SpreadDegrees = 0.6f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.2f; t.Weight = 2;
@@ -342,7 +344,7 @@ namespace HowToHunt.Editor
                 t.Tier = 5; t.Damage = 120f; t.Range = 150f; t.Cooldown = 0.6f; t.Knockback = 12f;
                 t.ChargeSeconds = 1.1f; t.PlasmaOrb = true; t.ExplosionRadius = 4f;
                 t.ClusterCount = 7; t.ClusterRadius = 2.3f; t.ClusterDamage = 45f;
-                t.RecoilUp = 6f; t.RecoilSide = 1f; t.RecoilRecover = 0.6f;
+                t.RecoilUp = 8f; t.RecoilSide = 5f; t.RecoilRecover = 0f; t.Handling = Handling.Shotgun(push: 6f);
                 t.MagazineSize = 1; t.ReloadSeconds = 3f; t.BulletSpeed = 32f; t.BulletGravity = 5f;
                 t.FalloffStart = 150f; t.FalloffEnd = 300f; t.MinDamageFraction = 1f;
                 t.SpreadDegrees = 0.4f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.3f; t.Weight = 2;
@@ -424,10 +426,10 @@ namespace HowToHunt.Editor
             // --- Phase 5: the Gunsmith's attachments (expensive: a gun becomes a killing machine of its own) -----
             GeneratedAssets.EnsureFolder(ContentDir + "/Attachments");
             GameObject AttachmentModel(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"{GeneratedAssets.AttachmentsDir}/{name}.prefab");
-            Attach("muzzle_brake", "Muzzle Brake", "Tames the kick (recoil -25 %). A little louder.", AttachmentSlot.Muzzle, 450, 10, a =>
+            Attach("muzzle_brake", "Muzzle Brake", "View kick -20 %. A little louder.", AttachmentSlot.Muzzle, 450, 10, a =>
             {
                 a.Tools = new List<ToolDefinition> { revolver, glock, sawedOff, handCannon, intervention };
-                a.RecoilMultiplier = 0.75f;
+                a.RecoilMultiplier = 0.8f;
                 a.NoiseMultiplier = 1.15f;
                 a.Visual = AttachmentModel("MuzzleBrake");
             });
@@ -443,15 +445,17 @@ namespace HowToHunt.Editor
             Attach("laser", "Laser Sight", "Steadier from the hip and on the move.", AttachmentSlot.Underbarrel, 500, 30, a =>
             {
                 a.Laser = true;
+                a.FreeAimMultiplier = 0.7f; // you see where the gun points, so it wanders less
                 a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, uzi };
                 a.SpreadMultiplier = 0.6f;
                 a.MoveSpreadMultiplier = 0.75f;
                 a.Visual = AttachmentModel("Laser");
             });
-            Attach("foregrip", "Foregrip", "Recoil -20 %, tighter down the scope.", AttachmentSlot.Underbarrel, 450, 31, a =>
+            Attach("foregrip", "Foregrip", "The gun kicks 20 % less in the hand and wanders less from the hip; tighter down the sights.", AttachmentSlot.Underbarrel, 450, 31, a =>
             {
                 a.Tools = new List<ToolDefinition> { heavyRifle, grenadeLauncher };
-                a.RecoilMultiplier = 0.8f;
+                a.KickMultiplier = 0.8f;
+                a.FreeAimMultiplier = 0.6f;
                 a.AdsSpreadMultiplier = 0.8f;
                 a.Visual = AttachmentModel("Foregrip");
             });
@@ -490,10 +494,11 @@ namespace HowToHunt.Editor
                 ViewmodelFit sight = owned != null ? owned.GetComponent<ViewmodelFit>() : null;
                 if (sight != null) a.SightLift = sight.Sight.y; // the eye lines up with the reticle
             });
-            Attach("padded_stock", "Padded Stock", "Recoil -30 %.", AttachmentSlot.Stock, 550, 70, a =>
+            Attach("padded_stock", "Padded Stock", "The gun kicks 30 % less in the hand and settles faster.", AttachmentSlot.Stock, 550, 70, a =>
             {
                 a.Tools = new List<ToolDefinition> { sawedOff, grenadeLauncher };
-                a.RecoilMultiplier = 0.7f;
+                a.KickMultiplier = 0.7f;
+                a.SpringMultiplier = 1.5f;
                 a.Visual = AttachmentModel("PaddedStock");
             });
 
@@ -508,11 +513,11 @@ namespace HowToHunt.Editor
                     fx(a);
                 });
             Builtin("uzi_suppressor", "Uzi Suppressor", "Prey hear the shot from a third as far.", AttachmentSlot.Muzzle, 650, 200, uzi, "Body14", a => { a.NoiseMultiplier = 0.35f; a.RangeMultiplier = 0.9f; a.RecoilMultiplier = 0.9f; });
-            Builtin("uzi_foregrip", "Uzi Foregrip", "A front grip: recoil -20 %, steadier on the move.", AttachmentSlot.Underbarrel, 400, 201, uzi, "Body19", a => { a.RecoilMultiplier = 0.8f; a.MoveSpreadMultiplier = 0.85f; });
-            Builtin("uzi_stock", "Uzi Folding Stock", "Recoil -30 %, a tighter spray.", AttachmentSlot.Stock, 450, 202, uzi, "Body15;Body21", a => { a.RecoilMultiplier = 0.7f; a.SpreadMultiplier = 0.85f; });
+            Builtin("uzi_foregrip", "Uzi Foregrip", "A front grip: the gun kicks 20 % less in the hand and wanders less from the hip.", AttachmentSlot.Underbarrel, 400, 201, uzi, "Body19", a => { a.KickMultiplier = 0.8f; a.FreeAimMultiplier = 0.6f; a.MoveSpreadMultiplier = 0.85f; });
+            Builtin("uzi_stock", "Uzi Folding Stock", "Braced on the shoulder: the gun kicks 30 % less and settles faster; a tighter spray.", AttachmentSlot.Stock, 450, 202, uzi, "Body15;Body21", a => { a.KickMultiplier = 0.7f; a.SpringMultiplier = 1.5f; a.SpreadMultiplier = 0.85f; });
             Builtin("scout_suppressor", "Scout Suppressor", "Prey barely hear it: a third of the range.", AttachmentSlot.Muzzle, 900, 220, scout, "suppressor ", a => { a.NoiseMultiplier = 0.3f; a.RangeMultiplier = 0.95f; });
-            Builtin("scout_buttpad", "Scout Butt Pad", "Recoil -25 %.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.RecoilMultiplier = 0.75f; });
-            Builtin("intervention_bipod", "Intervention Bipod", "Recoil -30 %, half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low", a => { a.RecoilMultiplier = 0.7f; a.AdsSpreadMultiplier = 0.5f; });
+            Builtin("scout_buttpad", "Scout Butt Pad", "The gun kicks 25 % less in the hand and settles faster.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.KickMultiplier = 0.75f; a.SpringMultiplier = 1.3f; });
+            Builtin("intervention_bipod", "Intervention Bipod", "Braced: the gun kicks half as much in the hand; half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low", a => { a.KickMultiplier = 0.5f; a.AdsSpreadMultiplier = 0.5f; });
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))

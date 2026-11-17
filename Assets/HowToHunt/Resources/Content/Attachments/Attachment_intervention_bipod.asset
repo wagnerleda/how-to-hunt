@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.AttachmentDefinition
   _key: attachment.intervention_bipod
   _displayName: Intervention Bipod
-  _description: Recoil -30 %, half the spread down the scope.
+  _description: 'Braced: the gun kicks half as much in the hand; half the spread down the scope.'
   Slot: 2
   Tools:
   - {fileID: 11400000, guid: b65affc065fbe3045b95c7199b46e687, type: 2}
   CostCoins: 800
   SortOrder: 230
   RecoilMultiplier: 0.7
+  KickMultiplier: 0.5
+  SpringMultiplier: 1
+  FreeAimMultiplier: 1
   SpreadMultiplier: 1
   MoveSpreadMultiplier: 1
   AdsSpreadMultiplier: 0.5
