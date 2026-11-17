@@ -31,6 +31,8 @@ Every asset and third-party package is listed here with its source and license. 
 | Impact Sounds, Interface Sounds, RPG Audio (selected clips) | Kenney, kenney.nl | CC0 1.0 (license files kept) | `Resources/Audio/Kenney`: footsteps, cloth, impacts, coins, UI |
 | Gore, flame, tracer, dust materials | Generated (`GeneratedAssets.cs`) | Ours | Cube particles, pooled gibs and splats |
 | Wedge / SurfPrism meshes | Procedural (`ProceduralMeshes.cs`) | Ours | Level brushes |
+| Pine trees, forest terrain | Procedural (`GrayboxSceneBuilder.Forest.cs`) | Ours | Low-poly conifers in vertex colours |
+| Pine Deer | Modelled in Blender for this game (`Art/Source/Deer.blend`) | Ours | `Art/Models/Deer/Deer.fbx`, 332 faces |
 | Palette materials `M_*` | Generated (`Palette.cs`) | Ours | Art direction A |
 | Scout rifle, attachment models | Generated from primitives (`GeneratedAssets.cs`) | Ours | Stand-ins until the owner's gun assets land |
 

@@ -53,9 +53,10 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 - A gun workshop (unlocked later in the game) sells expensive attachments: muzzle brakes, suppressors, stocks, grips, lasers, sights and scopes, magazine sizes, ammo types. Each changes weapon stats (recoil, spread, range, damage falloff, noise, reload, magazine).
 - Customization screen per weapon; each gun can become a killing machine of its own. Default recoil is high, which is what makes attachments worth it.
 
-## Phase 6: camp life and quests
+## Phase 6: camp life, quests, second map (done 2026-11-17, awaiting the owner's play test)
 - NPCs at the stalls (trader, outfitter, gun workshop) with dialogue boxes, instead of empty counters.
 - NPCs guide through quests; the first quest chain ends by opening the east clearing to the next zone.
+- Done with it: player health, downed and revive, PvP (host toggle), the Pine Forest reached by a surf route, the Pine Deer, Ash's trading post with forest prices, a pad back to the Plains camp.
 
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
@@ -63,5 +64,5 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 - New prey per zone, including rare prey (wary, valuable).
 
 ## Still planned for M4 (from the original brief)
-- A second map besides the Plains (smaller, per the earlier feedback), to prove areas, travel between them and per-area economy (ExpectedSale, prices) work. Not tested yet.
+- ~~A second map~~: done in Phase 6 (the Pine Forest).
 Player health, downed/revive, PvP damage, menus moved to uGUI, ambience sounds, death drop of unsold catch.
