@@ -26,6 +26,10 @@ namespace HowToHunt.Hunting
         private readonly LineRenderer[] _lines = new LineRenderer[BulletPool];
         private readonly bool[] _live = new bool[BulletPool];
         private readonly bool[] _explosive = new bool[BulletPool]; // the host announces the blast; no bullet impact
+        private readonly float[] _orbSize = new float[BulletPool];   // plasma orb size (0 = a plain bullet)
+        private readonly Transform[] _orbs = new Transform[BulletPool];
+        private MaterialPropertyBlock _orbColor;
+        private const float PlasmaOrbSize = 0.3f, BombletSize = 0.14f;
         private int _nextBullet;
 
         private readonly Transform[] _marks = new Transform[MarkPool];
@@ -122,15 +126,56 @@ namespace HowToHunt.Hunting
         /// <summary>A shot left this muzzle in this direction: fly its tracer (with the gun's speed and drop).</summary>
         public static void Fire(ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
-            if (_instance == null || tool == null) return;
+            if (tool == null) return;
+            FireWith(tool.Ballistics, origin, dir, tool.Range, tool.ExplosionRadius > 0f, tool.PlasmaOrb ? PlasmaOrbSize : 0f);
+        }
+
+        /// <summary>Plasma rounds are glowing low-poly orbs that pulse as they fly.</summary>
+        private void ShowOrb(int i, Vector3 at)
+        {
+            if (_orbSize[i] <= 0f) { if (_orbs[i] != null) _orbs[i].gameObject.SetActive(false); return; }
+            if (_orbs[i] == null)
+            {
+                GameObject g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(g.GetComponent<Collider>());
+                g.name = "Plasma Orb";
+                g.transform.SetParent(transform, false);
+                var r = g.GetComponent<MeshRenderer>();
+                Material fire = Resources.Load<Material>("FX/M_Fire");
+                if (fire != null) r.sharedMaterial = fire;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _orbColor ??= new MaterialPropertyBlock();
+                _orbColor.SetColor("_BaseColor", new Color(0.45f, 1f, 1f));
+                r.SetPropertyBlock(_orbColor);
+                _orbs[i] = g.transform;
+            }
+            _orbs[i].position = at;
+            _orbs[i].localScale = Vector3.one * _orbSize[i];
+            _orbs[i].gameObject.SetActive(true);
+        }
+
+        /// <summary>A cluster round burst: its orbs fly the same fan as the host's (from the shot seed).</summary>
+        public static void Cluster(ToolDefinition tool, Vector3 point, ushort seed)
+        {
+            if (tool == null) return;
+            Vector3 from = point + Vector3.up * 0.3f;
+            for (int i = 0; i < tool.ClusterCount; i++)
+                FireWith(Hunting.Cluster.Ballistics, from, Hunting.Cluster.Dir(seed, i).ToUnity(), Hunting.Cluster.Range(i), true, tool.PlasmaOrb ? BombletSize : 0f);
+        }
+
+        private static void FireWith(GunBallistics g, Vector3 origin, Vector3 dir, float range, bool explosive, float orb)
+        {
+            if (_instance == null) return;
             BulletFx f = _instance;
             int i = f._nextBullet;
             f._nextBullet = (i + 1) % BulletPool;
-            f._ballistics[i] = tool.Ballistics;
-            f._bullets[i] = GunMath.Fire(origin.ToSim(), dir.ToSim(), f._ballistics[i], tool.Range);
+            f._ballistics[i] = g;
+            f._bullets[i] = GunMath.Fire(origin.ToSim(), dir.ToSim(), g, range);
             f._live[i] = true;
-            f._explosive[i] = tool.ExplosionRadius > 0f;
+            f._explosive[i] = explosive;
+            f._orbSize[i] = orb;
             f._lines[i].enabled = false; // shown from the first step (no zero-length line)
+            f.ShowOrb(i, origin);
         }
 
         private void Update()
@@ -159,10 +204,16 @@ namespace HowToHunt.Hunting
                 lr.SetPosition(0, head - d.ToUnity() * streak);
                 lr.SetPosition(1, head);
                 lr.enabled = true;
+                if (_orbs[i] != null && _orbSize[i] > 0f)
+                {
+                    _orbs[i].position = head;
+                    _orbs[i].localScale = Vector3.one * (_orbSize[i] * (1f + 0.15f * Mathf.Sin(Time.time * 40f + i)));
+                }
                 if (end)
                 {
                     _live[i] = false;
                     lr.enabled = false;
+                    if (_orbs[i] != null) _orbs[i].gameObject.SetActive(false);
                 }
             }
 
@@ -175,11 +226,12 @@ namespace HowToHunt.Hunting
         }
 
         /// <summary>An explosive round went off: a burst of dust and debris, a boom, and a shake when it's close.</summary>
-        public static void Explosion(Vector3 point, float radius)
+        public static void Explosion(Vector3 point, float radius, bool plasma = false)
         {
             if (_instance == null) return;
             BulletFx f = _instance;
-            int count = Mathf.Clamp(Mathf.RoundToInt(radius * 14f), 20, 120);
+            ExplosionFx.Play(point, radius, plasma); // fire, smoke and flash
+            int count = Mathf.Clamp(Mathf.RoundToInt(radius * 6f), 8, 50); // plus thrown dust and grit
             for (int k = 0; k < count; k++)
             {
                 Vector3 dir = Random.insideUnitSphere;

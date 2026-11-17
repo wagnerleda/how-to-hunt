@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 574216533261415406}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.005, y: -0.035, z: -0.01}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: -0.005, z: 0}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6221709973006692982}
@@ -117,8 +117,8 @@ Transform:
   m_GameObject: {fileID: 2241390394529470096}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.026545461, z: 0.3575}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: -0.011545461, z: 0.3575}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6221709973006692982}
@@ -260,7 +260,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ViewmodelFit
   Muzzle: {x: 0, y: 0.05611615, z: 0.65}
-  Sight: {x: 0, y: 0.15290906, z: 0.05}
+  Sight: {x: 0, y: 0.15190907, z: 0.06863637}
+  SightFront: {x: 0, y: 0.12554544, z: 0.41618183}
   Anchors:
   - Slot: 0
     Position: {x: 0, y: 0.05611615, z: 0.65}
@@ -280,6 +281,13 @@ MonoBehaviour:
   - Slot: 7
     Position: {x: 0, y: 0.070272714, z: -0.35}
     Euler: {x: 0, y: 0, z: 0}
+  Parts:
+  - Name: LOD0 | PORT LEAF ASSEMBLY
+    Kind: 6
+    Pivot: {x: 0.04046139, y: 0.07118181, z: 0.22090906}
+  - Name: LOD0 | STARBOARD LEAF ASSEMBLY
+    Kind: 7
+    Pivot: {x: -0.04046143, y: 0.0711818, z: 0.2209091}
 --- !u!1001 &910486518058066831
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -16,7 +16,9 @@ MonoBehaviour:
   _displayName: Padded Stock
   _description: Recoil -30 %.
   Slot: 7
-  Tools: []
+  Tools:
+  - {fileID: 11400000, guid: 34d12b0b3b96726458f787b0b8014c2c, type: 2}
+  - {fileID: 11400000, guid: f21d553f085c0fd46bf054d5b8871bf0, type: 2}
   CostCoins: 550
   SortOrder: 70
   RecoilMultiplier: 0.7
@@ -33,4 +35,6 @@ MonoBehaviour:
   ScopeOverlay: 0
   SightLift: 0.03
   WeightAdd: 0
+  PartNames: []
+  Laser: 0
   Visual: {fileID: 5706586686688689306, guid: 9e8a88a53c31ad5498be4e41f938d5ea, type: 3}

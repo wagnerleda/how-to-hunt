@@ -168,6 +168,7 @@ namespace HowToHunt.Hunting
             if (tool == null) { LocalAiming = false; return; }
             LocalAiming = gun && (KeyBindings.IsPressed(GameAction.Aim) || HuntingCvars.ForceAim.Value) && LocalReload < 0f && LocalThrowCharge <= 0f;
             if (gun && KeyBindings.WasPressedThisFrame(GameAction.Reload)) StartReload(tool);
+            if (gun && tool.ChargeSeconds > 0f) { ChargeGun(tool); return; }
 
             bool trigger = gun && !tool.Automatic ? KeyBindings.WasPressedThisFrame(GameAction.Fire) : KeyBindings.IsPressed(GameAction.Fire);
             if (!trigger || Time.time < _cooldownUntil[_equipped] || LocalThrowCharge > 0f) return;
@@ -216,6 +217,7 @@ namespace HowToHunt.Hunting
             PlayerInputSampler.LoadLevel = tool == null ? 0 : gun ? Gun(tool).Weight : tool.Weight;
             if (_equipped != _sentHeld) { _sentHeld = _equipped; CmdHeld((short)_equipped); }
             MovementHud.HideCrosshair = gun || LocalThrowCharge > 0f; // guns aim by the barrel; a charging throw shows its ring instead
+            if (!gun || tool.ChargeSeconds <= 0f) LocalCharge = 0f;
             if (!gun) LocalAiming = false;
         }
 
@@ -230,6 +232,29 @@ namespace HowToHunt.Hunting
             else Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
             LocalReloadStarted?.Invoke(tool);
             CmdReload((byte)_equipped);
+        }
+
+        /// <summary>Local: how charged the held charge weapon is (0..1; the Gunlance opens and its orb grows).</summary>
+        public static float LocalCharge { get; private set; }
+
+        /// <summary>Charge weapons: hold Fire to charge; release when full to fire, earlier to cancel.</summary>
+        private void ChargeGun(ToolDefinition tool)
+        {
+            bool empty = AmmoOf(_equipped, tool) <= 0 && !HuntingCvars.InfiniteMag.Value;
+            if (LocalReload >= 0f || Time.time < _cooldownUntil[_equipped]) { LocalCharge = 0f; return; }
+            if (empty)
+            {
+                LocalCharge = 0f;
+                if (KeyBindings.WasPressedThisFrame(GameAction.Fire)) StartReload(tool);
+                return;
+            }
+            if (KeyBindings.IsPressed(GameAction.Fire))
+            {
+                LocalCharge = Mathf.Min(1f, LocalCharge + Time.deltaTime / tool.ChargeSeconds);
+                return;
+            }
+            if (LocalCharge >= 1f) FireGun(tool);
+            LocalCharge = 0f;
         }
 
         private void FireGun(ToolDefinition tool)
@@ -347,7 +372,7 @@ namespace HowToHunt.Hunting
                 for (int p = 0; p < pellets; p++)
                 {
                     Vector3 d = pellets > 1 ? GunMath.PelletDir(dir.ToSim(), tool.PelletSpreadDegrees, seed, p).ToUnity() : dir;
-                    var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), d.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = d };
+                    var hb = new HostBullet { Tool = tool, Stats = stats, Ballistics = g, Body = GunMath.Fire(origin.ToSim(), d.ToSim(), g, range), Tick = t, PreyLag = preyLag, Start = origin, Dir = d, Radius = tool.ExplosionRadius, Seed = seed };
                     if (StepBullet(ref hb, (float)TimeManager.TickDelta)) _bullets.Add(hb);
                 }
                 return;
@@ -401,6 +426,9 @@ namespace HowToHunt.Hunting
             public Bullet Body;
             public double Tick;     // rewound tick the next segment is checked at (what the shooter saw then)
             public double PreyLag;  // extra rewind for prey (PreyClock)
+            public float Radius;    // explosive: blast radius (0 = a plain bullet)
+            public bool Bomblet;    // a cluster orb (does not split again)
+            public ushort Seed;
             public Vector3 Start, Dir;
         }
 
@@ -441,7 +469,7 @@ namespace HowToHunt.Hunting
                 Vector3 f = from.ToUnity();
                 ToolResolver.PreyLag = hb.PreyLag;
                 ToolResolver.Target target = ToolResolver.Find(hb.Tool, length, f, d.ToUnity(), hb.Tick);
-                if (target.Kind != ToolResolver.TargetKind.None && hb.Tool.ExplosionRadius > 0f)
+                if (target.Kind != ToolResolver.TargetKind.None && hb.Radius > 0f)
                 {
                     Explode(hb, target.Point);
                     return false;
@@ -461,7 +489,7 @@ namespace HowToHunt.Hunting
             }
             if (hb.Body.Done)
             {
-                if (hb.Tool.ExplosionRadius > 0f) Explode(hb, hb.Body.Position.ToUnity()); // airburst at the end of its range
+                if (hb.Radius > 0f) Explode(hb, hb.Body.Position.ToUnity()); // airburst at the end of its range (bomblets: their fuse)
                 else HostToolReached?.Invoke(hb.Tool, hb.Start, hb.Dir, hb.Body.Travelled);
                 return false;
             }
@@ -474,7 +502,7 @@ namespace HowToHunt.Hunting
 
         private void Explode(HostBullet hb, Vector3 point)
         {
-            float radius = hb.Tool.ExplosionRadius;
+            float radius = hb.Radius;
             float rewound = (float)(TimeManager.Tick - hb.Tick);
             double tick = hb.Tick - hb.PreyLag;
             var prey = PreyWorld.All;
@@ -507,11 +535,36 @@ namespace HowToHunt.Hunting
             }
             HostExplosion?.Invoke(point, radius, hb.Tool.Knockback);
             PreyWorld.HostGunshot(point, 1.5f); // a blast scares everything around
-            RpcExplosion(point, radius);
+            RpcExplosion(point, radius, hb.Tool.PlasmaOrb);
+            // Cluster rounds burst into smaller explosive orbs (the same ones on every machine, from the shot seed).
+            if (!hb.Bomblet && hb.Tool.ClusterCount > 0)
+            {
+                Vector3 from = point + Vector3.up * 0.3f;
+                for (int i = 0; i < hb.Tool.ClusterCount; i++)
+                {
+                    Vec3 dir = Cluster.Dir(hb.Seed, i);
+                    var b = new HostBullet
+                    {
+                        Tool = hb.Tool, Stats = hb.Stats, Ballistics = Cluster.Ballistics, Tick = hb.Tick, PreyLag = hb.PreyLag,
+                        Body = GunMath.Fire(from.ToSim(), dir, Cluster.Ballistics, Cluster.Range(i)), Start = from, Dir = dir.ToUnity(),
+                        Radius = hb.Tool.ClusterRadius, Bomblet = true, Seed = hb.Seed,
+                    };
+                    b.Stats.Damage = hb.Tool.ClusterDamage;
+                    _bullets.Add(b);
+                }
+                RpcCluster((byte)Cluster.ToolIndex(hb.Tool), point, hb.Seed);
+            }
         }
 
         [ObserversRpc]
-        private void RpcExplosion(Vector3 point, float radius) => BulletFx.Explosion(point, radius);
+        private void RpcExplosion(Vector3 point, float radius, bool plasma) => BulletFx.Explosion(point, radius, plasma);
+
+        [ObserversRpc]
+        private void RpcCluster(byte toolIndex, Vector3 point, ushort seed)
+        {
+            var tools = Loadouts.AllTools;
+            if (toolIndex < tools.Count) BulletFx.Cluster(tools[toolIndex], point, seed);
+        }
 
         /// <summary>Host: spend a round of that gun's magazine (false: empty or mid-reload).</summary>
         private bool HostTakeRound(int index, ToolDefinition tool)

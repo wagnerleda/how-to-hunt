@@ -227,6 +227,7 @@ namespace HowToHunt.Editor
                 if (fit == null) return;
                 t.MuzzleOffset = fit.Muzzle;
                 t.SightOffset = fit.Sight;
+                t.SightFront = fit.SightFront;
                 t.AttachmentAnchors = new List<AttachmentAnchor>(fit.Anchors);
             }
             ToolDefinition Gun(string id, string name, string description, int slot, string prefab, System.Action<ToolDefinition> stats) =>
@@ -241,6 +242,9 @@ namespace HowToHunt.Editor
                     t.Automatic = false;
                     t.Pellets = 1;
                     t.ExplosionRadius = 0f;
+                    t.ChargeSeconds = 0f;
+                    t.PlasmaOrb = false;
+                    t.ClusterCount = 0;
                     t.ScopeOverlay = false;
                     t.AdsSpreadFactor = 0.3f;
                     t.BulletGravity = 4f;
@@ -333,13 +337,15 @@ namespace HowToHunt.Editor
                 t.SpreadDegrees = 0.6f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.2f; t.Weight = 2;
             });
             GunsmithSells(grenadeLauncher, 2500, 170);
-            ToolDefinition gunlance = Gun("gunlance", "Gunlance", "Something not from around here. Near-instant bolts that do not drop.", 9, "Gunlance", t =>
+            ToolDefinition gunlance = Gun("gunlance", "Gunlance", "Endgame. Hold Fire to charge a plasma orb, release to throw it: it bursts into seven smaller explosive orbs. One orb per charge.", 9, "Gunlance", t =>
             {
-                t.Tier = 4; t.Damage = 30f; t.Range = 300f; t.Cooldown = 0.25f; t.Knockback = 6f;
-                t.RecoilUp = 3f; t.RecoilSide = 0.8f; t.RecoilRecover = 0.7f;
-                t.MagazineSize = 12; t.ReloadSeconds = 2.2f; t.BulletSpeed = 1500f; t.BulletGravity = 0f;
-                t.FalloffStart = 80f; t.FalloffEnd = 250f; t.MinDamageFraction = 0.7f;
-                t.SpreadDegrees = 0.4f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 4f; t.AdsZoom = 1.5f; t.Weight = 2;
+                t.Tier = 5; t.Damage = 120f; t.Range = 150f; t.Cooldown = 0.6f; t.Knockback = 12f;
+                t.ChargeSeconds = 1.1f; t.PlasmaOrb = true; t.ExplosionRadius = 4f;
+                t.ClusterCount = 7; t.ClusterRadius = 2.3f; t.ClusterDamage = 45f;
+                t.RecoilUp = 6f; t.RecoilSide = 1f; t.RecoilRecover = 0.6f;
+                t.MagazineSize = 1; t.ReloadSeconds = 3f; t.BulletSpeed = 32f; t.BulletGravity = 5f;
+                t.FalloffStart = 150f; t.FalloffEnd = 300f; t.MinDamageFraction = 1f;
+                t.SpreadDegrees = 0.4f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 3f; t.AdsZoom = 1.3f; t.Weight = 2;
             });
             GunsmithSells(gunlance, 3000, 180);
 
@@ -420,14 +426,14 @@ namespace HowToHunt.Editor
             GameObject AttachmentModel(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"{GeneratedAssets.AttachmentsDir}/{name}.prefab");
             Attach("muzzle_brake", "Muzzle Brake", "Tames the kick (recoil -25 %). A little louder.", AttachmentSlot.Muzzle, 450, 10, a =>
             {
-                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, sawedOff, handCannon, scout, heavyRifle, intervention };
+                a.Tools = new List<ToolDefinition> { revolver, glock, sawedOff, handCannon, intervention };
                 a.RecoilMultiplier = 0.75f;
                 a.NoiseMultiplier = 1.15f;
                 a.Visual = AttachmentModel("MuzzleBrake");
             });
             Attach("suppressor", "Suppressor", "Prey hear the shot from a third as far. Slightly shorter reach.", AttachmentSlot.Muzzle, 700, 20, a =>
             {
-                a.Tools = new List<ToolDefinition> { revolver, glock, uzi, handCannon, scout, heavyRifle, intervention };
+                a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, intervention };
                 a.NoiseMultiplier = 0.35f;
                 a.RangeMultiplier = 0.9f;
                 a.RecoilMultiplier = 0.9f;
@@ -436,6 +442,7 @@ namespace HowToHunt.Editor
             });
             Attach("laser", "Laser Sight", "Steadier from the hip and on the move.", AttachmentSlot.Underbarrel, 500, 30, a =>
             {
+                a.Laser = true;
                 a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, uzi };
                 a.SpreadMultiplier = 0.6f;
                 a.MoveSpreadMultiplier = 0.75f;
@@ -443,7 +450,7 @@ namespace HowToHunt.Editor
             });
             Attach("foregrip", "Foregrip", "Recoil -20 %, tighter down the scope.", AttachmentSlot.Underbarrel, 450, 31, a =>
             {
-                a.Tools = new List<ToolDefinition> { scout, heavyRifle, intervention, uzi, grenadeLauncher };
+                a.Tools = new List<ToolDefinition> { heavyRifle, grenadeLauncher };
                 a.RecoilMultiplier = 0.8f;
                 a.AdsSpreadMultiplier = 0.8f;
                 a.Visual = AttachmentModel("Foregrip");
@@ -478,15 +485,36 @@ namespace HowToHunt.Editor
                 a.Tools = new List<ToolDefinition> { revolver, glock, uzi, sawedOff, handCannon, heavyRifle, grenadeLauncher };
                 a.AdsZoom = 1.35f;
                 a.AdsSpreadMultiplier = 0.75f;
-                a.SightLift = 0.03f;
                 var owned = AssetDatabase.LoadAssetAtPath<GameObject>(DropInWeapons.RedDotPrefab);
                 a.Visual = owned != null ? owned : AttachmentModel("RedDot"); // the owner's sight, else the stand-in
+                ViewmodelFit sight = owned != null ? owned.GetComponent<ViewmodelFit>() : null;
+                if (sight != null) a.SightLift = sight.Sight.y; // the eye lines up with the reticle
             });
             Attach("padded_stock", "Padded Stock", "Recoil -30 %.", AttachmentSlot.Stock, 550, 70, a =>
             {
+                a.Tools = new List<ToolDefinition> { sawedOff, grenadeLauncher };
                 a.RecoilMultiplier = 0.7f;
                 a.Visual = AttachmentModel("PaddedStock");
             });
+
+            // Attachments that are parts of a gun's own model: each gun has its own (an Uzi suppressor is not a scout
+            // suppressor). Hidden on the bare gun, shown when fitted.
+            void Builtin(string id, string name, string description, AttachmentSlot slot, double cost, int order, ToolDefinition gun, string parts, System.Action<AttachmentDefinition> fx) =>
+                Attach(id, name, description, slot, cost, order, a =>
+                {
+                    a.Tools = new List<ToolDefinition> { gun };
+                    a.PartNames = parts.Split(';');
+                    a.Visual = null;
+                    fx(a);
+                });
+            Builtin("uzi_suppressor", "Uzi Suppressor", "Prey hear the shot from a third as far.", AttachmentSlot.Muzzle, 650, 200, uzi, "Body14", a => { a.NoiseMultiplier = 0.35f; a.RangeMultiplier = 0.9f; a.RecoilMultiplier = 0.9f; });
+            Builtin("uzi_foregrip", "Uzi Foregrip", "A front grip: recoil -20 %, steadier on the move.", AttachmentSlot.Underbarrel, 400, 201, uzi, "Body19", a => { a.RecoilMultiplier = 0.8f; a.MoveSpreadMultiplier = 0.85f; });
+            Builtin("uzi_stock", "Uzi Folding Stock", "Recoil -30 %, a tighter spray.", AttachmentSlot.Stock, 450, 202, uzi, "Body15;Body21", a => { a.RecoilMultiplier = 0.7f; a.SpreadMultiplier = 0.85f; });
+            Builtin("heavyrifle_flash_hider", "SCAR Flash Hider", "Recoil -20 %.", AttachmentSlot.Muzzle, 500, 210, heavyRifle, "Cylinder", a => { a.RecoilMultiplier = 0.8f; });
+            Builtin("heavyrifle_stock", "SCAR Stock", "Recoil -35 %, steadier down the sights.", AttachmentSlot.Stock, 600, 211, heavyRifle, "Plane.005;Plane.006;Plane.010;Plane.014;Plane.031;Plane.038", a => { a.RecoilMultiplier = 0.65f; a.AdsSpreadMultiplier = 0.85f; });
+            Builtin("scout_suppressor", "Scout Suppressor", "Prey barely hear it: a third of the range.", AttachmentSlot.Muzzle, 900, 220, scout, "suppressor ", a => { a.NoiseMultiplier = 0.3f; a.RangeMultiplier = 0.95f; });
+            Builtin("scout_buttpad", "Scout Butt Pad", "Recoil -25 %.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.RecoilMultiplier = 0.75f; });
+            Builtin("intervention_bipod", "Intervention Bipod", "Recoil -30 %, half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low", a => { a.RecoilMultiplier = 0.7f; a.AdsSpreadMultiplier = 0.5f; });
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))

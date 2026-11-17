@@ -49,6 +49,10 @@ namespace HowToHunt.Hunting
         public int WeightAdd;
 
         [Header("Look")]
+        [Tooltip("Parts of the gun's own model that are this attachment (an Uzi's suppressor, a SCAR's stock): shown only when fitted. Takes the place of Visual.")]
+        public string[] PartNames = System.Array.Empty<string>();
+        [Tooltip("Shines a visible laser beam and dot where the gun points.")]
+        public bool Laser;
         [Tooltip("Model shown on the gun (attached at the gun's anchor for this slot). Optional.")]
         public GameObject Visual;
 

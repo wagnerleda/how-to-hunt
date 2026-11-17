@@ -43,11 +43,17 @@ MonoBehaviour:
   AdsZoom: 1.15
   SightOffset: {x: 0, y: 0.075, z: 0}
   MuzzleOffset: {x: 0, y: 0.04, z: 0.29}
+  SightFront: {x: 0, y: 0, z: 0}
   ScopeOverlay: 0
   Weight: 0
   Pellets: 1
   PelletSpreadDegrees: 5
   ExplosionRadius: 0
+  ChargeSeconds: 0
+  ClusterCount: 0
+  ClusterRadius: 2.3
+  ClusterDamage: 40
+  PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
     Position: {x: 0, y: 0.04, z: 0.29}

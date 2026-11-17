@@ -41,13 +41,19 @@ MonoBehaviour:
   MaxSpreadDegrees: 3
   AdsSpreadFactor: 0.3
   AdsZoom: 1.2
-  SightOffset: {x: 0, y: 0.16796494, z: -0.0251482}
+  SightOffset: {x: 0, y: 0.16696495, z: -0.0251482}
   MuzzleOffset: {x: 0, y: 0.118772954, z: 0.435}
+  SightFront: {x: 0, y: 0.16446644, z: 0.4345021}
   ScopeOverlay: 0
   Weight: 2
   Pellets: 1
   PelletSpreadDegrees: 5
   ExplosionRadius: 4.5
+  ChargeSeconds: 0
+  ClusterCount: 0
+  ClusterRadius: 2.3
+  ClusterDamage: 40
+  PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
     Position: {x: 0, y: 0.118772954, z: 0.435}
@@ -68,7 +74,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.050864197, z: -0.315}
     Euler: {x: 0, y: 0, z: 0}
   FireSounds:
-  - {fileID: 8300000, guid: 2b4ad8dc7c25da2438128435a44e9b89, type: 3}
+  - {fileID: 8300000, guid: 05c4ca12fc9072b44b0c60f104b5e059, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}

@@ -28,6 +28,51 @@ namespace HowToHunt.Editor
 
         public static string FolderFor(ToolDefinition tool) => Root + (Folders.TryGetValue(tool.Key, out string f) ? f : tool.Key.Substring(tool.Key.IndexOf('.') + 1));
 
+        private const string TrimmedRoot = GeneratedAssets.Root + "/Audio/WeaponsTrimmed/";
+        private const float SilenceLevel = 0.03f;   // amplitude below which the start counts as silence
+        private const float PreRoll = 0.004f;       // seconds kept before the first sound (no click)
+
+        /// <summary>
+        /// A copy of the clip without its leading silence (16-bit WAV under Audio/WeaponsTrimmed), or the clip itself if
+        /// it already starts at once. Generated: rebuilt with the content.
+        /// </summary>
+        private static AudioClip Trimmed(AudioClip clip, string outDir)
+        {
+            if (clip == null || clip.channels <= 0) return clip;
+            var data = new float[clip.samples * clip.channels];
+            if (!clip.GetData(data, 0)) return clip;
+            int first = 0;
+            while (first < data.Length && Mathf.Abs(data[first]) < SilenceLevel) first++;
+            int frame = Mathf.Max(0, first / clip.channels - Mathf.RoundToInt(PreRoll * clip.frequency));
+            if (frame < clip.frequency * 0.01f) return clip; // under 10 ms: fine as it is
+            GeneratedAssets.EnsureFolder(outDir);
+            string path = outDir + "/" + Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(clip)) + "_trimmed.wav";
+            int start = frame * clip.channels;
+            WriteWav(path, data, start, data.Length - start, clip.channels, clip.frequency);
+            AssetDatabase.ImportAsset(path);
+            Debug.Log($"[HowToHunt] {clip.name}: trimmed {frame / (float)clip.frequency:0.000} s of leading silence");
+            return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        }
+
+        private static void WriteWav(string path, float[] data, int start, int count, int channels, int rate)
+        {
+            using var stream = new FileStream(path, FileMode.Create);
+            using var w = new BinaryWriter(stream);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+            w.Write(36 + count * 2);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
+            w.Write(16);
+            w.Write((short)1);
+            w.Write((short)channels);
+            w.Write(rate);
+            w.Write(rate * channels * 2);
+            w.Write((short)(channels * 2));
+            w.Write((short)16);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+            w.Write(count * 2);
+            for (int i = 0; i < count; i++) w.Write((short)Mathf.Clamp(Mathf.RoundToInt(data[start + i] * 32767f), -32768, 32767));
+        }
+
         /// <summary>True if the tool's folder exists and its sounds were (re)linked.</summary>
         public static bool Link(ToolDefinition tool)
         {
@@ -50,11 +95,14 @@ namespace HowToHunt.Editor
                 else if (name.Contains("inspect")) inspect ??= clip;
                 else fire.Add(clip);
             }
+            // Downloads often start with a little silence: the shot must be heard the moment the gun fires.
+            string outDir = TrimmedRoot + tool.Key.Substring(tool.Key.IndexOf('.') + 1);
+            for (int i = 0; i < fire.Count; i++) fire[i] = Trimmed(fire[i], outDir);
             tool.FireSounds = fire.ToArray();
-            tool.ReloadSound = reload;
-            tool.DryFireSound = dry;
-            tool.EquipSound = equip;
-            tool.InspectSound = inspect;
+            tool.ReloadSound = reload != null ? Trimmed(reload, outDir) : null;
+            tool.DryFireSound = dry != null ? Trimmed(dry, outDir) : null;
+            tool.EquipSound = equip != null ? Trimmed(equip, outDir) : null;
+            tool.InspectSound = inspect != null ? Trimmed(inspect, outDir) : null;
             return true;
         }
     }

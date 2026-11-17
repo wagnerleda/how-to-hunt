@@ -14,40 +14,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
   _key: tool.gunlance
   _displayName: Gunlance
-  _description: Something not from around here. Near-instant bolts that do not drop.
+  _description: 'Endgame. Hold Fire to charge a plasma orb, release to throw it: it bursts into seven smaller explosive orbs. One orb per charge.'
   Archetype: 2
   Mode: 1
-  Tier: 4
-  Damage: 30
+  Tier: 5
+  Damage: 120
   CaptureStrength: 0
   HeadshotMultiplier: 2
-  Range: 300
+  Range: 150
   ArcDegrees: 0
   MaxTargets: 1
-  Knockback: 6
-  RecoilUp: 3
-  RecoilSide: 0.8
-  RecoilRecover: 0.7
-  MagazineSize: 12
-  ReloadSeconds: 2.2
+  Knockback: 12
+  RecoilUp: 6
+  RecoilSide: 1
+  RecoilRecover: 0.6
+  MagazineSize: 1
+  ReloadSeconds: 3
   Automatic: 0
-  BulletSpeed: 1500
-  BulletGravity: 0
-  FalloffStart: 80
-  FalloffEnd: 250
-  MinDamageFraction: 0.7
+  BulletSpeed: 32
+  BulletGravity: 5
+  FalloffStart: 150
+  FalloffEnd: 300
+  MinDamageFraction: 1
   SpreadDegrees: 0.4
   MoveSpreadPerMps: 0.2
-  MaxSpreadDegrees: 4
+  MaxSpreadDegrees: 3
   AdsSpreadFactor: 0.3
-  AdsZoom: 1.5
-  SightOffset: {x: 0, y: 0.15290906, z: 0.05}
+  AdsZoom: 1.3
+  SightOffset: {x: 0, y: 0.15190907, z: 0.06863637}
   MuzzleOffset: {x: 0, y: 0.05611615, z: 0.65}
+  SightFront: {x: 0, y: 0.12554544, z: 0.41618183}
   ScopeOverlay: 0
   Weight: 2
   Pellets: 1
   PelletSpreadDegrees: 5
-  ExplosionRadius: 0
+  ExplosionRadius: 4
+  ChargeSeconds: 1.1
+  ClusterCount: 7
+  ClusterRadius: 2.3
+  ClusterDamage: 45
+  PlasmaOrb: 1
   AttachmentAnchors:
   - Slot: 0
     Position: {x: 0, y: 0.05611615, z: 0.65}
@@ -68,7 +74,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.070272714, z: -0.35}
     Euler: {x: 0, y: 0, z: 0}
   FireSounds:
-  - {fileID: 8300000, guid: a174a2be5487047429cc064d6b9e7fae, type: 3}
+  - {fileID: 8300000, guid: f19c93b3c6e1b934faa8ccf9e0860e9a, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
@@ -76,7 +82,7 @@ MonoBehaviour:
   RestEuler: {x: 357.87454, y: 2.091349, z: 270.92685}
   RestCenter: {x: 0.047217038, y: 0.01120089, z: 0.14672887}
   RestSize: {x: 0.21770355, y: 0.1654642, z: 1.0006227}
-  Cooldown: 0.25
+  Cooldown: 0.6
   Slot: 9
   StartOwned: 0
   Viewmodel: {fileID: 8021940124361401177, guid: f49afb723f198ca488d1c1d63d73fdc6, type: 3}

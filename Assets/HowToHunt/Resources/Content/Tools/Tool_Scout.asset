@@ -41,31 +41,37 @@ MonoBehaviour:
   MaxSpreadDegrees: 0.15
   AdsSpreadFactor: 0.5
   AdsZoom: 3.5
-  SightOffset: {x: 0, y: 0.19286579, z: -0.05}
-  MuzzleOffset: {x: 0, y: 0.09232515, z: 0.7665}
+  SightOffset: {x: 0, y: 0.18701649, z: -0.05}
+  MuzzleOffset: {x: 0, y: 0.10453567, z: 0.5286939}
+  SightFront: {x: 0, y: 0.19052424, z: 0.3291617}
   ScopeOverlay: 1
   Weight: 1
   Pellets: 1
   PelletSpreadDegrees: 5
   ExplosionRadius: 0
+  ChargeSeconds: 0
+  ClusterCount: 0
+  ClusterRadius: 2.3
+  ClusterDamage: 40
+  PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
-    Position: {x: 0, y: 0.09232515, z: 0.7665}
+    Position: {x: 0, y: 0.10453567, z: 0.5286939}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: 0.036840975, z: 0.421575}
+    Position: {x: 0, y: 0.03684096, z: 0.29078165}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
     Position: {x: 0, y: -0.049665254, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.046162575, z: 0.05}
+    Position: {x: 0, y: 0.052267835, z: 0.05}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 7
-    Position: {x: 0, y: 0.019623943, z: -0.2835}
+    Position: {x: 0, y: 0.07723045, z: -0.24893613}
     Euler: {x: 0, y: 0, z: 0}
   FireSounds:
-  - {fileID: 8300000, guid: 89fc5305aa597724299e83dbfd426426, type: 3}
+  - {fileID: 8300000, guid: e6e7d3241bc10094c956f44859a6fa62, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}

@@ -17,10 +17,7 @@ MonoBehaviour:
   _description: Recoil -20 %, tighter down the scope.
   Slot: 2
   Tools:
-  - {fileID: 11400000, guid: c8748dc2584035a4e93830151cd25bac, type: 2}
   - {fileID: 11400000, guid: 25be77ac6b8d15149a488fb2061b9c3b, type: 2}
-  - {fileID: 11400000, guid: b65affc065fbe3045b95c7199b46e687, type: 2}
-  - {fileID: 11400000, guid: 517dd1cd50c9df742a7e9201980b9584, type: 2}
   - {fileID: 11400000, guid: f21d553f085c0fd46bf054d5b8871bf0, type: 2}
   CostCoins: 450
   SortOrder: 31
@@ -38,4 +35,6 @@ MonoBehaviour:
   ScopeOverlay: 0
   SightLift: 0.03
   WeightAdd: 0
+  PartNames: []
+  Laser: 0
   Visual: {fileID: 6370636542698341632, guid: 47a7fe36cecdb50498e45f3f6e19a4d1, type: 3}

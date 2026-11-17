@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 3730348098861091211}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.026869318, z: 0.14217499}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: -0.035024464, z: 0.087440185}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 350556459715927521}
@@ -137,27 +137,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77e75f27800974c41b7edc4128e3e5d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ViewmodelFit
-  Muzzle: {x: 0, y: 0.10658981, z: 0.25849998}
-  Sight: {x: 0, y: 0.16675328, z: -0.04892138}
+  Muzzle: {x: 0, y: 0.106589794, z: 0.15898216}
+  Sight: {x: 0, y: 0.16575329, z: -0.04892138}
+  SightFront: {x: 0, y: 0.1535835, z: 0.09872016}
   Anchors:
   - Slot: 0
-    Position: {x: 0, y: 0.10658981, z: 0.25849998}
+    Position: {x: 0, y: 0.106589794, z: 0.15898216}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.16275328, z: -0.04892138}
+    Position: {x: 0, y: 0.1509294, z: 0.063592866}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: 0.0031306813, z: 0.14217499}
+    Position: {x: 0, y: -0.020024465, z: 0.087440185}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
     Position: {x: 0, y: -0.04590476, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.053294905, z: 0.05}
+    Position: {x: 0, y: 0.053294897, z: 0.05}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 7
-    Position: {x: 0, y: 0.09821074, z: -0.21149997}
+    Position: {x: 0, y: 0.11666695, z: -0.0814371}
     Euler: {x: 0, y: 0, z: 0}
+  Parts:
+  - Name: Body18
+    Kind: 0
+    Pivot: {x: 0.002782866, y: 0.013179544, z: 0.009570874}
 --- !u!1 &6959402451882076671
 GameObject:
   m_ObjectHideFlags: 0
@@ -185,8 +190,8 @@ Transform:
   m_GameObject: {fileID: 6959402451882076671}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.005, y: -0.035, z: -0.01}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: -0.005, z: 0}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 350556459715927521}
@@ -328,6 +333,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5499212030130980793, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -5170667941337522862, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -344,6 +353,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 4d6a8c4602fd8d54880cdb74ba2b5883, type: 2}
+    - target: {fileID: -2728804360835636639, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -1030925830436303917, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -356,6 +369,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: uzI+1+v34
       objectReference: {fileID: 0}
+    - target: {fileID: 1125290503228006029, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2760870833288595499, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -396,6 +413,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 4d6a8c4602fd8d54880cdb74ba2b5883, type: 2}
+    - target: {fileID: 6575619715318582594, guid: 824bb51dc547acc42b2d6ae28f626f6d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

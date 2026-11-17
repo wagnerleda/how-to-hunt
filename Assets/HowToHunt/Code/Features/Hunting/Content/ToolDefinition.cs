@@ -60,6 +60,8 @@ namespace HowToHunt.Hunting
         public Vector3 SightOffset = new Vector3(0f, 0.09f, 0.05f);
         [Tooltip("Model space: where bullets leave (end of the barrel). They fly along the model's +Z.")]
         public Vector3 MuzzleOffset = new Vector3(0f, 0.07f, 0.26f);
+        [Tooltip("Model space: the front sight top. Aiming tilts the gun so rear (SightOffset) and front line up. Zero: keep the gun level.")]
+        public Vector3 SightFront;
         [Tooltip("Aiming down sights looks through a scope (black ring, reticle; the model hides) instead of iron sights.")]
         public bool ScopeOverlay;
         [Tooltip("Weight class 0-3: heavy weapons slow you while held (sv_load_slow per class). Light tools are 0.")]
@@ -70,6 +72,14 @@ namespace HowToHunt.Hunting
         public float PelletSpreadDegrees = 5f;
         [Tooltip("Explosive rounds (grenade launcher): blast radius, metres. 0 = a normal bullet. Damage falls off to the edge.")]
         public float ExplosionRadius;
+        [Tooltip("Charge weapons (the Gunlance): hold Fire this long to charge, release to fire. 0 = fires on press.")]
+        public float ChargeSeconds;
+        [Tooltip("Explosive rounds that burst into this many smaller explosive orbs (cluster).")]
+        public int ClusterCount;
+        public float ClusterRadius = 2.3f;
+        public float ClusterDamage = 40f;
+        [Tooltip("The round is a glowing plasma orb (drawn as an orb, explodes in cyan) instead of a bullet.")]
+        public bool PlasmaOrb;
 
         public GunBallistics Ballistics => new GunBallistics
         {

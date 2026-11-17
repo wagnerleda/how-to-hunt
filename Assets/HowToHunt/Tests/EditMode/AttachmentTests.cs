@@ -48,8 +48,13 @@ namespace HowToHunt.Tests
             ToolDefinition revolver = Get<ToolDefinition>("tool.revolver"), scout = Get<ToolDefinition>("tool.scout"), knife = Get<ToolDefinition>("tool.knife");
             Assert.IsTrue(Get<AttachmentDefinition>("attachment.red_dot").Fits(revolver));
             Assert.IsFalse(Get<AttachmentDefinition>("attachment.red_dot").Fits(scout), "the scout's scope is built in");
-            Assert.IsTrue(Get<AttachmentDefinition>("attachment.padded_stock").Fits(scout));
+            Assert.IsTrue(Get<AttachmentDefinition>("attachment.scout_buttpad").Fits(scout), "the scout has its own butt pad");
+            Assert.IsFalse(Get<AttachmentDefinition>("attachment.padded_stock").Fits(scout), "so not the stand-in");
             Assert.IsFalse(Get<AttachmentDefinition>("attachment.padded_stock").Fits(revolver));
+            ToolDefinition uzi = Get<ToolDefinition>("tool.uzi");
+            Assert.IsTrue(Get<AttachmentDefinition>("attachment.uzi_suppressor").Fits(uzi), "each gun has its own parts");
+            Assert.IsFalse(Get<AttachmentDefinition>("attachment.uzi_suppressor").Fits(scout), "an Uzi suppressor is not a scout suppressor");
+            Assert.IsFalse(Get<AttachmentDefinition>("attachment.suppressor").Fits(uzi), "the stand-in suppressor is not offered where a real one exists");
             Assert.IsFalse(Get<AttachmentDefinition>("attachment.suppressor").Fits(knife));
         }
 

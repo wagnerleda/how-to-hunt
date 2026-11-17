@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 846363483014284216}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.005, y: -0.035, z: -0.01}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: -0.005, z: 0}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 793632935888388478}
@@ -117,8 +117,8 @@ Transform:
   m_GameObject: {fileID: 1662257147610701224}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.004033843, z: 0.23925}
-  m_LocalScale: {x: 0.085, y: 0.085, z: 0.085}
+  m_LocalPosition: {x: 0, y: 0.019033842, z: 0.23925}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 793632935888388478}
@@ -260,7 +260,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ViewmodelFit
   Muzzle: {x: 0, y: 0.118772954, z: 0.435}
-  Sight: {x: 0, y: 0.16796494, z: -0.0251482}
+  Sight: {x: 0, y: 0.16696495, z: -0.0251482}
+  SightFront: {x: 0, y: 0.16446644, z: 0.4345021}
   Anchors:
   - Slot: 0
     Position: {x: 0, y: 0.118772954, z: 0.435}
@@ -280,6 +281,10 @@ MonoBehaviour:
   - Slot: 7
     Position: {x: 0, y: 0.050864197, z: -0.315}
     Euler: {x: 0, y: 0, z: 0}
+  Parts:
+  - Name: GL37_launcherHead
+    Kind: 5
+    Pivot: {x: -0.0000120271, y: 0.07401846, z: 0.051835507}
 --- !u!1001 &3854025335145255045
 PrefabInstance:
   m_ObjectHideFlags: 0

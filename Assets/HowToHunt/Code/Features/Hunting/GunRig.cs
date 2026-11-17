@@ -1,0 +1,168 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace HowToHunt.Hunting
+{
+    /// <summary>
+    /// Procedural animation of a gun's own parts (from its <see cref="ViewmodelFit"/>): the magazine drops out and goes
+    /// back in during a reload, a pistol slide snaps back per shot, a bolt cycles after each shot, a revolver cylinder
+    /// turns, a launcher head swings open, the Gunlance's front leaves open while it charges. Built once per model,
+    /// no allocations per frame. All motion is expressed in the gun's own space (barrel +Z, up +Y).
+    /// </summary>
+    public sealed class GunRig
+    {
+        private struct Part
+        {
+            public Transform T;
+            public RigPartKind Kind;
+            public Vector3 Pivot;          // gun space
+            public Vector3 RestPos;
+            public Quaternion RestRot;
+        }
+
+        private readonly Transform _root;
+        private readonly List<Part> _parts = new List<Part>();
+
+        private float _shotAt = -10f;
+        private int _shots;
+
+        public GunRig(GameObject model)
+        {
+            _root = model.transform;
+            ViewmodelFit fit = model.GetComponent<ViewmodelFit>();
+            if (fit == null) return;
+            foreach (RigPart p in fit.Parts)
+            {
+                Transform t = Find(_root, p.Name);
+                if (t == null) continue;
+                _parts.Add(new Part { T = t, Kind = p.Kind, Pivot = p.Pivot, RestPos = t.localPosition, RestRot = t.localRotation });
+
+            }
+        }
+
+        public bool Empty => _parts.Count == 0;
+
+        public void Shot()
+        {
+            _shotAt = Time.time;
+            _shots++;
+        }
+
+        /// <param name="reload">Reload progress 0..1, or below 0 when not reloading.</param>
+        /// <param name="cycleSeconds">Time between shots (a bolt cycles within it).</param>
+        /// <param name="charge">Charge 0..1 (the Gunlance opens as it charges).</param>
+        public void Update(float reload, float cycleSeconds, float charge)
+        {
+            float since = Time.time - _shotAt;
+            for (int i = 0; i < _parts.Count; i++)
+            {
+                Part p = _parts[i];
+                if (p.T == null) continue;
+                Vector3 move = Vector3.zero;
+                float angle = 0f;
+                Vector3 axis = Vector3.forward;
+                bool visible = true;
+                switch (p.Kind)
+                {
+                    case RigPartKind.Magazine:
+                        if (reload >= 0f)
+                        {
+                            // Out (0.12-0.35), gone, back in (0.55-0.8).
+                            float outT = Smooth(Mathf.InverseLerp(0.12f, 0.35f, reload)), inT = Smooth(Mathf.InverseLerp(0.55f, 0.8f, reload));
+                            float away = outT * (1f - inT);
+                            move = new Vector3(0f, -0.22f, -0.03f) * away;
+                            visible = away < 0.95f;
+                        }
+                        break;
+                    case RigPartKind.Slide:
+                    {
+                        float k = since < 0f ? 0f : since < 0.03f ? since / 0.03f : Mathf.Clamp01(1f - (since - 0.03f) / 0.09f);
+                        float rack = reload >= 0f ? Bump(reload, 0.85f, 0.97f) : 0f;
+                        move = new Vector3(0f, 0f, -0.028f * Mathf.Max(k, rack));
+                        break;
+                    }
+                    case RigPartKind.ChargingHandle:
+                        move = new Vector3(0f, 0f, -0.07f * (reload >= 0f ? Bump(reload, 0.84f, 0.97f) : 0f));
+                        break;
+                    case RigPartKind.Bolt:
+                    {
+                        // After each shot (or at the end of a reload): lift, pull back, push forward, lock down.
+                        float c = cycleSeconds > 0f ? Mathf.Clamp01((since - 0.08f) / (cycleSeconds * 0.85f)) : 1f;
+                        if (reload >= 0f) c = Mathf.InverseLerp(0.8f, 1f, reload);
+                        if (c > 0f && c < 1f)
+                        {
+                            float lift = Bump(c, 0f, 1f, 0.2f);
+                            float back = Bump(c, 0.2f, 0.8f, 0.3f);
+                            angle = 60f * lift;
+                            move = new Vector3(0f, 0f, -0.08f * back);
+                        }
+                        break;
+                    }
+                    case RigPartKind.Cylinder:
+                    {
+                        // One chamber per shot; a full spin as the reload ends.
+                        float turn = Mathf.Clamp01(since / 0.1f);
+                        angle = 60f * (_shots - 1 + turn);
+                        if (reload >= 0f) angle += 720f * Smooth(Mathf.InverseLerp(0.6f, 0.95f, reload));
+                        break;
+                    }
+                    case RigPartKind.Hinge:
+                        axis = Vector3.right;
+                        angle = reload >= 0f ? 38f * Bump(reload, 0.1f, 0.9f, 0.25f) : 0f;
+                        break;
+                    case RigPartKind.LeafPort:
+                        axis = Vector3.up;
+                        angle = -40f * Smooth(charge);
+                        break;
+                    case RigPartKind.LeafStarboard:
+                        axis = Vector3.up;
+                        angle = 40f * Smooth(charge);
+                        break;
+                }
+                if (p.T.gameObject.activeSelf != visible) p.T.gameObject.SetActive(visible);
+                Apply(p, move, axis, angle);
+            }
+        }
+
+        /// <summary>Puts a part back at rest, then moves it by a gun-space offset and turns it about its pivot.</summary>
+        private void Apply(Part p, Vector3 move, Vector3 axis, float angle)
+        {
+            Transform parent = p.T.parent;
+            if (parent == null) return;
+            Vector3 pos = p.RestPos;
+            Quaternion rot = p.RestRot;
+            if (angle != 0f)
+            {
+                Vector3 axisP = parent.InverseTransformDirection(_root.TransformDirection(axis)).normalized;
+                Vector3 centerP = parent.InverseTransformPoint(_root.TransformPoint(p.Pivot));
+                Quaternion q = Quaternion.AngleAxis(angle, axisP);
+                pos = centerP + q * (pos - centerP);
+                rot = q * rot;
+            }
+            if (move != Vector3.zero) pos += parent.InverseTransformVector(_root.TransformVector(move));
+            p.T.localPosition = pos;
+            p.T.localRotation = rot;
+        }
+
+        private static Transform Find(Transform t, string name)
+        {
+            if (t.name == name) return t;
+            for (int i = 0; i < t.childCount; i++)
+            {
+                Transform f = Find(t.GetChild(i), name);
+                if (f != null) return f;
+            }
+            return null;
+        }
+
+        private static float Smooth(float t) => t * t * (3f - 2f * t);
+
+        /// <summary>0 outside [a, b], rising and falling smoothly inside it (edge = share of the span spent rising).</summary>
+        private static float Bump(float t, float a, float b, float edge = 0.35f)
+        {
+            if (t <= a || t >= b) return 0f;
+            float u = (t - a) / (b - a);
+            return Smooth(Mathf.Clamp01(u / edge)) * Smooth(Mathf.Clamp01((1f - u) / edge));
+        }
+    }
+}

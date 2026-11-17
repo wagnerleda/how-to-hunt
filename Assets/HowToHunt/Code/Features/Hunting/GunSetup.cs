@@ -17,6 +17,7 @@ namespace HowToHunt.Hunting
         public float RecoilUp, RecoilSide, RecoilRecover;
         public float AdsZoom;
         public UnityEngine.Vector3 SightOffset;
+        public UnityEngine.Vector3 SightFront;
         public bool ScopeOverlay;
         public float DamageMultiplier = 1f;
         public float NoiseMultiplier = 1f;
@@ -35,6 +36,7 @@ namespace HowToHunt.Hunting
                 RecoilRecover = tool.RecoilRecover,
                 AdsZoom = tool.AdsZoom,
                 SightOffset = tool.SightOffset,
+                SightFront = tool.SightFront.sqrMagnitude > 0f ? tool.SightFront : tool.SightOffset + Vector3.forward * 0.1f,
                 ScopeOverlay = tool.ScopeOverlay,
                 Weight = tool.Weight,
             };
@@ -61,7 +63,11 @@ namespace HowToHunt.Hunting
                 {
                     if (a.AdsZoom > 0f) s.AdsZoom = a.AdsZoom;
                     s.ScopeOverlay = a.ScopeOverlay;
-                    if (tool.TryAnchor(AttachmentSlot.Optic, out AttachmentAnchor mount)) s.SightOffset = mount.Position + new Vector3(0f, a.SightLift, 0f);
+                    if (tool.TryAnchor(AttachmentSlot.Optic, out AttachmentAnchor mount))
+                    {
+                        s.SightOffset = mount.Position + new Vector3(0f, a.SightLift, 0f);
+                        s.SightFront = s.SightOffset + Vector3.forward * 0.1f; // an optic is level with the bore
+                    }
                 }
             }
             s.MagazineSize = Mathf.Max(1, s.MagazineSize);

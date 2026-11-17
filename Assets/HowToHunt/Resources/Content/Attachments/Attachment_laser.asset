@@ -37,4 +37,6 @@ MonoBehaviour:
   ScopeOverlay: 0
   SightLift: 0.03
   WeightAdd: 0
+  PartNames: []
+  Laser: 1
   Visual: {fileID: 178384760038707798, guid: b1490010d02f7ce4c8f1bc7ee252fa5d, type: 3}

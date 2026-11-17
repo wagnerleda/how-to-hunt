@@ -21,6 +21,7 @@ namespace HowToHunt.Hunting
         private const float RaiseSeconds = 0.22f;
         private static readonly Vector3 Rest = new Vector3(0.18f, -0.17f, 0.40f);
         private static readonly Vector3 Shoulder = new Vector3(0.24f, -0.42f, -0.12f);
+        private static readonly Vector3 GunShift = new Vector3(0.07f, -0.03f, 0.02f);
         private const float ShoulderShare = 1f; // the whole turn is the arm, so the sleeve always points back at the shoulder
 
         // Inertia spring (position, metres in camera space) and tilt spring (degrees).
@@ -46,6 +47,7 @@ namespace HowToHunt.Hunting
 
         // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
         private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
+        private const float LaserRange = 80f;
         private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
         private Vector3 _kick, _kickVel;
         private float _ads;
@@ -54,6 +56,9 @@ namespace HowToHunt.Hunting
         public static float AdsBlend { get; private set; }
         private float _inspectStart = -10f;
         private int _fittedVersion = -1;
+        private readonly Dictionary<ToolDefinition, GunRig> _rigs = new Dictionary<ToolDefinition, GunRig>();
+        private GunRig _rig;
+        private LineRenderer _laser, _laserDot;
 
         private void Awake()
         {
@@ -166,10 +171,12 @@ namespace HowToHunt.Hunting
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 _models[tool] = model;
+                _rigs[tool] = new GunRig(model);
             }
             model.SetActive(true);
             _shown = model;
             _fittedVersion = -1; // (re)mount attachments next frame
+            _rig = _rigs.TryGetValue(tool, out GunRig rig) && !rig.Empty ? rig : null;
             if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Shing, 0.22f, Random.Range(0.97f, 1.04f));
             else if (tool.EquipSound != null) Sfx.Play2D(tool.EquipSound, 0.5f);
             else Sfx.Play2D("Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
@@ -185,6 +192,7 @@ namespace HowToHunt.Hunting
                 float scale = HuntingCvars.RecoilScale.Value * (PlayerTools.LocalAiming ? HuntingCvars.AdsRecoil.Value : 1f);
                 GunSetup gun = Loadouts.Local.Setup(tool);
                 _kickVel.x += gun.RecoilUp * KickImpulse * scale;
+                _rig?.Shot();
                 _kickVel.y += Random.Range(-0.5f, 1f) * gun.RecoilSide * KickImpulse * scale;
                 _kickVel.z += KickBackImpulse * scale;
             }
@@ -224,7 +232,12 @@ namespace HowToHunt.Hunting
             }
             bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
-            if (!visible || (_tool == null && _heldPrey == null)) { _hasLastVelocity = false; return; }
+            if (!visible || (_tool == null && _heldPrey == null))
+            {
+                _hasLastVelocity = false;
+                if (_laser != null) _laser.enabled = _laserDot.enabled = false;
+                return;
+            }
 
             float dt = Mathf.Min(Time.deltaTime, 0.05f);
             if (dt <= 0f) return;
@@ -285,6 +298,7 @@ namespace HowToHunt.Hunting
             else if (_tool.Archetype == ToolArchetype.Firearm)
             {
                 GunPose(dt, out offset, out use);
+                _rig?.Update(PlayerTools.LocalReload, _tool.Cooldown, PlayerTools.LocalCharge);
             }
             else if (_tool.Archetype == ToolArchetype.Net)
             {
@@ -297,7 +311,9 @@ namespace HowToHunt.Hunting
 
             // Big sweeps turn the whole arm around the shoulder (below-right of the eye) like a real arm, not around the grip.
             Quaternion shoulder = Quaternion.Euler(0f, shoulderYaw, 0f);
-            Vector3 grip = Shoulder + shoulder * (Rest + offset - Shoulder);
+            // Guns sit further right and a bit lower than tools, so they don't block the middle of the view.
+            Vector3 rest = _tool != null && _tool.Archetype == ToolArchetype.Firearm ? Rest + GunShift : Rest;
+            Vector3 grip = Shoulder + shoulder * (rest + offset - Shoulder);
             Vector3 position = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
             Quaternion rotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
 
@@ -316,8 +332,12 @@ namespace HowToHunt.Hunting
             float a = Smooth(_ads);
             if (a > 0f)
             {
-                Quaternion adsRot = Quaternion.Slerp(Quaternion.identity, _lag, 0.25f) * use;
-                Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * Loadouts.Local.Setup(_tool).SightOffset + (bob + _springPos) * 0.2f;
+                GunSetup sights = Loadouts.Local.Setup(_tool);
+                // Tilt so the rear and front sights line up on the view axis (a few degrees at most).
+                Vector3 line = sights.SightFront - sights.SightOffset;
+                Quaternion align = line.sqrMagnitude > 1e-6f ? Quaternion.RotateTowards(Quaternion.identity, Quaternion.FromToRotation(line.normalized, Vector3.forward), 4f) : Quaternion.identity;
+                Quaternion adsRot = Quaternion.Slerp(Quaternion.identity, _lag, 0.25f) * use * align;
+                Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * sights.SightOffset + (bob + _springPos) * 0.2f;
                 position = Vector3.Lerp(position, adsPos, a);
                 rotation = Quaternion.Slerp(rotation, adsRot, a);
             }
@@ -329,6 +349,73 @@ namespace HowToHunt.Hunting
             _holder.localPosition = position / zoom;
             _holder.localRotation = rotation;
             _holder.localScale = Vector3.one / zoom;
+            UpdateLaser(gun);
+            UpdateChargeOrb(gun);
+        }
+
+        /// <summary>A fitted laser: a thin red beam from the laser to whatever the gun points at, and a bright dot there.</summary>
+        private void UpdateLaser(bool gun)
+        {
+            bool on = gun && _shown != null && _shown.activeInHierarchy && AttachmentVisuals.TryLaser(_tool, Loadouts.Local.Fitted(_tool), out Vector3 local);
+            if (_laser == null)
+            {
+                if (!on) return;
+                Material m = Resources.Load<Material>("FX/M_Tracer");
+                _laser = MakeLine("Laser", m, 0.0025f);
+                _laserDot = MakeLine("Laser Dot", m, 0.035f);
+            }
+            _laser.enabled = _laserDot.enabled = on;
+            if (!on) return;
+            AttachmentVisuals.TryLaser(_tool, Loadouts.Local.Fitted(_tool), out Vector3 lens);
+            Vector3 from = _shown.transform.TransformPoint(lens), dir = _shown.transform.forward;
+            var tr = SimWorld.Current.TraceBox(from.ToSim(), (from + dir * LaserRange).ToSim(), System.Numerics.Vector3.Zero);
+            Vector3 hit = tr.Hit ? tr.EndPosition.ToUnity() : from + dir * LaserRange;
+            _laser.SetPosition(0, from);
+            _laser.SetPosition(1, hit);
+            _laserDot.SetPosition(0, hit - dir * 0.02f);
+            _laserDot.SetPosition(1, hit);
+        }
+
+        private Transform _chargeOrb;
+
+        /// <summary>A charge weapon grows a glowing orb at its muzzle while you hold Fire.</summary>
+        private void UpdateChargeOrb(bool gun)
+        {
+            float c = gun && _tool.PlasmaOrb ? PlayerTools.LocalCharge : 0f;
+            if (_chargeOrb == null)
+            {
+                if (c <= 0f) return;
+                GameObject g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(g.GetComponent<Collider>());
+                g.name = "Charge Orb";
+                var r = g.GetComponent<MeshRenderer>();
+                Material fire = Resources.Load<Material>("FX/M_Fire");
+                if (fire != null) r.sharedMaterial = fire;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", new Color(0.45f, 1f, 1f));
+                r.SetPropertyBlock(block);
+                _chargeOrb = g.transform;
+            }
+            bool on = c > 0f && _shown != null && _shown.activeInHierarchy;
+            if (_chargeOrb.gameObject.activeSelf != on) _chargeOrb.gameObject.SetActive(on);
+            if (!on) return;
+            _chargeOrb.position = _shown.transform.TransformPoint(_tool.MuzzleOffset + Vector3.forward * 0.06f);
+            float pulse = c >= 1f ? 1f + 0.12f * Mathf.Sin(Time.time * 30f) : 1f;
+            _chargeOrb.localScale = Vector3.one * (0.02f + 0.12f * c) * pulse / Mathf.Max(1f, PlayerCamera.Zoom);
+        }
+
+        private LineRenderer MakeLine(string name, Material m, float width)
+        {
+            var go = new GameObject(name);
+            LineRenderer lr = go.AddComponent<LineRenderer>();
+            lr.positionCount = 2;
+            lr.startWidth = lr.endWidth = width;
+            lr.startColor = lr.endColor = new Color(1f, 0.1f, 0.08f, 0.9f);
+            if (m != null) lr.sharedMaterial = m;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.enabled = false;
+            return lr;
         }
 
         /// <summary>

@@ -38,6 +38,8 @@ MonoBehaviour:
   MagazineAdd: 0
   AdsZoom: 1.35
   ScopeOverlay: 0
-  SightLift: 0.03
+  SightLift: 0.028646905
   WeightAdd: 0
+  PartNames: []
+  Laser: 0
   Visual: {fileID: 80465427172726598, guid: 61af4a5927296e240a25bfc9b5c4185d, type: 3}

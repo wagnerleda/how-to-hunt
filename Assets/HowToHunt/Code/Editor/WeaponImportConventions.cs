@@ -33,6 +33,19 @@ namespace HowToHunt.Editor
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
         }
 
+        /// <summary>Weapon sounds load decompressed: short, played often, and readable when the content build trims them.</summary>
+        private void OnPreprocessAudio()
+        {
+            if (!assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) && !assetPath.StartsWith(GeneratedAssets.Root + "/Audio/WeaponsTrimmed/", System.StringComparison.Ordinal)) return;
+            var importer = (AudioImporter)assetImporter;
+            AudioImporterSampleSettings s = importer.defaultSampleSettings;
+            s.loadType = AudioClipLoadType.DecompressOnLoad;
+            s.compressionFormat = AudioCompressionFormat.Vorbis;
+            s.quality = 0.7f;
+            s.preloadAudioData = true;
+            importer.defaultSampleSettings = s;
+        }
+
         private void OnPreprocessTexture()
         {
             bool weapons = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);

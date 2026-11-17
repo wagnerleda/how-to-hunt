@@ -3,15 +3,40 @@ using UnityEngine;
 
 namespace HowToHunt.Hunting
 {
+    /// <summary>What a moving part of a gun does (see <see cref="GunRig"/>).</summary>
+    public enum RigPartKind : byte
+    {
+        Magazine,       // drops out and goes back in during a reload
+        Slide,          // snaps back on every shot (pistols)
+        Bolt,           // bolt action: up, back, forward, down after each shot
+        ChargingHandle, // pulled back at the end of a reload
+        Cylinder,       // turns one chamber per shot, spins on reload (revolvers)
+        Hinge,          // swings open for a reload (break-action, launcher head)
+        LeafPort,       // opens to the left while charging (the Gunlance's cannon)
+        LeafStarboard,  // opens to the right while charging
+    }
+
+    /// <summary>A named part of the viewmodel and the point it moves about (prefab space).</summary>
+    [System.Serializable]
+    public struct RigPart
+    {
+        public string Name;
+        public RigPartKind Kind;
+        public Vector3 Pivot;
+    }
+
     /// <summary>
-    /// Points measured on a generated gun viewmodel (grip at the origin, barrel along +Z): where bullets leave, where
-    /// the eye goes when aiming, and where each attachment slot mounts. Written by the editor's weapon fitting, read by
-    /// the content build to fill the tool's offsets; nothing at runtime depends on it.
+    /// Points measured on a generated gun viewmodel (grip at the origin, barrel along +Z): where bullets leave, the
+    /// sight line (rear and front sight tops: aiming tilts the gun so they line up with the eye), where each
+    /// attachment slot mounts, and the parts that animate. Written by the editor's weapon fitting, read by the
+    /// content build (offsets) and by <see cref="GunRig"/> (animation).
     /// </summary>
     public sealed class ViewmodelFit : MonoBehaviour
     {
         public Vector3 Muzzle;
         public Vector3 Sight;
+        public Vector3 SightFront;
         public List<AttachmentAnchor> Anchors = new List<AttachmentAnchor>();
+        public List<RigPart> Parts = new List<RigPart>();
     }
 }
