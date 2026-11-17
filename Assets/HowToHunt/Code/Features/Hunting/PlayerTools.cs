@@ -520,6 +520,7 @@ namespace HowToHunt.Hunting
 
         /// <summary>Host: an explosive round goes off. Everything in the radius is hit, harder near the centre.</summary>
         public static event Action<Vector3, float, float> HostExplosion;
+        private const float BlastPushReach = 1.5f, BlastLift = 0.6f; // players are thrown a little beyond the damage radius
 
         private void Explode(HostBullet hb, Vector3 point)
         {
@@ -553,6 +554,26 @@ namespace HowToHunt.Hunting
                 ToolStats st = hb.Stats;
                 st.Damage *= share;
                 HitDummy(st, new ToolResolver.Target { Kind = ToolResolver.TargetKind.Dummy, Index = i, Point = center, Pose = pose }, rewound);
+            }
+            // Players are thrown away from the blast (the shooter too: a grenade at your feet is a rocket jump).
+            float blastPush = HuntingCvars.BlastPush.Value;
+            if (blastPush > 0f)
+            {
+                var players = PlayerMotor.All;
+                for (int i = 0; i < players.Count; i++)
+                {
+                    PlayerMotor pm = players[i];
+                    if (pm == null) continue;
+                    Vector3 center = pm.transform.position;
+                    Vector3 away = center - point;
+                    float share = GunMath.Blast(away.magnitude, radius * BlastPushReach);
+                    if (share <= 0f) continue;
+                    var los = SimWorld.Current.TraceBox(point.ToSim() + new Vec3(0f, 0.2f, 0f), center.ToSim(), Vec3.Zero);
+                    if (los.Hit && los.Fraction < 0.98f) continue; // sheltered by a wall
+                    Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up;
+                    dir = (dir + Vector3.up * BlastLift).normalized; // blasts throw up as well as out
+                    pm.HostPush(dir * (blastPush * share));
+                }
             }
             HostExplosion?.Invoke(point, radius, hb.Tool.Knockback);
             PreyWorld.HostGunshot(point, 1.5f); // a blast scares everything around

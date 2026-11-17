@@ -247,6 +247,14 @@ namespace HowToHunt.Player
             _state.Velocity = new System.Numerics.Vector3(_state.Velocity.X * k, _state.Velocity.Y, _state.Velocity.Z * k);
         }
 
+        /// <summary>Host: thrown by a blast (m/s). Reaches the owner by reconciliation, like HostSlow.</summary>
+        public void HostPush(Vector3 velocity)
+        {
+            if (!IsServerStarted) return;
+            _state.Velocity += velocity.ToSim();
+            if (velocity.y > 3.5f) _state.OnGround = false; // lifted off the ground
+        }
+
         /// <summary>Cheat: toggle noclip. Validated on the host (sv_cheats).</summary>
         [ServerRpc]
         public void CmdToggleNoclip()

@@ -21,14 +21,14 @@ namespace HowToHunt.Editor
 
         /// <summary>
         /// The hand cannon: a heavy, slow shove back in the hands and a blast that throws you 14 m/s backwards along
-        /// your view (fire it at the ground to fly). Too heavy to sway much; one ball, so no tactical reload.
+        /// your view (fire it at the ground to fly: 20 m/s). Too heavy to sway much; one ball, so no tactical reload.
         /// </summary>
         public static GunHandling Cannon() => new GunHandling
         {
-            KickPos = new Vector3(0.05f, 0.12f, 0.6f), KickRot = new Vector2(10f, 20f),
+            KickPos = new Vector3(0.08f, 0.2f, 0.9f), KickRot = new Vector2(14f, 30f),
             SpringPos = 400f, DamperPos = 1f, SpringRot = 600f, DamperRot = 40f,
             AdsSpring = 1f, AdsKickPos = 1f, AdsKickRot = 1f,
-            FreeAim = new Vector3(1f, 3f, 2f), FreeAimSpeed = 0.15f, Push = 14f,
+            FreeAim = new Vector3(1f, 3f, 2f), FreeAimSpeed = 0.15f, Push = 20f,
             SprintPos = new Vector3(-0.1f, -0.15f, 0f), SprintRot = new Vector3(15f, -30f, 15f), SprintSeconds = 0.3f,
             StrafeTilt = -4f, RefillAt = 0.85f, TacticalReload = 1f,
             // Loaded from the muzzle: tipped back, muzzle up into view, while the hand rams the charge home.

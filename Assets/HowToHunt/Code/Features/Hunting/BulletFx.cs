@@ -28,6 +28,9 @@ namespace HowToHunt.Hunting
         private readonly bool[] _explosive = new bool[BulletPool]; // the host announces the blast; no bullet impact
         private readonly float[] _orbSize = new float[BulletPool];   // plasma orb size (0 = a plain bullet)
         private readonly PlasmaOrb[] _orbs = new PlasmaOrb[BulletPool];
+        private readonly float[] _ballSize = new float[BulletPool];  // an iron ball (the hand cannon), 0 = none
+        private readonly Transform[] _balls = new Transform[BulletPool];
+        private MaterialPropertyBlock _ballColor;
         private const float PlasmaOrbSize = 0.3f, BombletSize = 0.14f;
         private int _nextBullet;
 
@@ -126,7 +129,7 @@ namespace HowToHunt.Hunting
         public static void Fire(ToolDefinition tool, Vector3 origin, Vector3 dir)
         {
             if (tool == null) return;
-            FireWith(tool.Ballistics, origin, dir, tool.Range, tool.ExplosionRadius > 0f, tool.PlasmaOrb ? PlasmaOrbSize : 0f);
+            FireWith(tool.Ballistics, origin, dir, tool.Range, tool.ExplosionRadius > 0f, tool.PlasmaOrb ? PlasmaOrbSize : 0f, tool.IronBall);
         }
 
         /// <summary>Plasma rounds are layered plasma orbs (PlasmaOrb), pooled with the bullets.</summary>
@@ -139,6 +142,28 @@ namespace HowToHunt.Hunting
             _orbs[i].gameObject.SetActive(true);
         }
 
+        /// <summary>The hand cannon's iron ball: a dark low-poly ball, pooled with the bullets.</summary>
+        private void ShowBall(int i, Vector3 at)
+        {
+            if (_ballSize[i] <= 0f) { if (_balls[i] != null) _balls[i].gameObject.SetActive(false); return; }
+            if (_balls[i] == null)
+            {
+                var g = new GameObject("Iron Ball");
+                g.transform.SetParent(transform, false);
+                g.AddComponent<MeshFilter>().sharedMesh = ExplosionFx.OrbMesh;
+                var r = g.AddComponent<MeshRenderer>();
+                Material smoke = Resources.Load<Material>("FX/M_Smoke"); // lit, coloured per renderer
+                if (smoke != null) r.sharedMaterial = smoke;
+                _ballColor ??= new MaterialPropertyBlock();
+                _ballColor.SetColor("_BaseColor", new Color(0.13f, 0.13f, 0.14f));
+                r.SetPropertyBlock(_ballColor);
+                _balls[i] = g.transform;
+            }
+            _balls[i].position = at;
+            _balls[i].localScale = Vector3.one * _ballSize[i];
+            _balls[i].gameObject.SetActive(true);
+        }
+
         /// <summary>A cluster round burst: its orbs fly the same fan as the host's (from the shot seed).</summary>
         public static void Cluster(ToolDefinition tool, Vector3 point, ushort seed)
         {
@@ -148,7 +173,7 @@ namespace HowToHunt.Hunting
                 FireWith(Hunting.Cluster.Ballistics, from, Hunting.Cluster.Dir(seed, i).ToUnity(), Hunting.Cluster.Range(i), true, tool.PlasmaOrb ? BombletSize : 0f);
         }
 
-        private static void FireWith(GunBallistics g, Vector3 origin, Vector3 dir, float range, bool explosive, float orb)
+        private static void FireWith(GunBallistics g, Vector3 origin, Vector3 dir, float range, bool explosive, float orb, float ball = 0f)
         {
             if (_instance == null) return;
             BulletFx f = _instance;
@@ -159,6 +184,8 @@ namespace HowToHunt.Hunting
             f._live[i] = true;
             f._explosive[i] = explosive;
             f._orbSize[i] = orb;
+            f._ballSize[i] = ball;
+            f.ShowBall(i, origin);
             f._lines[i].enabled = false; // shown from the first step (no zero-length line)
             f.ShowOrb(i, origin);
         }
@@ -188,7 +215,12 @@ namespace HowToHunt.Hunting
                 LineRenderer lr = _lines[i];
                 lr.SetPosition(0, head - d.ToUnity() * streak);
                 lr.SetPosition(1, head);
-                lr.enabled = true;
+                lr.enabled = _ballSize[i] <= 0f; // an iron ball is seen, not streaked
+                if (_balls[i] != null && _ballSize[i] > 0f)
+                {
+                    _balls[i].position = head;
+                    _balls[i].Rotate(720f * dt, 0f, 0f, Space.Self); // tumbling
+                }
                 if (_orbs[i] != null && _orbSize[i] > 0f)
                 {
                     _orbs[i].transform.position = head;
@@ -199,6 +231,7 @@ namespace HowToHunt.Hunting
                     _live[i] = false;
                     lr.enabled = false;
                     if (_orbs[i] != null) _orbs[i].gameObject.SetActive(false);
+                    if (_balls[i] != null) _balls[i].gameObject.SetActive(false);
                 }
             }
 

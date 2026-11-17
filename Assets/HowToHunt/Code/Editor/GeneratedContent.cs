@@ -287,7 +287,7 @@ namespace HowToHunt.Editor
             ToolDefinition uzi = Gun("uzi", "Uzi", "Hold the trigger: 800 rounds a minute, and it climbs.", 5, "Uzi", t =>
             {
                 t.Tier = 2; t.Damage = 8f; t.Range = 100f; t.Cooldown = 0.075f; t.Automatic = true; t.Knockback = 1.5f;
-                t.RecoilUp = 3f; t.RecoilSide = 5f; t.RecoilRecover = 0f; t.Handling = Handling.Smg();
+                t.RecoilUp = 3f; t.RecoilSide = 3.5f; t.RecoilRecover = 0f; t.Handling = Handling.Smg();
                 t.MagazineSize = 25; t.ReloadSeconds = 1.9f; t.BulletSpeed = 330f;
                 t.FalloffStart = 12f; t.FalloffEnd = 40f; t.MinDamageFraction = 0.4f;
                 t.SpreadDegrees = 2.2f; t.MoveSpreadPerMps = 0.5f; t.MaxSpreadDegrees = 9f; t.AdsZoom = 1.15f; t.Weight = 0;
@@ -305,8 +305,9 @@ namespace HowToHunt.Editor
             ToolDefinition handCannon = Gun("handcannon", "Hand Cannon", "A real cannon, held by its wheels. One ball per load and a slow reload, but the blast throws you back: fire it at the ground to fly.", 7, "HandCannon", t =>
             {
                 t.Tier = 3; t.Damage = 90f; t.Range = 120f; t.Cooldown = 0.8f; t.Knockback = 15f;
-                t.RecoilUp = 10f; t.RecoilSide = 3f; t.RecoilRecover = 0f; t.Handling = Handling.Cannon();
-                t.MagazineSize = 1; t.ReloadSeconds = 3.5f; t.BulletSpeed = 70f; t.BulletGravity = 9.8f;
+                t.RecoilUp = 14f; t.RecoilSide = 4f; t.RecoilRecover = 0f; t.Handling = Handling.Cannon();
+                t.MagazineSize = 1; t.ReloadSeconds = 3.5f; t.BulletSpeed = 45f; t.BulletGravity = 9.8f; // an iron ball, as slow as a grenade
+                t.IronBall = 0.14f;
                 t.FalloffStart = 60f; t.FalloffEnd = 120f; t.MinDamageFraction = 0.7f;
                 t.SpreadDegrees = 0.8f; t.MoveSpreadPerMps = 0.2f; t.MaxSpreadDegrees = 4f; t.AdsZoom = 1.1f; t.Weight = 2;
                 t.ViewOffset = new Vector3(0.05f, -0.12f, 0.06f); // held low by the wheels, the barrel below your eye

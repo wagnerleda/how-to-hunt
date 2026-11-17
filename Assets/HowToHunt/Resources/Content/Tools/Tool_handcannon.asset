@@ -25,12 +25,12 @@ MonoBehaviour:
   ArcDegrees: 0
   MaxTargets: 1
   Knockback: 15
-  RecoilUp: 10
-  RecoilSide: 3
+  RecoilUp: 14
+  RecoilSide: 4
   RecoilRecover: 0
   Handling:
-    KickPos: {x: 0.05, y: 0.12, z: 0.6}
-    KickRot: {x: 10, y: 20}
+    KickPos: {x: 0.08, y: 0.2, z: 0.9}
+    KickRot: {x: 14, y: 30}
     SpringPos: 400
     DamperPos: 1
     SpringRot: 600
@@ -40,7 +40,7 @@ MonoBehaviour:
     AdsKickRot: 1
     FreeAim: {x: 1, y: 3, z: 2}
     FreeAimSpeed: 0.15
-    Push: 14
+    Push: 20
     SprintPos: {x: -0.1, y: -0.15, z: 0}
     SprintRot: {x: 15, y: -30, z: 15}
     SprintSeconds: 0.3
@@ -50,10 +50,11 @@ MonoBehaviour:
     ReloadPos: {x: -0.04, y: 0.02, z: -0.06}
     ReloadRot: {x: -38, y: -12, z: 6}
   ViewOffset: {x: 0.05, y: -0.12, z: 0.06}
+  IronBall: 0.14
   MagazineSize: 1
   ReloadSeconds: 3.5
   Automatic: 0
-  BulletSpeed: 70
+  BulletSpeed: 45
   BulletGravity: 9.8
   FalloffStart: 60
   FalloffEnd: 120

@@ -30,7 +30,7 @@ namespace HowToHunt.Player
         public static readonly FloatCvar StaminaRegen = new FloatCvar("sv_stamina_regen", D.StaminaRegen, "Seconds of sprint recovered per second while not sprinting.", Sv, 0f, 10f);
         public static readonly FloatCvar WaterSpeed = new FloatCvar("sv_water_speed", D.WaterSpeedFactor, "Ground speed while wading, x sv_maxspeed.", Sv, 0.1f, 1f);
         public static readonly FloatCvar ThrowSlow = new FloatCvar("sv_throw_slow", D.HitSlowFactor, "Speed multiplier for a moment after being hit by a thrown item (never a stun).", Sv, 0.1f, 1f);
-        public static readonly FloatCvar MaxPush = new FloatCvar("sv_push_max", D.MaxPush, "Strongest gun shove (knockback) a shot may give its shooter, m/s.", Sv, 0f, 20f);
+        public static readonly FloatCvar MaxPush = new FloatCvar("sv_push_max", D.MaxPush, "Strongest gun shove (knockback) a shot may give its shooter, m/s.", Sv, 0f, 25f);
         public static readonly FloatCvar PushInterval = new FloatCvar("sv_push_interval", D.PushInterval, "Seconds between gun shoves a player can get.", Sv, 0f, 2f);
         public static readonly FloatCvar LoadSlow = new FloatCvar("sv_load_slow", D.LoadSlowPerLevel, "Ground speed lost per weapon weight class while holding a heavy weapon (fraction).", Sv, 0f, 0.3f);
         public static readonly FloatCvar RecoilSettleSpeed = new FloatCvar("sv_recoil_follow", 25f, "How fast the view takes up a weapon kick, per second (How to Fish: 25).", Sv, 0.5f, 60f);

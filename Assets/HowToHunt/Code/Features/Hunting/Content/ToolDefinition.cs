@@ -37,6 +37,8 @@ namespace HowToHunt.Hunting
         public GunHandling Handling;
         [Tooltip("Firearms: extra offset of the held gun in first person, metres (a bulky gun sits lower and further out).")]
         public Vector3 ViewOffset;
+        [Tooltip("Firearms: fires a visible iron ball this big (m) instead of a tracer (the hand cannon). 0: a bullet.")]
+        public float IronBall;
         [Header("Firearm")]
         [Tooltip("Rounds per magazine. Ammo is infinite; magazines are not (reload with R).")]
         public int MagazineSize = 6;

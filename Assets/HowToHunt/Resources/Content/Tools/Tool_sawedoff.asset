@@ -50,6 +50,7 @@ MonoBehaviour:
     ReloadPos: {x: 0, y: 0, z: 0}
     ReloadRot: {x: 0, y: 0, z: 0}
   ViewOffset: {x: 0, y: 0, z: 0}
+  IronBall: 0
   MagazineSize: 2
   ReloadSeconds: 2.4
   Automatic: 0

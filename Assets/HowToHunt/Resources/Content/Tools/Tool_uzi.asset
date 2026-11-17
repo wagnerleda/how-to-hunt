@@ -26,7 +26,7 @@ MonoBehaviour:
   MaxTargets: 1
   Knockback: 1.5
   RecoilUp: 3
-  RecoilSide: 5
+  RecoilSide: 3.5
   RecoilRecover: 0
   Handling:
     KickPos: {x: 0.1, y: 0.1, z: 0.5}
@@ -50,6 +50,7 @@ MonoBehaviour:
     ReloadPos: {x: 0, y: 0, z: 0}
     ReloadRot: {x: 0, y: 0, z: 0}
   ViewOffset: {x: 0, y: 0, z: 0}
+  IronBall: 0
   MagazineSize: 25
   ReloadSeconds: 1.9
   Automatic: 1
