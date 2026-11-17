@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_steady_hands
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.steady_hands
+  _displayName: Steady Hands
+  _description: Take down 5 prey (killed, not caught)
+  Giver: {fileID: 11400000, guid: 4a9c46be411fd0a42a273c0edf0b8d67, type: 2}
+  Requires: {fileID: 11400000, guid: 11394bb8f3eb23d48b41383097a0356c, type: 2}
+  Objective: 1
+  Prey: {fileID: 0}
+  Count: 5
+  RewardCoins: 120
+  Unlocks: 
+  Offer: A net's fine for rabbits. A hunter brings things down. Five of them, any way you like, but no catching alive.
+  Task: Take down 5 prey (killed, not caught)
+  Waiting: Five. Down. Off you go.
+  Done: Not bad at all. Tomas has been going on about the fallen trees to the east. Go and see him.
+  Order: 3

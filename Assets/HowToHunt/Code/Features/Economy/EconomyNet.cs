@@ -35,6 +35,10 @@ namespace HowToHunt.Economy
         /// <summary>The gunsmith sold an attachment (EventContent) or fitted / took one off.</summary>
         AttachmentBought,
         AttachmentFitted,
+        /// <summary>A quest was accepted (EventContent) or turned in (EventCoins: the reward).</summary>
+        QuestAccepted,
+        QuestDone,
+        QuestProgress,
     }
 
     public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull }
@@ -65,9 +69,12 @@ namespace HowToHunt.Economy
         public int Captures;
         public int Kills;
         public string LifetimeCoins;
+        public uint[] QuestIds;
+        public int[] QuestProgress;
+        public uint[] QuestsDone;
     }
 
-    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools, BuyAttachment, FitAttachment, UnfitAttachment }
+    public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools, BuyAttachment, FitAttachment, UnfitAttachment, AcceptQuest, TurnInQuest }
 
     /// <summary>Client → host: sell, buy, pick an item up, throw or drop the held prey.</summary>
     public struct EconomyRequestBroadcast : IBroadcast
@@ -91,7 +98,7 @@ namespace HowToHunt.Economy
     /// and returns the whole ledger after every change, which the client saves. Clients never change their own coins
     /// or items. (Trusting the joining profile is a v1 choice for co-op with friends: docs/adr/0011.)
     /// </summary>
-    public static class EconomyNet
+    public static partial class EconomyNet
     {
         public static readonly FloatCvar StationReach = new FloatCvar("sv_station_reach", 3.5f, "Extra distance (m) beyond a camp station's radius at which the host still accepts its use.", CvarFlags.Replicated | CvarFlags.Cheat, 0f, 50f);
         public static readonly FloatCvar ThrowSpeed = new FloatCvar("sv_throw_speed", 18f, "How fast a fully charged throw leaves your hand (m/s).", CvarFlags.Replicated | CvarFlags.Cheat, 1f, 60f);
@@ -118,10 +125,13 @@ namespace HowToHunt.Economy
             _manager = m;
             _joined = false;
             Ledger.Clear();
+            Flags.Clear();
             m.ServerManager.RegisterBroadcast<EconomyStateBroadcast>(OnJoinFromClient);
             m.ServerManager.RegisterBroadcast<EconomyRequestBroadcast>(OnRequest);
             m.ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
             m.ClientManager.RegisterBroadcast<EconomyStateBroadcast>(OnStateFromHost);
+            m.ClientManager.RegisterBroadcast<WorldFlagsBroadcast>(OnWorldFlags);
+            Flags.Clear();
             WorldItems.Attach(m);
             // Using a tool requires carrying it (tools can be dropped, lost or picked up by someone else).
             PlayerTools.HostHasTool = (clientId, tool) =>
@@ -135,6 +145,7 @@ namespace HowToHunt.Economy
             _manager = null;
             _joined = false;
             Ledger.Clear();
+            Flags.Clear();
             PlayerTools.HostHasTool = null;
             PlayerHealth.HostBledOut -= OnBledOut;
             WorldItems.Detach();
@@ -208,6 +219,7 @@ namespace HowToHunt.Economy
             Unpack(msg, p, exact: false); // re-lays the slots with this build's tools and capacity
             Ledger[conn.ClientId] = p;
             p.ApplyTo(Loadouts.ForClient(conn.ClientId));
+            HostPushFlags(); // what the party has unlocked, including anything this player brought
             Send(conn, p, EconomyEvent.Synced);
         }
 
@@ -234,10 +246,12 @@ namespace HowToHunt.Economy
                 p.Kills++;
                 WorldItems.HostSpawn(item, e.Position, e.Fling);
                 Send(conn, p, EconomyEvent.Killed, content: e.Prey.Value, flags: item.Flags, coins: value.Coins);
+                CountQuest(e.ClientId, p, QuestObjective.TakeDown, e.Prey.Value, false, 1);
                 return;
             }
             p.Captures++;
             p.Research[e.Prey.Value] = p.ResearchOf(e.Prey.Value) + 1;
+            CountQuest(e.ClientId, p, QuestObjective.TakeDown, e.Prey.Value, true, 1);
             if (p.Inventory.Add(item, EconomyProfile.StackSize(item.Content)) > 0)
             {
                 DropAtFeet(e.ClientId, item);
@@ -261,6 +275,8 @@ namespace HowToHunt.Economy
                 case EconomyRequestKind.BuyAttachment: BuyAttachment(conn, p, req.Upgrade, req.Tool); break;
                 case EconomyRequestKind.FitAttachment: FitAttachment(conn, p, req.Tool, req.Upgrade); break;
                 case EconomyRequestKind.UnfitAttachment: UnfitAttachment(conn, p, req.Tool, (AttachmentSlot)req.Slot); break;
+                case EconomyRequestKind.AcceptQuest: HostAcceptQuest(conn, p, req.Upgrade); break;
+                case EconomyRequestKind.TurnInQuest: HostTurnInQuest(conn, p, req.Upgrade); break;
             }
         }
 
@@ -268,6 +284,10 @@ namespace HowToHunt.Economy
         {
             if (!NearStation(conn, CampStationKind.Sell)) { Refuse(conn, p, EconomyRefusal.NotAtStation); return; }
             CatchReward total = p.InventoryValue(EconomyRules.Default, Scratch);
+            // Per-area prices: the trader you sell to sets them (the forest pays more than the Plains).
+            PlayerMotor seller = MotorOf(conn.ClientId);
+            CampStation at = seller != null ? CampStation.Nearest(seller.transform.position, CampStationKind.Sell, StationReach.Value) : null;
+            if (at != null && at.PriceMultiplier != 1f) total.Coins *= at.PriceMultiplier;
             int count = p.Inventory.PreyCount;
             if (count == 0) { Refuse(conn, p, EconomyRefusal.NothingToSell); return; }
             p.Inventory.TakeAllPrey();
@@ -275,6 +295,8 @@ namespace HowToHunt.Economy
             p.LifetimeCoins += total.Coins;
             p.Trophies += total.Trophies;
             Send(conn, p, EconomyEvent.Sold, coins: total.Coins, count: count);
+            CountQuest(conn.ClientId, p, QuestObjective.Sell, 0, false, count);
+            CountQuest(conn.ClientId, p, QuestObjective.EarnCoins, 0, false, (int)Math.Min(int.MaxValue, total.Coins.ToDouble()));
         }
 
         /// <summary>Host: a prey this client threw reached the trader. Sold, as if handed over. Tools aren't bought.</summary>
@@ -292,6 +314,8 @@ namespace HowToHunt.Economy
             p.LifetimeCoins += coins;
             p.Trophies += trophies;
             Send(conn, p, EconomyEvent.Sold, coins: coins, count: count);
+            CountQuest(clientId, p, QuestObjective.Sell, 0, false, count);
+            CountQuest(clientId, p, QuestObjective.EarnCoins, 0, false, (int)Math.Min(int.MaxValue, coins.ToDouble()));
             return true;
         }
 
@@ -309,6 +333,7 @@ namespace HowToHunt.Economy
             if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null && p.Inventory.Add(ItemStack.Tool(u.Tool.Id.Value), 1) > 0)
                 DropAtFeet(conn.ClientId, ItemStack.Tool(u.Tool.Id.Value));
             Send(conn, p, EconomyEvent.Bought, content: upgradeId, coins: u.CostCoins);
+            CountQuest(conn.ClientId, p, QuestObjective.BuyUpgrade, 0, false, 1);
         }
 
         // --- gunsmith (Phase 5) -------------------------------------------------------------------------------
@@ -338,6 +363,7 @@ namespace HowToHunt.Economy
                 p.ApplyTo(Loadouts.ForClient(conn.ClientId));
             }
             Send(conn, p, EconomyEvent.AttachmentBought, content: id, coins: a.CostCoins);
+            CountQuest(conn.ClientId, p, QuestObjective.BuyAttachment, 0, false, 1);
         }
 
         private static void FitAttachment(NetworkConnection conn, EconomyProfile p, uint toolId, uint id)
@@ -513,6 +539,9 @@ namespace HowToHunt.Economy
                 Captures = p.Captures,
                 Kills = p.Kills,
                 LifetimeCoins = p.LifetimeCoins.Serialize(),
+                QuestIds = new List<uint>(p.Quests.Keys).ToArray(),
+                QuestProgress = new List<int>(p.Quests.Values).ToArray(),
+                QuestsDone = new List<uint>(p.QuestsDone).ToArray(),
                 EventCoins = string.Empty,
             };
             int i = 0;
@@ -560,6 +589,12 @@ namespace HowToHunt.Economy
             p.Captures = msg.Captures;
             p.Kills = msg.Kills;
             p.LifetimeCoins = BigDouble.Deserialize(msg.LifetimeCoins);
+            if (msg.QuestIds != null && msg.QuestProgress != null)
+                for (int i = 0; i < msg.QuestIds.Length && i < msg.QuestProgress.Length; i++)
+                    if (exact || ContentRegistry.Get<QuestDefinition>(new ContentId(msg.QuestIds[i])) != null) p.Quests[msg.QuestIds[i]] = msg.QuestProgress[i];
+            if (msg.QuestsDone != null)
+                foreach (uint q in msg.QuestsDone)
+                    if (exact || ContentRegistry.Get<QuestDefinition>(new ContentId(q)) != null) p.QuestsDone.Add(q);
 
             int n = msg.SlotKind != null ? msg.SlotKind.Length : 0;
             if (msg.SlotContent == null || msg.SlotFlags == null || msg.SlotCount == null) n = 0;

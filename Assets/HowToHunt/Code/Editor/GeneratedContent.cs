@@ -12,7 +12,7 @@ namespace HowToHunt.Editor
     /// code so numbers are reviewable in diffs. Re-running updates values in place; keys and asset GUIDs stay.
     /// Tuning rationale: docs/DESIGN.md (Plains economy). Pacing is checked by EconomyPacingTests.
     /// </summary>
-    public static class GeneratedContent
+    public static partial class GeneratedContent
     {
         public const string ContentDir = GeneratedAssets.ResourcesDir + "/Content";
         private const string ModelsDir = GeneratedAssets.Root + "/Art/Models";
@@ -526,6 +526,8 @@ namespace HowToHunt.Editor
             Builtin("scout_suppressor", "Scout Suppressor", "Prey barely hear it: a third of the range.", AttachmentSlot.Muzzle, 900, 220, scout, "suppressor ", a => { a.NoiseMultiplier = 0.3f; a.RangeMultiplier = 0.95f; });
             Builtin("scout_buttpad", "Scout Butt Pad", "The gun kicks 25 % less in the hand and settles faster.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.KickMultiplier = 0.75f; a.SpringMultiplier = 1.3f; });
             Builtin("intervention_bipod", "Intervention Bipod", "Braced: the gun kicks half as much in the hand; half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low;Cylinder.008_low", a => { a.KickMultiplier = 0.5f; a.AdsSpreadMultiplier = 0.5f; });
+
+            BuildNpcsAndQuests();
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))

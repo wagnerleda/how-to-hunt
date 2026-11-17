@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_fresh_stock
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.fresh_stock
+  _displayName: Fresh Stock
+  _description: Sell 3 catches to Tomas
+  Giver: {fileID: 11400000, guid: 021c2cd390e27f84f8a527c44518973b, type: 2}
+  Requires: {fileID: 0}
+  Objective: 3
+  Prey: {fileID: 0}
+  Count: 3
+  RewardCoins: 60
+  Unlocks: 
+  Offer: New out here? Then you'll want coin. Bring me three catches, caught or killed, and I'll pay a bonus on top.
+  Task: Sell 3 catches to Tomas
+  Waiting: Still waiting on those catches. The rabbit warrens are by the logs.
+  Done: That's the spirit. Here's your bonus. Go see Wren at the outfitter, she'll want to see you kitted out.
+  Order: 1

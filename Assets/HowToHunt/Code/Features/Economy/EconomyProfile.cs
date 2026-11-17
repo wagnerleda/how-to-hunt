@@ -25,6 +25,9 @@ namespace HowToHunt.Economy
         public int Captures;
         public int Kills;
         public BigDouble LifetimeCoins = BigDouble.Zero;
+        /// <summary>Quests accepted and their progress, and quests turned in (Phase 6).</summary>
+        public readonly Dictionary<uint, int> Quests = new Dictionary<uint, int>();
+        public readonly HashSet<uint> QuestsDone = new HashSet<uint>();
 
         public int ResearchOf(uint prey) => Research.TryGetValue(prey, out int r) ? r : 0;
         public bool Owns(uint upgrade) => Upgrades.Contains(upgrade);
@@ -136,6 +139,10 @@ namespace HowToHunt.Economy
             Captures = other.Captures;
             Kills = other.Kills;
             LifetimeCoins = other.LifetimeCoins;
+            Quests.Clear();
+            foreach (KeyValuePair<uint, int> kv in other.Quests) Quests[kv.Key] = kv.Value;
+            QuestsDone.Clear();
+            QuestsDone.UnionWith(other.QuestsDone);
         }
 
         public void Clear()
@@ -151,6 +158,8 @@ namespace HowToHunt.Economy
             Captures = 0;
             Kills = 0;
             LifetimeCoins = BigDouble.Zero;
+            Quests.Clear();
+            QuestsDone.Clear();
         }
 
         /// <summary>What all prey in the inventory sell for right now (mastery counts research at the moment of sale).</summary>
@@ -216,6 +225,9 @@ namespace HowToHunt.Economy
             public int captures;
             public int kills;
             public string lifetimeCoins = "0;0";
+            public List<string> questKeys = new List<string>();
+            public List<int> questProgress = new List<int>();
+            public List<string> questsDone = new List<string>();
         }
 
         private readonly EconomyProfile _profile;
@@ -246,6 +258,18 @@ namespace HowToHunt.Economy
                 if (p == null) continue;
                 d.researchKeys.Add(p.Key);
                 d.researchCounts.Add(kv.Value);
+            }
+            foreach (KeyValuePair<uint, int> kv in _profile.Quests)
+            {
+                QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(kv.Key));
+                if (q == null) continue;
+                d.questKeys.Add(q.Key);
+                d.questProgress.Add(kv.Value);
+            }
+            foreach (uint done in _profile.QuestsDone)
+            {
+                QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(done));
+                if (q != null) d.questsDone.Add(q.Key);
             }
             foreach (uint u in _profile.Upgrades)
             {
@@ -311,6 +335,16 @@ namespace HowToHunt.Economy
                 ToolDefinition t = ContentRegistry.Get<ToolDefinition>(d.fittedTools[i]);
                 AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(d.fittedAttachments[i]);
                 if (t != null && a != null && _profile.Attachments.Contains(a.Id.Value) && a.Fits(t)) _profile.Fit(t.Id.Value, a);
+            }
+            for (int i = 0; i < d.questKeys.Count && i < d.questProgress.Count; i++)
+            {
+                QuestDefinition q = ContentRegistry.Get<QuestDefinition>(d.questKeys[i]);
+                if (q != null) _profile.Quests[q.Id.Value] = d.questProgress[i];
+            }
+            foreach (string key in d.questsDone)
+            {
+                QuestDefinition q = ContentRegistry.Get<QuestDefinition>(key);
+                if (q != null) _profile.QuestsDone.Add(q.Id.Value);
             }
             _profile.ApplyCapacity();
             if (savedVersion >= 3)

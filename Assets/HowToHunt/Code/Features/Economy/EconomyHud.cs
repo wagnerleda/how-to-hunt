@@ -81,6 +81,21 @@ namespace HowToHunt.Economy
                     Sfx.Play2D("Kenney/handleCoins", 0.6f);
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
+                case EconomyEvent.QuestAccepted:
+                {
+                    QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(msg.EventContent));
+                    if (q != null) HuntFeedback.Message($"New quest: {q.DisplayName}");
+                    Sfx.Play2D("Kenney/confirmation_001", 0.5f);
+                    break;
+                }
+                case EconomyEvent.QuestDone:
+                {
+                    QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(msg.EventContent));
+                    if (q != null) HuntFeedback.Message($"Quest done: {q.DisplayName}  +{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
+                    Sfx.Play2D("Kenney/handleCoins", 0.6f);
+                    if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
+                    break;
+                }
                 case EconomyEvent.AttachmentBought:
                 {
                     AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(msg.EventContent));
@@ -154,6 +169,7 @@ namespace HowToHunt.Economy
             }
 
             if (!KeyBindings.WasPressedThisFrame(GameAction.Interact)) return;
+            if (item == null && station != null && TalkAt != null && TalkAt(station)) return; // the stall's NPC takes it from here
             if (item != null) EconomyNet.RequestPickUp(item.Id);
             else if (station != null)
             {
@@ -174,8 +190,15 @@ namespace HowToHunt.Economy
             return $"[{key}] Pick up {name}{count} ({how})";
         }
 
+        /// <summary>Set by the NPC feature: talk to whoever runs this stall (true: handled, the stall's own action waits).</summary>
+        public static System.Func<CampStation, bool> TalkAt;
+        /// <summary>Set by the NPC feature: the prompt near a stall with someone at it ("[E] Talk to Tomas").</summary>
+        public static System.Func<CampStation, string> TalkPrompt;
+
         private string PromptFor(CampStation station)
         {
+            string talk = TalkPrompt?.Invoke(station);
+            if (talk != null) return talk;
             string key = KeyBindings.DisplayName(GameAction.Interact);
             if (station.Kind == CampStationKind.Shop) return $"[{key}] {station.Label}: browse upgrades";
             if (station.Kind == CampStationKind.Workshop) return $"[{key}] {station.Label}: attachments for your guns";

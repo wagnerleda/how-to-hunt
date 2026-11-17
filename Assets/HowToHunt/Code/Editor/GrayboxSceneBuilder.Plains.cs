@@ -306,6 +306,9 @@ namespace HowToHunt.Editor
         private static void BuildBoundary(Transform plains, Transform signs)
         {
             Transform walls = Group(plains, "Forest Wall (collision)");
+            // Phase 6: everything closing the east clearing sits in a gate that opens with the quest (world flag).
+            Transform blocked = Group(plains, "East Gate (blocked)");
+            blocked.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.EastClearingFlag, showWhenSet: false);
             // Invisible wall a few metres into the trees all the way round, except the south corridor and the east
             // clearing (which has its own barricade until the quest opens it).
             const int segments = 160;
@@ -318,7 +321,8 @@ namespace HowToHunt.Editor
                 if (Mathf.Abs(mid.x - GateX) < 7f && mid.z < PlayMinZ + 10f) continue; // corridor opening
                 float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
                 float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
-                GameObject w = Box(walls, $"Wall {i}", new Vector3(mid.x, 15f, mid.z), new Vector3(1f, 40f, len), "Wall", yaw);
+                bool clearing = mid.x > PlayMaxX - 6f && Mathf.Abs(mid.z - ClearingZ) < 8f;
+                GameObject w = Box(clearing ? blocked : walls, $"Wall {i}", new Vector3(mid.x, 15f, mid.z), new Vector3(1f, 40f, len), "Wall", yaw);
                 w.GetComponent<MeshRenderer>().enabled = false;
             }
             // Corridor sides from the lab gate to the meadow.
@@ -340,9 +344,13 @@ namespace HowToHunt.Editor
             // East clearing toward the next zone: a fallen-tree barricade until the quest opens it.
             var rng = new System.Random(7);
             Vector3 gate = OnGround(new Vector3(PlayMaxX + 3f, 0f, ClearingZ));
+            // Phase 6: the logs and their sign go when the party finishes "Beyond the Trees" (world flag), on every machine.
             for (int i = -2; i <= 2; i++)
-                Prop(plains, "log_large", gate + new Vector3(0f, 0.3f + (i & 1) * 0.7f, i * 2.4f), 3.5f, rng, collide: true, yaw: 0f);
-            Sign(signs, "THE WAY EAST\n<size=55%>blocked by fallen trees - a hunter at camp may know a way</size>", gate + new Vector3(-3f, 3.8f, 0f), 90f, 1.2f);
+                Prop(blocked, "log_large", gate + new Vector3(0f, 0.3f + (i & 1) * 0.7f, i * 2.4f), 3.5f, rng, collide: true, yaw: 0f);
+            Sign(blocked, "THE WAY EAST\n<size=55%>blocked by fallen trees - a hunter at camp may know a way</size>", gate + new Vector3(-3f, 3.8f, 0f), 90f, 1.2f);
+            Transform open = Group(plains, "East Gate (open)");
+            open.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.EastClearingFlag, showWhenSet: true);
+            Sign(open, "THE WAY EAST\n<size=55%>surf the slopes down to the pine forest</size>", gate + new Vector3(-3f, 3.8f, 0f), 90f, 1.2f);
         }
 
         /// <summary>A point on the rounded play rectangle (t = 0..1 around), pushed <paramref name="outward"/> metres out.</summary>
@@ -384,10 +392,10 @@ namespace HowToHunt.Editor
             }
 
             // Trader: sells the bag. Outfitter: the upgrade shop.
-            Station(camp, signs, CampStationKind.Sell, "Trader", "TRADER\n<size=55%>sell your catch</size>", c + new Vector3(8f, 0f, -1f), 90f);
-            Station(camp, signs, CampStationKind.Shop, "Outfitter", "OUTFITTER\n<size=55%>tools and upgrades</size>", c + new Vector3(-8f, 0f, -1f), 270f);
+            Station(camp, signs, CampStationKind.Sell, "Trader", "TRADER\n<size=55%>sell your catch</size>", c + new Vector3(8f, 0f, -1f), 90f, "npc.trader");
+            Station(camp, signs, CampStationKind.Shop, "Outfitter", "OUTFITTER\n<size=55%>tools and upgrades</size>", c + new Vector3(-8f, 0f, -1f), 270f, "npc.outfitter");
             // Gunsmith (Phase 5): attachments for your guns.
-            Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f);
+            Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f, "npc.gunsmith");
             Prop(camp, "log_stack", c + new Vector3(-10.5f, 0f, -2.5f), 3f, rng, collide: true, yaw: 90f);
             Prop(camp, "pot_large", c + new Vector3(10.3f, 0f, -2.8f), 3f, rng, collide: false, yaw: 0f);
             Prop(camp, "crop_pumpkin", c + new Vector3(9.4f, 0f, 1.3f), 3f, rng, collide: false, yaw: 20f);
@@ -444,7 +452,7 @@ namespace HowToHunt.Editor
             light.shadows = LightShadows.None;
         }
 
-        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw)
+        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw, string npcKey = null, double expectedSale = PlainsExpectedSale, float priceMultiplier = 1f)
         {
             Transform t = Group(camp, label);
             t.SetPositionAndRotation(feet, Quaternion.Euler(0f, yaw, 0f));
@@ -462,8 +470,25 @@ namespace HowToHunt.Editor
             station.transform.SetParent(t, false);
             station.transform.position = feet;
             // Plains: a full bag sells for roughly 50 coins (Phase 3 economy); that sets the size of the cash burst.
-            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, PlainsExpectedSale);
+            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, expectedSale, priceMultiplier);
+            // Phase 6: the stall's keeper stands behind the counter, facing you.
+            if (npcKey != null) NpcAt(t, npcKey, feet + fwd * 2.05f, yaw + 180f);
         }
+
+        /// <summary>A camp character (Phase 6): the hunters' stick figure with their own mask, posed by NpcBody.</summary>
+        private static void NpcAt(Transform parent, string key, Vector3 feet, float yaw)
+        {
+            var def = AssetDatabase.LoadAssetAtPath<NpcDefinition>($"{GeneratedContent.ContentDir}/Npcs/Npc_{key.Substring(key.IndexOf('.') + 1)}.asset");
+            if (def == null) { Debug.LogWarning($"[HowToHunt] No NPC {key}"); return; }
+            var go = new GameObject($"NPC {def.DisplayName}");
+            go.transform.SetParent(parent, true);
+            go.transform.SetPositionAndRotation(feet + new Vector3(0f, MovementConfigHalfHeight, 0f), Quaternion.Euler(0f, yaw, 0f));
+            AvatarBuilder.BuildFigure(go.transform);
+            go.AddComponent<Npcs.Npc>().Configure(def, 4.5f); // customers stand across the counter
+            go.AddComponent<Npcs.NpcBody>();
+        }
+
+        private const float MovementConfigHalfHeight = 0.9144f; // the hunters' hull: the figure is built about its centre
 
         private static void Spawner(Transform parent, string name, string preyKey, Vector3 position, int count, float radius, float respawn)
         {

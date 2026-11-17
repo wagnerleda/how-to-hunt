@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_ghost_of_the_pines
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.ghost_of_the_pines
+  _displayName: Ghost of the Pines
+  _description: Take down anything in the forest
+  Giver: {fileID: 11400000, guid: 9be2c6121454e554c9233f69b20b47af, type: 2}
+  Requires: {fileID: 11400000, guid: b91cd1420fe4db349a9687aaff032f52, type: 2}
+  Objective: 2
+  Prey: {fileID: 0}
+  Count: 1
+  RewardCoins: 300
+  Unlocks: 
+  Offer: 'Deer here are wary: they hear you long before you see them. Bring one down, caught or killed, and I''ll know you''re the real thing.'
+  Task: Take down anything in the forest
+  Waiting: No deer yet? Move slowly, stay downwind... or don't, and chase it.
+  Done: A real deer. You'll do well out here. That's the best I've paid all season.
+  Order: 5

@@ -25,10 +25,14 @@ namespace HowToHunt.Economy
         public string Label => string.IsNullOrEmpty(_label) ? (_kind == CampStationKind.Sell ? "Trader" : _kind == CampStationKind.Shop ? "Outfitter" : "Gunsmith") : _label;
 
         public double ExpectedSale => _expectedSale;
+        /// <summary>This area's prices: a trader far from the Plains pays more for the same catch (per-area economy).</summary>
+        public float PriceMultiplier => _priceMultiplier <= 0f ? 1f : _priceMultiplier;
+        [SerializeField] private float _priceMultiplier = 1f;
 
-        public void Configure(CampStationKind kind, float radius, string label, double expectedSale = 50)
+        public void Configure(CampStationKind kind, float radius, string label, double expectedSale = 50, float priceMultiplier = 1f)
         {
             _expectedSale = expectedSale;
+            _priceMultiplier = priceMultiplier;
             _kind = kind;
             _radius = radius;
             _label = label;
