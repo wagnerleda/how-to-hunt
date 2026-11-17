@@ -36,6 +36,8 @@ namespace HowToHunt.Hunting
         [Range(0f, 1f)] public float RefillAt;
         [Tooltip("Reload time multiplier with rounds still in the gun (no rack at the end).")]
         public float TacticalReload;
+        [Tooltip("Reload pose: offset (m) and rotation (degrees) the gun is brought to while reloading. Zero: the usual tilt in.")]
+        public Vector3 ReloadPos, ReloadRot;
 
         public bool IsSet => SpringPos > 0f;
     }

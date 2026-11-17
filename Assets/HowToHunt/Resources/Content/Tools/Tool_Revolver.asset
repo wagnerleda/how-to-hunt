@@ -14,23 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
   _key: tool.revolver
   _displayName: Old Revolver
-  _description: 'Long reach. Too much gun for small prey: overkill ruins the carcass.'
+  _description: 'Your first gun: an old six-shooter. Light damage, a gentle kick; only a laser or a speed loader fits it.'
   Archetype: 2
   Mode: 1
   Tier: 2
-  Damage: 25
+  Damage: 14
   CaptureStrength: 0
   HeadshotMultiplier: 2
   Range: 150
   ArcDegrees: 0
   MaxTargets: 1
   Knockback: 6
-  RecoilUp: 5
-  RecoilSide: 2.5
+  RecoilUp: 2.5
+  RecoilSide: 1.5
   RecoilRecover: 0
   Handling:
     KickPos: {x: 0, y: 0.05, z: 0.5}
-    KickRot: {x: 15, y: 15}
+    KickRot: {x: 8, y: 10}
     SpringPos: 2500
     DamperPos: 1
     SpringRot: 5000
@@ -47,6 +47,9 @@ MonoBehaviour:
     StrafeTilt: -10
     RefillAt: 0.8
     TacticalReload: 0.85
+    ReloadPos: {x: 0, y: 0, z: 0}
+    ReloadRot: {x: 0, y: 0, z: 0}
+  ViewOffset: {x: 0, y: 0, z: 0}
   MagazineSize: 6
   ReloadSeconds: 2.2
   Automatic: 0
@@ -60,9 +63,9 @@ MonoBehaviour:
   MaxSpreadDegrees: 7
   AdsSpreadFactor: 0.25
   AdsZoom: 1.15
-  SightOffset: {x: 0, y: 0.075, z: 0}
-  MuzzleOffset: {x: 0, y: 0.04, z: 0.29}
-  SightFront: {x: 0, y: 0, z: 0}
+  SightOffset: {x: 0, y: 0.09883687, z: 0.03295924}
+  MuzzleOffset: {x: 0, y: 0.07708426, z: 0.3168}
+  SightFront: {x: 0, y: 0.09515535, z: 0.31122032}
   ScopeOverlay: 0
   Weight: 0
   Pellets: 1
@@ -75,29 +78,30 @@ MonoBehaviour:
   PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
-    Position: {x: 0, y: 0.04, z: 0.29}
+    Position: {x: 0, y: 0.07708426, z: 0.3168}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.066, z: 0.1}
+    Position: {x: 0, y: 0.08925299, z: 0.08861146}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: 0.02, z: 0.2}
+    Position: {x: 0, y: 0.038315598, z: 0.17424001}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
-    Position: {x: 0, y: 0.02, z: 0.05}
+    Position: {x: 0, y: -0.041003708, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.02, z: 0.05}
+    Position: {x: 0, y: 0.03854213, z: 0.05}
     Euler: {x: 0, y: 0, z: 0}
-  FireSounds: []
+  FireSounds:
+  - {fileID: 8300000, guid: 90348515ce12fa94d97366be6e76b929, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
   InspectSound: {fileID: 0}
-  RestEuler: {x: 0.13263454, y: 0.12520611, z: 86.69952}
-  RestCenter: {x: 0.028020263, y: 0.0013467148, z: 0.1051874}
-  RestSize: {x: 0.18656817, y: 0.053729683, z: 0.36987257}
+  RestEuler: {x: 0.13238886, y: 0.12173674, z: 85.19951}
+  RestCenter: {x: -0.027179971, y: 0.005371252, z: 0.13685165}
+  RestSize: {x: 0.13666824, y: 0.041045055, z: 0.3602778}
   Cooldown: 0.4
   Slot: 3
   StartOwned: 0
-  Viewmodel: {fileID: 919132149155446097, guid: d70fe87620fd3b943bf5e82caaa41565, type: 3}
+  Viewmodel: {fileID: 6572240877284494319, guid: 64b7ffc0afa08e04d9a3825ea8708f59, type: 3}

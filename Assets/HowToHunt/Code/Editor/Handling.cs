@@ -19,17 +19,21 @@ namespace HowToHunt.Editor
             StrafeTilt = -10f, RefillAt = 0.8f, TacticalReload = 0.85f,
         };
 
-        /// <summary>The pistol, heavier: a bigger throw and slower springs.</summary>
-        public static GunHandling HandCannon()
+        /// <summary>
+        /// The hand cannon: a heavy, slow shove back in the hands and a blast that throws you 14 m/s backwards along
+        /// your view (fire it at the ground to fly). Too heavy to sway much; one ball, so no tactical reload.
+        /// </summary>
+        public static GunHandling Cannon() => new GunHandling
         {
-            GunHandling h = Pistol();
-            h.KickRot = new Vector2(20f, 25f);
-            h.SpringPos = 1500f;
-            h.SpringRot = 2500f;
-            h.DamperRot = 60f;
-            h.Push = 1.5f;
-            return h;
-        }
+            KickPos = new Vector3(0.05f, 0.12f, 0.6f), KickRot = new Vector2(10f, 20f),
+            SpringPos = 400f, DamperPos = 1f, SpringRot = 600f, DamperRot = 40f,
+            AdsSpring = 1f, AdsKickPos = 1f, AdsKickRot = 1f,
+            FreeAim = new Vector3(1f, 3f, 2f), FreeAimSpeed = 0.15f, Push = 14f,
+            SprintPos = new Vector3(-0.1f, -0.15f, 0f), SprintRot = new Vector3(15f, -30f, 15f), SprintSeconds = 0.3f,
+            StrafeTilt = -4f, RefillAt = 0.85f, TacticalReload = 1f,
+            // Loaded from the muzzle: tipped back, muzzle up into view, while the hand rams the charge home.
+            ReloadPos = new Vector3(-0.04f, 0.02f, -0.06f), ReloadRot = new Vector3(-38f, -12f, 6f),
+        };
 
         public static GunHandling Smg() => new GunHandling
         {

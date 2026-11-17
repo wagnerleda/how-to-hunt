@@ -47,7 +47,9 @@ namespace HowToHunt.Hunting
 
         // Guns: How to Fish's recoil rig, free-aim box and sprint pose; aim-down-sights blend, inspect.
         private readonly GunRecoilRig _recoil = new GunRecoilRig();
-        private Vector3 _freeAim;                 // degrees: pitch, yaw, roll of the gun inside its free-aim box
+        private Vector3 _freeAim;                 // degrees: pitch, yaw, roll of the gun inside its free-aim box (the target)
+        private Vector3 _freeAimShown, _freeAimVel; // where the gun really is: it follows the target on a spring
+        private const float FreeAimSpring = 1000f, FreeAimDamping = 10f; // How to Fish's sway rig: rotation drive, body damping
         private float _lastViewYaw, _lastViewPitch;
         private bool _hasLastView;
         private Vector3 _sprintPos, _sprintRot, _sprintPosVel, _sprintRotVel;
@@ -166,7 +168,7 @@ namespace HowToHunt.Hunting
         {
             _inspectStart = -10f;
             _recoil.Reset();
-            _freeAim = _sprintPos = _sprintRot = _sprintPosVel = _sprintRotVel = Vector3.zero;
+            _freeAim = _freeAimShown = _freeAimVel = _sprintPos = _sprintRot = _sprintPosVel = _sprintRotVel = Vector3.zero;
             _hasLastView = false;
             _heldPrey = null;
             _tool = tool;
@@ -324,7 +326,7 @@ namespace HowToHunt.Hunting
             // Big sweeps turn the whole arm around the shoulder (below-right of the eye) like a real arm, not around the grip.
             Quaternion shoulder = Quaternion.Euler(0f, shoulderYaw, 0f);
             // Guns sit further right and a bit lower than tools, so they don't block the middle of the view.
-            Vector3 rest = _tool != null && _tool.Archetype == ToolArchetype.Firearm ? Rest + GunShift : Rest;
+            Vector3 rest = _tool != null && _tool.Archetype == ToolArchetype.Firearm ? Rest + GunShift + _tool.ViewOffset : Rest;
             Vector3 grip = Shoulder + shoulder * (rest + offset - Shoulder);
             Vector3 position = grip + bob + _springPos + new Vector3(0f, -0.25f * (1f - raise), 0f);
             Quaternion rotation = _lag * Quaternion.Euler(_tilt) * shoulder * use * Quaternion.Euler(25f * (1f - raise), 0f, 0f);
@@ -471,11 +473,13 @@ namespace HowToHunt.Hunting
                 bool rack = !PlayerTools.LocalReloadTactical;
                 float hold = Smooth(Mathf.Clamp01(r / 0.2f)) * Smooth(Mathf.Clamp01((1f - r) / (rack ? 0.12f : 0.2f)));
                 float flick = Pulse(r, 0.32f, 0.08f), seat = Pulse(r, 0.6f, 0.07f), jolt = rack ? Pulse(r, 0.82f, 0.07f) : 0f;
-                offset += new Vector3(-0.05f, -0.02f, -0.03f) * hold
+                bool custom = h.ReloadRot != Vector3.zero;
+                Vector3 holdPos = custom ? h.ReloadPos : new Vector3(-0.05f, -0.02f, -0.03f), holdRot = custom ? h.ReloadRot : new Vector3(14f, -20f, 28f);
+                offset += holdPos * hold
                         + new Vector3(0.01f, 0.025f, -0.015f) * flick
                         + new Vector3(0f, 0.03f, 0.008f) * seat
                         + new Vector3(0f, 0.02f, 0.04f) * jolt;
-                rotation *= Quaternion.Euler(14f * hold - 14f * flick - 18f * seat - 16f * jolt, -20f * hold + 8f * flick, 28f * hold + 14f * flick - 6f * jolt);
+                rotation *= Quaternion.Euler(holdRot.x * hold - 14f * flick - 18f * seat - 16f * jolt, holdRot.y * hold + 8f * flick, holdRot.z * hold + 14f * flick - 6f * jolt);
             }
         }
 
@@ -497,7 +501,14 @@ namespace HowToHunt.Hunting
                 _freeAim.y = Mathf.Clamp(_freeAim.y + dYaw * h.FreeAimSpeed, -h.FreeAim.y, h.FreeAim.y);
                 _freeAim.z = -_freeAim.y / h.FreeAim.y * h.FreeAim.z; // rolls as it swings aside
             }
-            Quaternion swing = Quaternion.Euler(_freeAim);
+            // The gun follows on a spring (implicit steps: stable at any frame rate), so it shifts, never snaps.
+            for (float left = dt; left > 1e-5f; left -= GunRecoilRig.Step)
+            {
+                float h2 = Mathf.Min(left, GunRecoilRig.Step);
+                _freeAimVel = (_freeAimVel - h2 * FreeAimSpring * (_freeAimShown - _freeAim)) / (1f + h2 * FreeAimDamping + h2 * h2 * FreeAimSpring);
+                _freeAimShown += _freeAimVel * h2;
+            }
+            Quaternion swing = Quaternion.Euler(_freeAimShown);
             position = swing * position;
             rotation = swing * rotation;
         }

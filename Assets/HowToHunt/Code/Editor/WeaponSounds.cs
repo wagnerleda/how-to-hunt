@@ -21,7 +21,7 @@ namespace HowToHunt.Editor
         /// <summary>Folders named differently from the tool key (the owner's drop-ins).</summary>
         private static readonly System.Collections.Generic.Dictionary<string, string> Folders = new System.Collections.Generic.Dictionary<string, string>
         {
-            { "tool.glock", "Glock" }, { "tool.uzi", "Uzi" }, { "tool.sawedoff", "Sawed-Off" }, { "tool.handcannon", "Handcannon" },
+            { "tool.glock", "Glock" }, { "tool.uzi", "Uzi" }, { "tool.sawedoff", "Sawed-Off" }, { "tool.handcannon", "Handcannon" }, { "tool.revolver", "old revolver" },
             { "tool.scout", "ScoutSniper" }, { "tool.heavyrifle", "HeavyAssaultRifle" }, { "tool.intervention", "Intervention" },
             { "tool.grenadelauncher", "GrenadeLauncher" }, { "tool.gunlance", "scifigun" },
         };

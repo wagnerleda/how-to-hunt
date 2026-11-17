@@ -41,5 +41,6 @@ MonoBehaviour:
   - Cube.003_low
   - Cylinder.034_low
   - Cylinder.038_low
+  - Cylinder.008_low
   Laser: 0
   Visual: {fileID: 0}

@@ -22,6 +22,7 @@ namespace HowToHunt.Hunting
 
         private readonly Transform _root;
         private readonly List<Part> _parts = new List<Part>();
+        private readonly ReloadHands _hands;
 
         private float _shotAt = -10f;
         private int _shots;
@@ -38,9 +39,10 @@ namespace HowToHunt.Hunting
                 _parts.Add(new Part { T = t, Kind = p.Kind, Pivot = p.Pivot, RestPos = t.localPosition, RestRot = t.localRotation });
 
             }
+            _hands = new ReloadHands(_root, fit, n => Find(_root, n));
         }
 
-        public bool Empty => _parts.Count == 0;
+        public bool Empty => _parts.Count == 0 && (_hands == null || !_hands.Valid);
 
         public void Shot()
         {
@@ -129,6 +131,8 @@ namespace HowToHunt.Hunting
                 if (p.T.gameObject.activeSelf != visible) p.T.gameObject.SetActive(visible);
                 Apply(p, move, axis, angle);
             }
+            // The off hand follows the parts it works, after they have moved this frame.
+            _hands?.Update(reload, rack);
         }
 
         // A break action, timed like How to Fish's shotgun reload: the latch slips (0-8 %), the barrels drop open

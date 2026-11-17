@@ -35,6 +35,8 @@ namespace HowToHunt.Hunting
         [Range(0f, 1f)] public float RecoilRecover;
         [Tooltip("Firearms: kick springs, free aim, shove, sprint pose and reload timing.")]
         public GunHandling Handling;
+        [Tooltip("Firearms: extra offset of the held gun in first person, metres (a bulky gun sits lower and further out).")]
+        public Vector3 ViewOffset;
         [Header("Firearm")]
         [Tooltip("Rounds per magazine. Ammo is infinite; magazines are not (reload with R).")]
         public int MagazineSize = 6;

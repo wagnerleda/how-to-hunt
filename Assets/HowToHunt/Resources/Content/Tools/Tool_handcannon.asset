@@ -14,57 +14,60 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.ToolDefinition
   _key: tool.handcannon
   _displayName: Hand Cannon
-  _description: An 1851 navy revolver loaded like a cannon. Massive kick.
+  _description: 'A real cannon, held by its wheels. One ball per load and a slow reload, but the blast throws you back: fire it at the ground to fly.'
   Archetype: 2
   Mode: 1
   Tier: 3
-  Damage: 45
+  Damage: 90
   CaptureStrength: 0
   HeadshotMultiplier: 2
-  Range: 150
+  Range: 120
   ArcDegrees: 0
   MaxTargets: 1
-  Knockback: 8
-  RecoilUp: 7
+  Knockback: 15
+  RecoilUp: 10
   RecoilSide: 3
   RecoilRecover: 0
   Handling:
-    KickPos: {x: 0, y: 0.05, z: 0.5}
-    KickRot: {x: 20, y: 25}
-    SpringPos: 1500
+    KickPos: {x: 0.05, y: 0.12, z: 0.6}
+    KickRot: {x: 10, y: 20}
+    SpringPos: 400
     DamperPos: 1
-    SpringRot: 2500
-    DamperRot: 60
-    AdsSpring: 3
+    SpringRot: 600
+    DamperRot: 40
+    AdsSpring: 1
     AdsKickPos: 1
     AdsKickRot: 1
-    FreeAim: {x: 2, y: 8, z: 5}
-    FreeAimSpeed: 0.25
-    Push: 1.5
-    SprintPos: {x: -0.1, y: -0.1, z: 0}
-    SprintRot: {x: 30, y: -35, z: 25}
-    SprintSeconds: 0.15
-    StrafeTilt: -10
-    RefillAt: 0.8
-    TacticalReload: 0.85
-  MagazineSize: 6
-  ReloadSeconds: 3
+    FreeAim: {x: 1, y: 3, z: 2}
+    FreeAimSpeed: 0.15
+    Push: 14
+    SprintPos: {x: -0.1, y: -0.15, z: 0}
+    SprintRot: {x: 15, y: -30, z: 15}
+    SprintSeconds: 0.3
+    StrafeTilt: -4
+    RefillAt: 0.85
+    TacticalReload: 1
+    ReloadPos: {x: -0.04, y: 0.02, z: -0.06}
+    ReloadRot: {x: -38, y: -12, z: 6}
+  ViewOffset: {x: 0.05, y: -0.12, z: 0.06}
+  MagazineSize: 1
+  ReloadSeconds: 3.5
   Automatic: 0
-  BulletSpeed: 420
-  BulletGravity: 4
-  FalloffStart: 30
-  FalloffEnd: 80
-  MinDamageFraction: 0.6
-  SpreadDegrees: 1
-  MoveSpreadPerMps: 0.45
-  MaxSpreadDegrees: 7
+  BulletSpeed: 70
+  BulletGravity: 9.8
+  FalloffStart: 60
+  FalloffEnd: 120
+  MinDamageFraction: 0.7
+  SpreadDegrees: 0.8
+  MoveSpreadPerMps: 0.2
+  MaxSpreadDegrees: 4
   AdsSpreadFactor: 0.3
-  AdsZoom: 1.2
-  SightOffset: {x: 0, y: 0.09883687, z: 0.03295924}
-  MuzzleOffset: {x: 0, y: 0.07708426, z: 0.3168}
-  SightFront: {x: 0, y: 0.09515535, z: 0.31122032}
+  AdsZoom: 1.1
+  SightOffset: {x: 0, y: 0.34402633, z: -0.09289745}
+  MuzzleOffset: {x: 0, y: 0.24736638, z: 0.5399997}
+  SightFront: {x: 0, y: 0.34480667, z: 0.5128602}
   ScopeOverlay: 0
-  Weight: 1
+  Weight: 2
   Pellets: 1
   PelletSpreadDegrees: 5
   ExplosionRadius: 0
@@ -75,31 +78,33 @@ MonoBehaviour:
   PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
-    Position: {x: 0, y: 0.07708426, z: 0.3168}
+    Position: {x: 0, y: 0.24736638, z: 0.5399997}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.08925299, z: 0.08861146}
+    Position: {x: 0, y: 0.18760905, z: 0.028254075}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: 0.038315598, z: 0.17424001}
+    Position: {x: 0, y: -0.03, z: 0.29699984}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
-    Position: {x: 0, y: -0.041003708, z: 0.07}
+    Position: {x: 0, y: -0.09905867, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.03854213, z: 0.05}
+    Position: {x: 0, y: 0.12368319, z: 0.05}
+    Euler: {x: 0, y: 0, z: 0}
+  - Slot: 7
+    Position: {x: 0, y: 0.15877378, z: -0.20999998}
     Euler: {x: 0, y: 0, z: 0}
   FireSounds:
-  - {fileID: 8300000, guid: e55b0768e095f764087b490df3e57b42, type: 3}
   - {fileID: 8300000, guid: c02cd51213e8158458011637a287a1b0, type: 3}
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
   InspectSound: {fileID: 0}
-  RestEuler: {x: 0.13238886, y: 0.12173674, z: 85.19951}
-  RestCenter: {x: -0.027179971, y: 0.005371252, z: 0.13685165}
-  RestSize: {x: 0.13666824, y: 0.041045055, z: 0.3602778}
-  Cooldown: 0.6
+  RestEuler: {x: 359.64697, y: 359.00812, z: 140.81882}
+  RestCenter: {x: -0.036441654, y: -0.045114458, z: 0.16397041}
+  RestSize: {x: 0.48885906, y: 0.47575706, z: 0.7500938}
+  Cooldown: 0.8
   Slot: 7
   StartOwned: 0
   Viewmodel: {fileID: 7293916305289541949, guid: f3eb953c5ab77d944a0922f7eb8fb101, type: 3}

@@ -47,6 +47,9 @@ MonoBehaviour:
     StrafeTilt: 0
     RefillAt: 0
     TacticalReload: 0
+    ReloadPos: {x: 0, y: 0, z: 0}
+    ReloadRot: {x: 0, y: 0, z: 0}
+  ViewOffset: {x: 0, y: 0, z: 0}
   MagazineSize: 6
   ReloadSeconds: 2
   Automatic: 0

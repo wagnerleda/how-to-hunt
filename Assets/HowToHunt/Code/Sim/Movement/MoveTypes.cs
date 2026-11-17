@@ -138,7 +138,7 @@ namespace HowToHunt.Sim.Movement
         public float DuckEyeHeight = 1.1684f;
         public float NoclipSpeed = 19f;
         /// <summary>Strongest gun shove accepted, m/s, and how often (seconds).</summary>
-        public float MaxPush = 8f;
+        public float MaxPush = 16f;
         public float PushInterval = 0.15f;
 
         public Vector3 Hull(bool ducked) => ducked ? new Vector3(HullHalfExtents.X, DuckHalfHeight, HullHalfExtents.Z) : HullHalfExtents;

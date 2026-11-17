@@ -26,6 +26,10 @@ namespace HowToHunt.Editor
             public string Rig;        // moving parts: "partName=Kind;partName=Kind" (RigPartKind)
             public string Detachable; // parts that are attachments ("a;b"): left out when measuring the bare gun
             public string Keep;       // a model with several versions side by side: keep only this one (and its parts)
+            public string HandPart;   // the right hand holds the outside of this part (the cannon's wheels) instead of the grip
+            public string FrontHandPart; // and the left hand this one
+            public string Hide;       // parts of the file that aren't the gun (loose display props): removed ("a;b")
+            public string TextureFor; // "material=texture word;...": only these materials get the folder's textures, the rest keep the file's colours
         }
 
         public static readonly Spec[] Specs =
@@ -34,10 +38,12 @@ namespace HowToHunt.Editor
             new Spec { Name = "Uzi", Model = W + "Uzi/uzI+1+v34.fbx", Euler = new Vector3(90f, 180f, 0f), Length = 0.47f, GripAlong = 0.45f, GripUp = 0.22f, TwoHanded = true, Rig = "Body18=Magazine", Detachable = "Body14;Body19;Body15;Body21" },
             // The owner's Hector Gauge 8 (four versions in one file): the "Huntress", long barrels and a shoulder stock; a break action.
         new Spec { Name = "SawedOff", Model = W + "Sawed-Off/Hector-Gauge8.fbx", Keep = "Hector_G8_Huntress", Euler = new Vector3(0f, 0f, 0f), Length = 1.0f, GripAlong = 0.38f, GripUp = 0.3f, TwoHanded = true, Rig = "Barrel_Long=BreakOpen;Ejector_3=Ejector;Cartridge_4=Shell;Cartridge_Used_4=Shell;Lock_3=Latch" },
-            new Spec { Name = "HandCannon", Model = W + "Handcannon/Colt+navy+1851.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 0.36f, GripAlong = 0.12f, GripUp = 0.3f, Rig = "12=Cylinder" },
+            new Spec { Name = "OldRevolver", Model = W + "old revolver/Colt+navy+1851.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 0.36f, GripAlong = 0.12f, GripUp = 0.3f, Rig = "12=Cylinder" },
+            // The owner's cannon, held by its wheels (a hand on each hub): one ball, a huge shove.
+            new Spec { Name = "HandCannon", Model = W + "Handcannon/CANNON3.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 0.75f, GripAlong = 0.28f, GripUp = 0.23f, TwoHanded = true, HandPart = "Cylinder.004", FrontHandPart = "Cylinder.003", TextureFor = "Material.004=bake" },
             new Spec { Name = "ScoutSniper", Model = W + "ScoutSniper/scoutsniper.fbx", Euler = new Vector3(0f, 0f, 0f), Length = 1.05f, GripAlong = 0.27f, GripUp = 0.3f, TwoHanded = true, Rig = "magazine.002_low=Magazine;magazine.003_low=Magazine;bolt_handle .001_low=Bolt", Detachable = "suppressor ;stock.001_low" },
             new Spec { Name = "HeavyRifle", Model = W + "HeavyAssaultRifle/SCAR_H_PR.fbx", Euler = new Vector3(0f, 90f, 0f), Length = 0.97f, GripAlong = 0.33f, GripUp = 0.3f, TwoHanded = true, Rig = "Plane.017=Magazine;Plane.019=ChargingHandle" }, // barrel, flash hider and stock are part of the rifle
-            new Spec { Name = "Intervention", Model = W + "Intervention/Cheytac3.6.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 1.4f, GripAlong = 0.27f, GripUp = 0.25f, TwoHanded = true, Rig = "Cube_low=Magazine;Cylinder.011_low.001=Magazine;Cylinder.043_low=Magazine;Cylinder.044_low.002=Magazine;Cylinder.012_low=Bolt", Detachable = "Cube.003_low;Cylinder.034_low;Cylinder.038_low" },
+            new Spec { Name = "Intervention", Model = W + "Intervention/Cheytac3.6.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 1.4f, GripAlong = 0.27f, GripUp = 0.25f, TwoHanded = true, Rig = "Cube_low=Magazine;Cylinder.012_low=Bolt", Detachable = "Cube.003_low;Cylinder.034_low;Cylinder.038_low;Cylinder.008_low", Hide = "Cylinder.011_low.001;Cylinder.043_low;Cylinder.044_low.002" }, // the three loose cartridges under the barrel are display props
             new Spec { Name = "GrenadeLauncher", Model = W + "GrenadeLauncher/GL37.fbx", Euler = new Vector3(0f, -90f, 0f), Length = 0.75f, GripAlong = 0.42f, GripUp = 0.25f, TwoHanded = true, Rig = "GL37_launcherHead=Hinge" },
             new Spec { Name = "Gunlance", Model = W + "scifigun/model/gunlance-closed-static.fbx", Euler = new Vector3(0f, -90f, 0f), Length = 1.0f, GripAlong = 0.35f, GripUp = 0.3f, TwoHanded = true, Rig = "LOD0 | PORT LEAF ASSEMBLY=LeafPort;LOD0 | STARBOARD LEAF ASSEMBLY=LeafStarboard" },
             new Spec { Name = "KnifeV2", Model = GeneratedAssets.Root + "/Art/Models/KnifeV2/knifev2.fbx", Euler = new Vector3(0f, -90f, 0f), Length = 0.3f, GripAlong = 0.2f, GripUp = 0.5f },
@@ -72,6 +78,7 @@ namespace HowToHunt.Editor
                 model.transform.localPosition = Vector3.zero;
                 model.transform.localRotation = Quaternion.identity;
                 if (!string.IsNullOrEmpty(spec.Keep)) KeepOnly(model, spec.Keep);
+                if (!string.IsNullOrEmpty(spec.Hide)) Remove(model, spec.Hide);
                 // The grip goes at the origin and the gun is scaled to its real length.
                 var points = new List<Vector3>(8192);
                 Bounds b = Measure(root.transform, points);
@@ -154,6 +161,9 @@ namespace HowToHunt.Editor
                         if (part.Kind == RigPartKind.BreakOpen && FindDeep(root.transform, part.Name) is Transform barrels)
                             root.transform.Find("FrontHand").SetParent(barrels, true);
                 }
+                // Held by named parts (the cannon by its wheels): each hand on the outside of its part, at its middle.
+                HandOn(root.transform, "Hand", spec.HandPart, 1f);
+                HandOn(root.transform, "FrontHand", spec.FrontHandPart, -1f);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath(spec.Name));
             }
             finally
@@ -255,6 +265,29 @@ namespace HowToHunt.Editor
         }
 
         // --- measuring ---------------------------------------------------------------------------------------------
+
+        /// <param name="side">+1: the part's right-hand face, -1: its left.</param>
+        private static void HandOn(Transform root, string hand, string partName, float side)
+        {
+            if (string.IsNullOrEmpty(partName)) return;
+            Transform ball = root.Find(hand), part = FindDeep(root, partName);
+            if (ball == null || part == null) { Debug.LogWarning($"[HowToHunt] {root.name}: can't put {hand} on '{partName}'"); return; }
+            Bounds pb = PartBounds(root, part);
+            ball.localPosition = new Vector3(side > 0f ? pb.max.x : pb.min.x, pb.center.y, pb.center.z);
+        }
+
+        /// <summary>Removes the named parts (loose props shipped in the gun's file).</summary>
+        private static void Remove(GameObject model, string parts)
+        {
+            if (PrefabUtility.IsPartOfPrefabInstance(model))
+                PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            foreach (string name in Split(parts))
+            {
+                Transform t = FindDeep(model.transform, name);
+                if (t != null) Object.DestroyImmediate(t.gameObject);
+                else Debug.LogWarning($"[HowToHunt] {model.name}: no part '{name}' to remove");
+            }
+        }
 
         /// <summary>Removes everything in the model that isn't the named version, its parts or one of its parents.</summary>
         private static void KeepOnly(GameObject model, string keep)
@@ -396,7 +429,14 @@ namespace HowToHunt.Editor
                     string name = mats[i] != null ? mats[i].name : "Default";
                     if (!made.TryGetValue(name, out Material m))
                     {
-                        m = MakeMaterial(spec.Name, name, udim ? null : textures, outDir);
+                        if (!string.IsNullOrEmpty(spec.TextureFor))
+                        {
+                            // Only the listed materials are textured (a bake for the wood); the rest keep the colours made in the file.
+                            string word = TextureWord(spec.TextureFor, name);
+                            List<string> mine = word == null ? null : textures.FindAll(t => Path.GetFileName(t).ToLowerInvariant().Contains(word));
+                            m = MakeMaterial(spec.Name, name, mine, outDir, mats[i] != null && word == null ? mats[i].color : (Color?)null);
+                        }
+                        else m = MakeMaterial(spec.Name, name, udim ? null : textures, outDir);
                         made[name] = m;
                     }
                     mats[i] = m;
@@ -405,7 +445,17 @@ namespace HowToHunt.Editor
             }
         }
 
-        private static Material MakeMaterial(string gun, string materialName, List<string> textures, string outDir)
+        private static string TextureWord(string map, string material)
+        {
+            foreach (string entry in Split(map))
+            {
+                int eq = entry.IndexOf('=');
+                if (eq > 0 && entry.Substring(0, eq) == material) return entry.Substring(eq + 1).ToLowerInvariant();
+            }
+            return null;
+        }
+
+        private static Material MakeMaterial(string gun, string materialName, List<string> textures, string outDir, Color? fileColour = null)
         {
             string path = $"{outDir}/M_{gun}_{Sanitize(materialName)}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -414,7 +464,7 @@ namespace HowToHunt.Editor
                 mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 AssetDatabase.CreateAsset(mat, path);
             }
-            mat.SetColor("_BaseColor", textures == null ? new Color(0.24f, 0.25f, 0.27f) : Color.white);
+            mat.SetColor("_BaseColor", fileColour ?? (textures == null ? new Color(0.24f, 0.25f, 0.27f) : Color.white));
             mat.SetFloat("_Smoothness", 0.4f);
             mat.SetFloat("_Metallic", 0.2f);
             mat.SetTexture("_BaseMap", null);
@@ -426,7 +476,7 @@ namespace HowToHunt.Editor
             {
                 // Colour maps by name; a "specular colour" or "diffusion" (greyscale) map is never the colour.
                 var colorMaps = textures.FindAll(t => !Path.GetFileName(t).ToLowerInvariant().Contains("specular") && !Path.GetFileName(t).ToLowerInvariant().Contains("diffusion"));
-                string color = Pick(colorMaps, materialName, "basecolor", "base_color", "albedo", "diffuse", "_diff", "color", "_col");
+                string color = Pick(colorMaps, materialName, "basecolor", "base_color", "albedo", "diffuse", "_diff", "color", "_col", "bake");
                 string normal = Pick(textures, materialName, "normal_opengl", "normal", "_nor");
                 string metal = Pick(textures, materialName, "metallicsmoothness", "metallic");
                 if (color != null) mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(color));
