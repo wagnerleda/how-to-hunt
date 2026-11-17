@@ -76,6 +76,8 @@ namespace HowToHunt.Editor
             BuildSprintLane(level, signs);
             BuildShootingRange(level, signs);
             BuildPlains(level, signs);
+            BuildEastRoute(level, zones, signs);
+            BuildPineForest(level, zones, signs);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);

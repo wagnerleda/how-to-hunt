@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
   _key: quest.ghost_of_the_pines
   _displayName: Ghost of the Pines
-  _description: Take down anything in the forest
+  _description: Take down a deer
   Giver: {fileID: 11400000, guid: 9be2c6121454e554c9233f69b20b47af, type: 2}
   Requires: {fileID: 11400000, guid: b91cd1420fe4db349a9687aaff032f52, type: 2}
   Objective: 2
-  Prey: {fileID: 0}
+  Prey: {fileID: 11400000, guid: 0e8157ecb66b3ea4eb7b438afb09bbec, type: 2}
   Count: 1
   RewardCoins: 300
   Unlocks: 
   Offer: 'Deer here are wary: they hear you long before you see them. Bring one down, caught or killed, and I''ll know you''re the real thing.'
-  Task: Take down anything in the forest
+  Task: Take down a deer
   Waiting: No deer yet? Move slowly, stay downwind... or don't, and chase it.
   Done: A real deer. You'll do well out here. That's the best I've paid all season.
   Order: 5

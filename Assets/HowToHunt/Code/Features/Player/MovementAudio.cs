@@ -129,19 +129,19 @@ namespace HowToHunt.Player
             _wind.pitch = Mathf.Lerp(_wind.pitch, pitch, 1f - Mathf.Exp(-3f * dt));
         }
 
-        private SimTerrain _terrain;
-        private bool _terrainLooked;
+        private SimTerrain[] _terrains;
 
-        /// <summary>Terrain height under a point (0 where there is no terrain: the lab floor).</summary>
+        /// <summary>Terrain height under a point (0 where there is no terrain: the lab floor). Several maps, several terrains.</summary>
         private float GroundHeight(float x, float z)
         {
-            if (!_terrainLooked || _terrain == null)
+            if (_terrains == null || _terrains.Length == 0 || _terrains[0] == null)
+                _terrains = FindObjectsByType<SimTerrain>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < _terrains.Length; i++)
             {
-                _terrain = FindAnyObjectByType<SimTerrain>();
-                _terrainLooked = _terrain != null;
+                float h = _terrains[i] != null ? _terrains[i].HeightAt(x, z) : float.NaN;
+                if (!float.IsNaN(h)) return h;
             }
-            float h = _terrain != null ? _terrain.HeightAt(x, z) : float.NaN;
-            return float.IsNaN(h) ? 0f : h;
+            return 0f;
         }
 
         private static AudioClip[] Load(string prefix, int count)

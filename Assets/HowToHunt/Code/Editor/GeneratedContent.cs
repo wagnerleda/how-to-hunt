@@ -90,6 +90,48 @@ namespace HowToHunt.Editor
                 p.Voice = PreyVoice.Squeak;
             });
 
+            // Phase 6: the pine forest's own prey. Big, wary and fast: it hears you from far off and outruns a sprint
+            // (bunny hoppers can still catch it). Worth far more than a rabbit; a gun or a strong net to take it.
+            var deerModel = AssetDatabase.LoadAssetAtPath<GameObject>(ModelsDir + "/Deer/Deer.fbx");
+            Asset<PreyDefinition>("Prey/Prey_Deer", "prey.deer", "Pine Deer",
+                "Wary: hears you from 70 m and sees you from 35. Outruns a sprint for six seconds. Needs a gun or a strong net; a head shot drops it fast.", p =>
+            {
+                p.Allowed = TakedownMethods.Either;
+                p.MaxHealth = 60f;
+                p.CaptureDifficulty = 3f;
+                p.MinKillTier = 2;
+                p.OverkillRatio = 4f;
+                // Model faces +Z in Unity; pivot between the feet. Body along Z, head up front.
+                p.Hitboxes = new List<HitboxShape>
+                {
+                    new HitboxShape { A = new Vector3(0f, 1.0f, -0.45f), B = new Vector3(0f, 1.0f, 0.5f), Radius = 0.28f },
+                    new HitboxShape { A = new Vector3(0f, 0.5f, -0.4f), B = new Vector3(0f, 0.5f, 0.45f), Radius = 0.12f }, // legs
+                    new HitboxShape { A = new Vector3(0f, 1.55f, 0.82f), B = new Vector3(0f, 1.6f, 0.98f), Radius = 0.13f, WeakPoint = true },
+                };
+                p.BaseValue = 45;
+                p.TrophiesOnKill = 4;
+                p.Movement = PreyMovement.Ground;
+                p.WalkSpeed = 1.3f;
+                p.FleeSpeed = 10.5f;
+                p.StaminaSeconds = 6f;
+                p.TiredSpeed = 6.8f;
+                p.FleeRadius = 14f;
+                p.SightRange = 35f;
+                p.HearingRange = 70f;
+                p.Wariness = 1.6f;
+                p.CalmDownSeconds = 5f;
+                p.StunSeconds = 0.3f;
+                p.HalfExtents = new Vector3(0.3f, 0.55f, 0.6f);
+                p.Visual = deerModel;
+                p.VisualScale = 1f;
+                p.Noun = "a deer";
+                p.BloodColor = new Color(0.7f, 0.06f, 0.05f);
+                p.GibColor = new Color(0.5f, 0.32f, 0.18f);
+                p.GibCount = 8;
+                p.StackSize = 1;
+                p.Voice = PreyVoice.Grunt;
+            });
+
             ToolDefinition net = Asset<ToolDefinition>("Tools/Tool_Net", "tool.net", "Butterfly Net",
                 "Catches prey alive: worth 1.5x and adds Bestiary research.", t =>
             {

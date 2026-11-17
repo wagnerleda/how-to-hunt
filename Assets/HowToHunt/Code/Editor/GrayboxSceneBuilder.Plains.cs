@@ -134,7 +134,11 @@ namespace HowToHunt.Editor
             float corridor = Mathf.Abs(x - GateX) < 6f + 8f && z < CampCenter.z ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Mathf.Abs(x - GateX) - 6f) / 8f)) : 0f;
             float bhop = Mathf.Abs(x) < 18f && z < 112f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Mathf.Abs(x) - 12f) / 6f)) : 0f;
             float labEdge = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((z - 82f) / 10f));
-            return Mathf.Max(Mathf.Max(camp, corridor), Mathf.Max(bhop, labEdge));
+            // Phase 6: the trail from the east clearing through the forest band to the surf route.
+            float trail = x > PlayMaxX - 12f && Mathf.Abs(z - ClearingZ) < 11f
+                ? (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Mathf.Abs(z - ClearingZ) - 5f) / 6f))) * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((x - (PlayMaxX - 12f)) / 6f))
+                : 0f;
+            return Mathf.Max(Mathf.Max(Mathf.Max(camp, corridor), Mathf.Max(bhop, labEdge)), trail);
         }
 
         private static float Height(float x, float z)
@@ -195,11 +199,14 @@ namespace HowToHunt.Editor
             return terrain;
         }
 
-        private static void AddTri(List<Vector3> verts, List<Color> colors, List<int> tris, Vector3 a, Vector3 b, Vector3 c)
+        private static void AddTri(List<Vector3> verts, List<Color> colors, List<int> tris, Vector3 a, Vector3 b, Vector3 c) =>
+            AddTri(verts, colors, tris, a, b, c, GroundColor);
+
+        private static void AddTri(List<Vector3> verts, List<Color> colors, List<int> tris, Vector3 a, Vector3 b, Vector3 c, System.Func<float, float, float, float, Color> colour)
         {
             Vector3 centroid = (a + b + c) / 3f;
             Vector3 n = Vector3.Cross(b - a, c - a).normalized;
-            Color col = GroundColor(centroid.x, centroid.z, centroid.y, n.y);
+            Color col = colour(centroid.x, centroid.z, centroid.y, n.y);
             int i = verts.Count;
             verts.Add(a); verts.Add(b); verts.Add(c);
             colors.Add(col); colors.Add(col); colors.Add(col);
@@ -710,6 +717,7 @@ namespace HowToHunt.Editor
             {
                 float angle = i / 13f * Mathf.PI * 2f + Range(rng, -0.15f, 0.15f);
                 if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 180f)) < 30f) continue; // keep the lab side open
+                if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 90f)) < 35f) continue;  // and the surf route to the forest
                 float dist = Range(rng, 290f, 360f);
                 var pos = center + new Vector3(Mathf.Sin(angle) * dist, -4f, Mathf.Cos(angle) * dist);
                 Mesh m = Mountain(rng, Range(rng, 55f, 110f), Range(rng, 70f, 120f), i);
