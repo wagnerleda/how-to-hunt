@@ -28,3 +28,5 @@ Not approved for building. Each needs the owner's yes before work starts.
 - Bullets that ricochet off rock at shallow angles; per-surface impact effects (wood chips, grass, water splash).
 - Throwable grenades (the owner's grenade model is imported, unused): a cooked throw that explodes like the GL-37.
 - A grenade model flying out of the GL-37 instead of a tracer streak.
+
+- **Red canyon map** (owner, 2026-11-17): a later zone of mesas, arches and dry riverbeds whose **canyon walls are surfable** (steep sides you can ride like surf ramps to cross and climb the map). Prey that fit: goats, coyotes. Parked when the pine forest was chosen as map 2.
