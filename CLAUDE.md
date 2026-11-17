@@ -29,6 +29,6 @@
 - Editor Play mode runs offline (no Steam) unless How to Hunt > Use Steam in Play Mode is ticked: an Editor registered as app 480 is closed by Steam whenever another app-480 instance (test builds, bots-test) exits. Always leave Play mode when done testing.
 
 ## Network tests (M2)
-- `tools/bots-test.ps1` (host + 7 bots + refused 9th, bandwidth vs budgets), `tools/lagcomp-test.ps1` (hit registration under fake latency), `tools/build-installer.ps1 -TestInstall`.
+- `tools/bots-test.ps1` (host + 7 bots + refused 9th, bandwidth vs budgets), `tools/lagcomp-test.ps1` (hit registration under fake latency), `tools/build-installer.ps1 -TestInstall`. Both network tests take `-Port <n>` (default 7770) when an installed game already holds 7770; `-TestInstall` shares the installed game's app id, so skip it while the owner has the game installed.
 - Multi-instance runs use `-nocfg` so instances don't overwrite each other's config.cfg.
 - Test hooks: `net_fakelag`, `net_fakeloss`, `wpn_autofire <dummy> <n>` + `wpn_stats` (cheat), `delay <s> <cmd>`, `cl_bot_*`.

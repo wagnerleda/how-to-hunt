@@ -10,7 +10,7 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools/lagcomp-test.ps1 -LatencyMs 150 -Dummy 2
 #>
-param([int]$LatencyMs = 150, [int]$Dummy = 2, [string]$Build = "Builds/Windows")
+param([int]$LatencyMs = 150, [int]$Dummy = 2, [string]$Build = "Builds/Windows", [int]$Port = 7770)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $exe = Join-Path $root (Join-Path $Build 'HowToHunt.exe')
@@ -21,10 +21,10 @@ New-Item -ItemType Directory -Force $logs | Out-Null
 function Run([int]$lagcomp) {
     Get-ChildItem $logs -Filter "*-$lagcomp.log" | Remove-Item
     $h = Start-Process $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/host-$lagcomp.log",
-        '+sv_cheats', '1', '+sv_hitdebug', '1', '+sv_alltools', '1', '+sv_damage_scale', '0.04', '+sv_infinite_mag', '1', '+sv_lagcomp', "$lagcomp", '+host', 'local', '+delay', '32', 'quit') -PassThru
+        '+sv_cheats', '1', '+sv_hitdebug', '1', '+sv_alltools', '1', '+sv_damage_scale', '0.04', '+sv_infinite_mag', '1', '+sv_lagcomp', "$lagcomp", '+net_local_port', "$Port", '+host', 'local', '+delay', '32', 'quit') -PassThru
     Start-Sleep -Seconds 4
     $c = Start-Process $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/client-$lagcomp.log",
-        '+net_fakelag', "$LatencyMs", '+sv_hitdebug', '1', '+connect', '127.0.0.1', '+delay', '6', 'setpos', '3', '0.3', '-2', '+delay', '7.5', 'wpn_autofire', "$Dummy", '30',
+        '+net_fakelag', "$LatencyMs", '+sv_hitdebug', '1', '+net_local_port', "$Port", '+connect', '127.0.0.1', '+delay', '6', 'setpos', '3', '0.3', '-2', '+delay', '7.5', 'wpn_autofire', "$Dummy", '30',
         '+delay', '23', 'wpn_stats', '+delay', '24', 'quit') -PassThru
     $c.WaitForExit(60000) | Out-Null
     $h.WaitForExit(60000) | Out-Null

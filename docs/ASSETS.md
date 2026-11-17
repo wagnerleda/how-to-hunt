@@ -69,5 +69,5 @@ attachment mounts measured from the mesh).
 | Gunlance (sci-fi) model + textures | `Art/Weapons/scifigun` | CGTrader, royalty-free, no AI training, no redistribution of sources (LICENSE.txt kept) | `tool.gunlance` |
 | Sci-fi single shot (mp3) | `Art/Weapons/scifigun` | Pixabay (daviddumaisaudio), to confirm | Gunlance fire |
 | Knife V2 model + PBR | `Art/Models/KnifeV2` | unknown, to confirm | knife viewmodel |
-| Red dot sight model + textures | `Art/Models/RedDotSight` | unknown, to confirm | Red Dot attachment |
+| Red dot sight model + textures | `Art/Models/RedDotSight` | unknown, to confirm | Red Dot attachment (`RedDotSight_Open.fbx`: the same model with its window glass removed in Blender) |
 | Grenade model | `Art/Models/Grenade` | unknown, to confirm | not used yet (throwables, later) |

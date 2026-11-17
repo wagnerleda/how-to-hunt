@@ -6,7 +6,7 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools/bots-test.ps1 -Seconds 60
 #>
-param([int]$Seconds = 60, [string]$Build = "Builds/Windows")
+param([int]$Seconds = 60, [string]$Build = "Builds/Windows", [int]$Port = 7770)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $exe = Join-Path $root (Join-Path $Build 'HowToHunt.exe')
@@ -16,7 +16,7 @@ New-Item -ItemType Directory -Force $logs | Out-Null
 Get-ChildItem $logs -Filter *.log | Remove-Item
 
 $stats = $Seconds - 8
-$hostArgs = @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/host.log", '+mat_vsync', '0', '+fps_max', '64', '+host', 'local',
+$hostArgs = @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/host.log", '+mat_vsync', '0', '+fps_max', '64', '+net_local_port', "$Port", '+host', 'local',
     '+delay', "$stats", 'net_stats', '+delay', "$($stats + 1)", 'status', '+delay', "$Seconds", 'quit')
 $procs = @(Start-Process $exe -ArgumentList $hostArgs -PassThru)
 Start-Sleep -Seconds 4
@@ -24,7 +24,7 @@ Start-Sleep -Seconds 4
 for ($i = 1; $i -le 8; $i++) {
     $yaw = 20 + 15 * $i
     $botArgs = @('-batchmode', '-nographics', '-nocfg', '-logFile', "$logs/bot$i.log", '+mat_vsync', '0', '+fps_max', '64', '+name', "Bot$i",
-        '+cl_bot_forward', '1', '+cl_bot_yawspeed', "$yaw", '+cl_bot_jump', '1', '+connect', '127.0.0.1',
+        '+cl_bot_forward', '1', '+cl_bot_yawspeed', "$yaw", '+cl_bot_jump', '1', '+net_local_port', "$Port", '+connect', '127.0.0.1',
         '+delay', "$($stats - 4)", 'net_stats', '+delay', "$($Seconds - 5)", 'quit')
     $procs += Start-Process $exe -ArgumentList $botArgs -PassThru
     Start-Sleep -Milliseconds 700
