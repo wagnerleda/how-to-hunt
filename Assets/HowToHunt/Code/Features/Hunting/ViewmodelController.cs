@@ -428,12 +428,19 @@ namespace HowToHunt.Hunting
             _kick += _kickVel * dt;
             offset = new Vector3(0f, 0.004f * _kick.x, -_kick.z);
             rotation = Quaternion.Euler(-_kick.x, _kick.y, 0f);
+            // Charging a plasma weapon: cant it left and dip it so you can watch the cannon open and the orb grow.
+            float charge = _tool != null && _tool.PlasmaOrb ? Smooth(PlayerTools.LocalCharge) : 0f;
+            if (charge > 0f)
+            {
+                offset += new Vector3(-0.05f, -0.035f, 0.02f) * charge;
+                rotation *= Quaternion.Euler(6f * charge, -16f * charge, -24f * charge);
+            }
             float r = PlayerTools.LocalReload;
             if (r >= 0f)
             {
                 float w = Smooth(Mathf.Clamp01(r * 5f)) * Smooth(Mathf.Clamp01((1f - r) * 5f));
-                offset += new Vector3(-0.06f, -0.1f, -0.04f) * w;
-                rotation *= Quaternion.Euler(30f * w, -25f * w, 45f * w + 8f * Mathf.Sin(r * Mathf.PI * 6f) * w);
+                offset += new Vector3(-0.05f, -0.02f, -0.03f) * w; // brought in and tilted, still in view (the magazine comes out)
+                rotation *= Quaternion.Euler(14f * w, -20f * w, 28f * w + 5f * Mathf.Sin(r * Mathf.PI * 6f) * w);
             }
         }
 

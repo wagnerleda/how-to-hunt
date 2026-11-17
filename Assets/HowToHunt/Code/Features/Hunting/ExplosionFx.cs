@@ -80,28 +80,28 @@ namespace HowToHunt.Hunting
             Color core = plasma ? new Color(0.85f, 1f, 1f) : new Color(1f, 0.95f, 0.7f);
             Color hot = plasma ? new Color(0.25f, 0.95f, 1f) : new Color(1f, 0.72f, 0.18f);
             Color cool = plasma ? new Color(0.35f, 0.15f, 0.75f) : new Color(0.62f, 0.12f, 0.05f);
-            Color smokeA = plasma ? new Color(0.28f, 0.24f, 0.36f) : new Color(0.32f, 0.3f, 0.28f);
-            Color smokeB = plasma ? new Color(0.5f, 0.48f, 0.6f) : new Color(0.55f, 0.53f, 0.5f);
+            Color smokeA = plasma ? new Color(0.42f, 0.38f, 0.52f) : new Color(0.5f, 0.48f, 0.45f);
+            Color smokeB = plasma ? new Color(0.7f, 0.68f, 0.8f) : new Color(0.78f, 0.76f, 0.72f);
 
             // Core flash.
-            Spawn(false, p, Vector3.zero, r * 0.9f, 0.32f, 0f, 0f, core, hot);
+            Spawn(false, p, Vector3.zero, r * 0.55f, 0.28f, 0f, 0f, core, hot);
             // Fire balls burst out and cool.
-            int fires = Mathf.Clamp(Mathf.RoundToInt(6f + r * 2.5f), 8, 22);
+            int fires = Mathf.Clamp(Mathf.RoundToInt(8f + r * 3f), 10, 26);
             for (int i = 0; i < fires; i++)
             {
                 Vector3 dir = Random.onUnitSphere;
                 dir.y = Mathf.Abs(dir.y) * 0.8f + 0.1f;
-                Spawn(false, p + dir * r * 0.15f, dir.normalized * Random.Range(r * 1.6f, r * 3.2f), r * Random.Range(0.28f, 0.5f),
-                    Random.Range(0.45f, 0.8f), 1.2f, 3.5f, hot, cool);
+                Spawn(false, p + dir * r * 0.15f, dir.normalized * Random.Range(r * 1.6f, r * 3.2f), r * Random.Range(0.12f, 0.24f),
+                    Random.Range(0.4f, 0.7f), 1.2f, 3.5f, hot, cool);
             }
             // Smoke swells and rises after the fire.
-            int smokes = Mathf.Clamp(Mathf.RoundToInt(5f + r * 2f), 6, 18);
+            int smokes = Mathf.Clamp(Mathf.RoundToInt(8f + r * 3f), 10, 26);
             for (int i = 0; i < smokes; i++)
             {
                 Vector3 dir = Random.insideUnitSphere;
                 dir.y = Mathf.Abs(dir.y) + 0.2f;
-                Spawn(true, p + dir * r * 0.4f, dir * Random.Range(r * 0.4f, r * 1.2f), r * Random.Range(0.45f, 0.85f),
-                    Random.Range(1.6f, 2.6f), 1.4f, 1.6f, smokeA, smokeB);
+                Spawn(true, p + dir * r * 0.4f, dir * Random.Range(r * 0.4f, r * 1.2f), r * Random.Range(0.16f, 0.3f),
+                    Random.Range(1.1f, 1.8f), 1.4f, 1.6f, smokeA, smokeB);
             }
             Light l = _lights[_nextLight];
             _lightLife[_nextLight] = 0.35f;

@@ -41,6 +41,7 @@ namespace HowToHunt.Net
                 }
                 NetSession.ConnectLocal(target, port);
             });
+            r.Cvar(NetSession.LocalPortCvar);
             r.Cvar(FakeLag).Changed += _ => ApplyFakeNetwork(NetSession.Manager);
             r.Cvar(FakeLoss).Changed += _ => ApplyFakeNetwork(NetSession.Manager);
             NetSession.ManagerCreated += ApplyFakeNetwork;

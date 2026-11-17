@@ -41,7 +41,9 @@ namespace HowToHunt.Net
     /// </summary>
     public static class NetSession
     {
-        public const ushort LocalPort = 7770;
+        public const ushort DefaultLocalPort = 7770;
+        public static readonly Foundation.IntCvar LocalPortCvar = new Foundation.IntCvar("net_local_port", DefaultLocalPort, "UDP port for local (non-Steam) hosting and connecting. Change it to run a second host on this machine.", Foundation.CvarFlags.None, 1024, 65535);
+        public static ushort LocalPort => (ushort)LocalPortCvar.Value;
         private const float ConnectTimeoutSeconds = 20f;
 
         private static NetworkManager _prefab;
@@ -164,7 +166,7 @@ namespace HowToHunt.Net
         }
 
         /// <summary>Connect to a local/LAN host by address (loopback testing, second editor instance, bots).</summary>
-        public static void ConnectLocal(string address, ushort port = LocalPort) => ConnectLocalCore(address, port, reconnecting: false);
+        public static void ConnectLocal(string address, ushort port = 0) => ConnectLocalCore(address, port == 0 ? LocalPort : port, reconnecting: false);
 
         private static void ConnectLocalCore(string address, ushort port, bool reconnecting)
         {
