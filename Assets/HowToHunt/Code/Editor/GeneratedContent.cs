@@ -496,7 +496,7 @@ namespace HowToHunt.Editor
             });
             Attach("padded_stock", "Padded Stock", "The gun kicks 30 % less in the hand and settles faster.", AttachmentSlot.Stock, 550, 70, a =>
             {
-                a.Tools = new List<ToolDefinition> { sawedOff, grenadeLauncher };
+                a.Tools = new List<ToolDefinition> { grenadeLauncher }; // the shotgun has its own stock now
                 a.KickMultiplier = 0.7f;
                 a.SpringMultiplier = 1.5f;
                 a.Visual = AttachmentModel("PaddedStock");

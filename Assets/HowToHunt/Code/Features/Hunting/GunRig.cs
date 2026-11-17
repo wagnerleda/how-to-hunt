@@ -119,9 +119,47 @@ namespace HowToHunt.Hunting
                         axis = Vector3.up;
                         angle = 40f * Smooth(charge);
                         break;
+                    case RigPartKind.BreakOpen:
+                    case RigPartKind.Ejector:
+                    case RigPartKind.Latch:
+                    case RigPartKind.Shell:
+                        BreakAction(p, reload);
+                        continue;
                 }
                 if (p.T.gameObject.activeSelf != visible) p.T.gameObject.SetActive(visible);
                 Apply(p, move, axis, angle);
+            }
+        }
+
+        // A break action, timed like How to Fish's shotgun reload: the latch slips (0-8 %), the barrels drop open
+        // (6-20 %) and the ejector lifts the shells, the spent shells come out and fresh ones go in (30-55 %), then the
+        // barrels snap shut (68-78 %) and the latch returns. Each part moves in its own frame, as the model's own open
+        // pose shows (barrels 60 degrees about X, ejector 5 mm back, latch 15 degrees).
+        private const float BreakOpenDegrees = 55f, EjectorTravel = 0.005f, LatchDegrees = 15f;
+
+        private static void BreakAction(Part p, float reload)
+        {
+            float open = reload < 0f ? 0f : Smooth(Mathf.InverseLerp(0.06f, 0.2f, reload)) * (1f - Smooth(Mathf.InverseLerp(0.68f, 0.78f, reload)));
+            switch (p.Kind)
+            {
+                case RigPartKind.BreakOpen:
+                    p.T.localRotation = p.RestRot * Quaternion.Euler(BreakOpenDegrees * open, 0f, 0f);
+                    break;
+                case RigPartKind.Ejector:
+                    p.T.localPosition = p.RestPos + new Vector3(0f, 0f, -EjectorTravel * open);
+                    break;
+                case RigPartKind.Latch:
+                {
+                    float unlock = reload < 0f ? 0f : Smooth(Mathf.InverseLerp(0f, 0.08f, reload)) * (1f - Smooth(Mathf.InverseLerp(0.76f, 0.84f, reload)));
+                    p.T.localRotation = p.RestRot * Quaternion.Euler(0f, -LatchDegrees * unlock, 0f);
+                    break;
+                }
+                case RigPartKind.Shell:
+                {
+                    bool swapping = reload >= 0.3f && reload < 0.55f;
+                    if (p.T.gameObject.activeSelf == swapping) p.T.gameObject.SetActive(!swapping);
+                    break;
+                }
             }
         }
 

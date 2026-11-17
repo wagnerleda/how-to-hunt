@@ -17,7 +17,6 @@ MonoBehaviour:
   _description: The gun kicks 30 % less in the hand and settles faster.
   Slot: 7
   Tools:
-  - {fileID: 11400000, guid: 34d12b0b3b96726458f787b0b8014c2c, type: 2}
   - {fileID: 11400000, guid: f21d553f085c0fd46bf054d5b8871bf0, type: 2}
   CostCoins: 550
   SortOrder: 70

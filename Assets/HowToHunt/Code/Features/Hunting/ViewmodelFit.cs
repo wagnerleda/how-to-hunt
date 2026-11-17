@@ -14,6 +14,10 @@ namespace HowToHunt.Hunting
         Hinge,          // swings open for a reload (break-action, launcher head)
         LeafPort,       // opens to the left while charging (the Gunlance's cannon)
         LeafStarboard,  // opens to the right while charging
+        BreakOpen,      // break action: the barrels swing down about their own origin (the hinge) for the reload
+        Ejector,        // rides on the barrels and lifts the shells as they open
+        Shell,          // a shell in a chamber: gone while the barrels are open and empty, back when reloaded
+        Latch,          // the top lever that unlocks the barrels before they open
     }
 
     /// <summary>A named part of the viewmodel and the point it moves about (prefab space).</summary>

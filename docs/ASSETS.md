@@ -55,7 +55,7 @@ attachment mounts measured from the mesh).
 | Glock silenced shot (mp3) | `Art/Weapons/Glock` | unknown, to confirm | Glock fire |
 | Uzi model (UDIM textures, shown untextured) | `Art/Weapons/Uzi` | unknown, to confirm | `tool.uzi` |
 | Uzi shot "universfield gunshot" | `Art/Weapons/Uzi` | Pixabay (universfield), Pixabay licence likely | Uzi fire |
-| Sawed-off model + PBR | `Art/Weapons/Sawed-Off` | unknown, to confirm (no sound supplied) | `tool.sawedoff` |
+| Hector Gauge 8 shotgun model + textures (four versions in one file; the game uses "Huntress": long barrels, shoulder stock, break action) | `Art/Weapons/Sawed-Off/Hector-Gauge8.fbx` | unknown, to confirm (no sound supplied) | `tool.sawedoff` |
 | Colt Navy 1851 model (no textures) | `Art/Weapons/Handcannon` | unknown, to confirm | `tool.handcannon` |
 | Revolver shot, cannon fire (mp3) | `Art/Weapons/Handcannon` | Pixabay (diega1241251, lordsonny), Pixabay licence likely | Hand Cannon fire |
 | Low-poly sniper rifle + bakes | `Art/Weapons/ScoutSniper` | unknown, to confirm | `tool.scout` model |

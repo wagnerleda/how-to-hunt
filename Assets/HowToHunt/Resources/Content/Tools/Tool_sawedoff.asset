@@ -60,9 +60,9 @@ MonoBehaviour:
   MaxSpreadDegrees: 3
   AdsSpreadFactor: 0.3
   AdsZoom: 1.1
-  SightOffset: {x: 0, y: 0.10082317, z: 0.08784702}
-  MuzzleOffset: {x: 0, y: 0.07921784, z: 0.48399994}
-  SightFront: {x: 0, y: 0.11962261, z: 0.46877396}
+  SightOffset: {x: 0, y: 0.09944807, z: -0.030520659}
+  MuzzleOffset: {x: 0, y: 0.073401526, z: 0.61999977}
+  SightFront: {x: 0, y: 0.10036662, z: 0.6109239}
   ScopeOverlay: 0
   Weight: 1
   Pellets: 8
@@ -75,31 +75,31 @@ MonoBehaviour:
   PlasmaOrb: 0
   AttachmentAnchors:
   - Slot: 0
-    Position: {x: 0, y: 0.07921784, z: 0.48399994}
+    Position: {x: 0, y: 0.073401526, z: 0.61999977}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.06095857, z: 0.1640324}
+    Position: {x: 0, y: 0.095580705, z: 0.097768255}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
-    Position: {x: 0, y: 0.016337967, z: 0.26619998}
+    Position: {x: 0, y: 0.049436424, z: 0.34099987}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 3
-    Position: {x: 0, y: -0.023989253, z: 0.07}
+    Position: {x: 0, y: 0.031231275, z: 0.07}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 4
-    Position: {x: 0, y: 0.03960892, z: 0.05}
+    Position: {x: 0, y: 0.036700763, z: 0.05}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 7
-    Position: {x: 0, y: -0.027828373, z: -0.066000015}
+    Position: {x: 0, y: 0.008227188, z: -0.38}
     Euler: {x: 0, y: 0, z: 0}
   FireSounds: []
   ReloadSound: {fileID: 0}
   DryFireSound: {fileID: 0}
   EquipSound: {fileID: 0}
   InspectSound: {fileID: 0}
-  RestEuler: {x: 0.8820012, y: 0.92457265, z: 92.69993}
-  RestCenter: {x: -0.023156434, y: -0.0023431145, z: 0.20952277}
-  RestSize: {x: 0.17148417, y: 0.058928728, z: 0.5522403}
+  RestEuler: {x: 0.13282578, y: 0.1356361, z: 91.19953}
+  RestCenter: {x: -0.027825281, y: -0.00089473836, z: 0.12015742}
+  RestSize: {x: 0.13738358, y: 0.03477575, z: 1.000073}
   Cooldown: 0.35
   Slot: 6
   StartOwned: 0
