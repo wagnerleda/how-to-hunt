@@ -161,6 +161,7 @@ namespace HowToHunt.Hunting
             bool gun = tool != null && tool.Archetype == ToolArchetype.Firearm;
             UpdateGunState(tool, gun);
             if (AutoFireShots > 0) { AutoFire(); return; }
+            if (PlayerInputSampler.Incapacitated) { LocalAiming = false; LocalCharge = 0f; return; } // downed: hands empty
             if (Game.UiHasFocus || Cursor.lockState != CursorLockMode.Locked) { LocalAiming = gun && HuntingCvars.ForceAim.Value && LocalReload < 0f; return; }
 
             // Slot keys belong to the inventory bar (economy feature), which calls SelectTool / HoldPrey.
@@ -345,6 +346,7 @@ namespace HowToHunt.Hunting
             // Prey are drawn a little further behind than the rest (PreyClock): rewind them by that much more.
             double preyLag = HuntingCvars.LagComp.Value ? Math.Max(0.0, Math.Min(32.0, viewTick - preyTick)) : 0.0;
             ToolResolver.PreyLag = preyLag;
+            ToolResolver.IgnoreClient = Owner.ClientId;
             var tools = Loadouts.AllTools;
             if (toolIndex >= tools.Count || toolIndex >= MaxTools) { HitLog("bad tool index"); return; }
             ToolDefinition tool = tools[toolIndex];
@@ -424,6 +426,9 @@ namespace HowToHunt.Hunting
                 case ToolResolver.TargetKind.Dummy:
                     if (tool.Mode == ToolMode.Kill) HitDummy(stats, target, (float)(now - t));
                     break;
+                case ToolResolver.TargetKind.Player:
+                    if (tool.Mode == ToolMode.Kill) HitPlayer(stats, target);
+                    break;
             }
             HostToolReached?.Invoke(tool, origin, dir, tool.ArcDegrees > 0f ? range : (end - origin).magnitude);
         }
@@ -435,6 +440,24 @@ namespace HowToHunt.Hunting
             bool killed = d.ApplyDamage(dmg);
             ServerManager.Broadcast(new DummyStateBroadcast { Index = target.Index, Health = d.Health, Down = d.IsDown });
             RpcDummyHit(Owner, target.Point, dmg, target.WeakPoint, killed, target.Index, target.Pose.Position.ToUnity(), target.Pose.Yaw, rewound);
+        }
+
+        /// <summary>Host, PvP: another hunter was hit (headshots count double, as on prey).</summary>
+        private void HitPlayer(ToolStats stats, ToolResolver.Target target)
+        {
+            PlayerHealth victim = target.Player != null ? target.Player.GetComponent<PlayerHealth>() : null;
+            if (victim == null) return;
+            float dmg = stats.Damage * (target.WeakPoint ? stats.HeadshotMultiplier : 1f);
+            victim.HostDamage(dmg, Owner.ClientId);
+            RpcPlayerHit(Owner, target.Point, dmg, target.WeakPoint, victim.Downed);
+            if (HuntingCvars.HitDebug.Value) HitLog($"player {victim.OwnerId} hit for {dmg:0.0}{(target.WeakPoint ? " (head)" : "")}, {victim.Health:0} left");
+        }
+
+        [TargetRpc]
+        private void RpcPlayerHit(NetworkConnection conn, Vector3 point, float damage, bool head, bool downed)
+        {
+            HitsConfirmed++;
+            HitFeedback.Confirm(point, damage, head, downed, -1, Vector3.zero, 0f, 0f);
         }
 
         // --- host: magazines and bullets in flight ------------------------------------------------------------
@@ -489,6 +512,7 @@ namespace HowToHunt.Hunting
             {
                 Vector3 f = from.ToUnity();
                 ToolResolver.PreyLag = hb.PreyLag;
+                ToolResolver.IgnoreClient = Owner.ClientId;
                 ToolResolver.Target target = ToolResolver.Find(hb.Tool, length, f, d.ToUnity(), hb.Tick);
                 if (target.Kind != ToolResolver.TargetKind.None && hb.Radius > 0f)
                 {
@@ -504,6 +528,7 @@ namespace HowToHunt.Hunting
                     if (HuntingCvars.HitDebug.Value) HitLog($"{hb.Tool.Key} bullet -> {target.Kind} {target.Index}/{target.PreyId} at {distance:0.0} m, x{st.Damage / Mathf.Max(0.001f, hb.Stats.Damage):0.00} damage, rewound {rewound:0.0} ticks");
                     if (target.Kind == ToolResolver.TargetKind.Prey) ResolvePrey(hb.Tool, st, target, rewound);
                     else if (target.Kind == ToolResolver.TargetKind.Dummy) HitDummy(st, target, rewound);
+                    else if (target.Kind == ToolResolver.TargetKind.Player) HitPlayer(st, target);
                     HostToolReached?.Invoke(hb.Tool, hb.Start, hb.Dir, distance);
                     return false;
                 }
@@ -573,6 +598,10 @@ namespace HowToHunt.Hunting
                     Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up;
                     dir = (dir + Vector3.up * BlastLift).normalized; // blasts throw up as well as out
                     pm.HostPush(dir * (blastPush * share));
+                    // PvP: a blast hurts other hunters (never its own shooter: blast jumps are free).
+                    float hurt = GunMath.Blast(away.magnitude, radius);
+                    if (PlayerHealth.Pvp.Value && hurt > 0f && pm.OwnerId != Owner.ClientId)
+                        pm.GetComponent<PlayerHealth>()?.HostDamage(hb.Stats.Damage * hurt, Owner.ClientId);
                 }
             }
             HostExplosion?.Invoke(point, radius, hb.Tool.Knockback);
@@ -726,7 +755,7 @@ namespace HowToHunt.Hunting
     /// <summary>Host: what a tool use reaches, at the rewound tick.</summary>
     public static class ToolResolver
     {
-        public enum TargetKind { None, Prey, Dummy, World }
+        public enum TargetKind { None, Prey, Dummy, World, Player }
 
         public struct Target
         {
@@ -736,6 +765,8 @@ namespace HowToHunt.Hunting
             public Vector3 Point;
             public bool WeakPoint;
             public EntityPose Pose;
+            /// <summary>Player targets (PvP).</summary>
+            public PlayerMotor Player;
             /// <summary>Sweeps: angle from the crosshair (lower = better).</summary>
             public float Score;
         }
@@ -744,6 +775,27 @@ namespace HowToHunt.Hunting
 
         /// <summary>Host: extra ticks the shooter drew prey behind their view tick (PreyClock), set before resolving a shot.</summary>
         public static double PreyLag;
+
+        /// <summary>The shooter's client id: never hits itself. Set before each search (host).</summary>
+        public static int IgnoreClient = -1;
+
+        // A hunter's hitboxes from the hull centre: body from the feet to the shoulders, and the head.
+        private static readonly HitCapsule[] PlayerHitboxes =
+        {
+            new HitCapsule(new Vec3(0f, -0.82f, 0f), new Vec3(0f, 0.38f, 0f), 0.24f, HitRegion.Body),
+            new HitCapsule(new Vec3(0f, 0.6f, 0f), new Vec3(0f, 0.8f, 0f), 0.17f, HitRegion.Head),
+        };
+
+        /// <summary>A player who can be hit right now (PvP on, not the shooter, not already down).</summary>
+        private static bool Hittable(PlayerMotor m, double tick, out EntityPose pose)
+        {
+            pose = default;
+            if (m == null || m.OwnerId == IgnoreClient) return false;
+            PlayerHealth h = m.GetComponent<PlayerHealth>();
+            if (h == null || h.Downed) return false;
+            if (!m.History.TrySample(tick, out pose)) pose = new EntityPose { Position = m.transform.position.ToSim() };
+            return true;
+        }
 
         /// <summary>Does one use of this tool reach several prey (a net sweep)?</summary>
         public static bool SweepsSeveral(ToolDefinition tool) =>
@@ -811,6 +863,17 @@ namespace HowToHunt.Hunting
                 if (RayCapsules(o, d, pose, TargetDummyPath.Hitboxes, ref bestDist, out bool weak))
                     best = new Target { Kind = TargetKind.Dummy, Index = i, Point = origin + dir * bestDist, WeakPoint = weak, Pose = pose };
             }
+            // PvP: other hunters, where the shooter saw them. With PvP off shots pass through teammates.
+            if (PlayerHealth.Pvp.Value)
+            {
+                var players = PlayerMotor.All;
+                for (int i = 0; i < players.Count; i++)
+                {
+                    if (!Hittable(players[i], tick, out EntityPose pose)) continue;
+                    if (RayCapsules(o, d, pose, PlayerHitboxes, ref bestDist, out bool weak))
+                        best = new Target { Kind = TargetKind.Player, Player = players[i], Index = i, Point = origin + dir * bestDist, WeakPoint = weak, Pose = pose };
+                }
+            }
             return best;
         }
 
@@ -858,6 +921,17 @@ namespace HowToHunt.Hunting
                     Vector3 center = pose.Position.ToUnity() + Vector3.up * 1f;
                     if (Consider(origin, dir, center, range + 0.35f, ref bestAngle))
                         best = new Target { Kind = TargetKind.Dummy, Index = i, Point = center, Pose = pose };
+                }
+                if (PlayerHealth.Pvp.Value)
+                {
+                    var players = PlayerMotor.All;
+                    for (int i = 0; i < players.Count; i++)
+                    {
+                        if (!Hittable(players[i], tick, out EntityPose pose)) continue;
+                        Vector3 center = pose.Position.ToUnity() + Vector3.up * 0.2f;
+                        if (Consider(origin, dir, center, range + 0.35f, ref bestAngle))
+                            best = new Target { Kind = TargetKind.Player, Player = players[i], Index = i, Point = center, Pose = pose };
+                    }
                 }
             }
             return best;

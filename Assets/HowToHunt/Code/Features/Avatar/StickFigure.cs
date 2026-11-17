@@ -28,7 +28,9 @@ namespace HowToHunt.Avatar
         private readonly Transform[] _upper = new Transform[4], _lower = new Transform[4], _ends = new Transform[4]; // L arm, R arm, L leg, R leg
         private Vector3 _torsoRest, _neckRest, _headRest, _leafRest;
         private Vector3 _lastPos, _velocity;
-        private float _phase, _crouch;
+        private float _phase, _crouch, _lie;
+        private PlayerHealth _health;
+        private const float LieDegrees = 82f;
         private bool _ready;
 
         private Renderer _maskRenderer;
@@ -85,7 +87,14 @@ namespace HowToHunt.Avatar
             if (dt <= 0f) return;
 
             // Facing: the body turns with the view (the network root does not rotate).
-            _figure.rotation = Quaternion.Euler(0f, _motor.ViewYaw, 0f);
+            // Downed: the figure tips over backwards onto the ground (about the feet).
+            if (_health == null) _health = GetComponent<PlayerHealth>();
+            _lie = Mathf.MoveTowards(_lie, _health != null && _health.Downed ? 1f : 0f, dt * 2.5f);
+            Quaternion facing = Quaternion.Euler(0f, _motor.ViewYaw, 0f);
+            Quaternion tip = Quaternion.Euler(-LieDegrees * _lie, 0f, 0f);
+            Vector3 feet = new Vector3(0f, -MovementCvars.Config.HullHalfExtents.Y, 0f);
+            _figure.rotation = facing * tip;
+            _figure.position = _visual.position + facing * (feet - tip * feet);
 
             // Speed from how the smoothed body moved.
             Vector3 pos = _visual.position, step = (pos - _lastPos) / dt;

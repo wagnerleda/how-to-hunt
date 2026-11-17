@@ -171,7 +171,17 @@ namespace HowToHunt.Player
             PerformReplicate(IsOwner ? new ReplicateData(_input.BuildCmd((float)TimeManager.TickDelta)) : default);
         }
 
-        protected override void TimeManager_OnPostTick() => CreateReconcile();
+        protected override void TimeManager_OnPostTick()
+        {
+            // Host: where this player was on each tick, so shots can be checked where the shooter saw them (lag compensation).
+            if (IsServerStarted) _history.Record(TimeManager.Tick, new HowToHunt.Sim.Combat.EntityPose { Position = _state.Position, Yaw = ViewYaw });
+            CreateReconcile();
+        }
+
+        private readonly HowToHunt.Sim.Combat.PoseHistory _history = new HowToHunt.Sim.Combat.PoseHistory();
+
+        /// <summary>Host: this player's recent poses by tick (hull centre and facing).</summary>
+        public HowToHunt.Sim.Combat.PoseHistory History => _history;
 
         public override void CreateReconcile()
         {

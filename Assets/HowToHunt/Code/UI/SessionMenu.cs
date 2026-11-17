@@ -223,6 +223,13 @@ namespace HowToHunt.UI
 
             GUILayout.Space(8);
             if (GUILayout.Button("Resume", _big, GUILayout.Height(40))) _pauseOpen = false;
+            if (NetSession.IsServer && ConsoleSystem.Global.TryGetCvar("sv_pvp", out Cvar pvp))
+            {
+                // The host decides whether hunters can hurt each other (friendly fire follows it).
+                bool on = pvp.ValueString == "1" || pvp.ValueString == "true";
+                GUILayout.Space(4);
+                if (GUILayout.Button(on ? "PvP: ON (hunters can hurt each other)" : "PvP: OFF", GUILayout.Height(30))) Game.Console.Execute(on ? "sv_pvp 0" : "sv_pvp 1");
+            }
             GUILayout.Space(4);
             if (GUILayout.Button("Settings", GUILayout.Height(30))) _page = Page.Settings;
             GUILayout.Space(4);

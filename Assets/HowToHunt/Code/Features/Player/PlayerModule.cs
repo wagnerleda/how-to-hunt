@@ -22,6 +22,7 @@ namespace HowToHunt.Player
         public void Register(ModuleRegistrar r)
         {
             MovementCvars.Register(r.Console);
+            PlayerHealth.Register(r.Console);
             DemoRecorder.Register(r.Console);
             r.Cvar(MovementHud.ShowSpeed);
             r.Cvar(MovementHud.Crosshair);
@@ -59,6 +60,13 @@ namespace HowToHunt.Player
             if (_playerPrefab == null) Debug.LogError("[Player] Missing Resources/Player/PlayerAvatar prefab.");
             NetSession.ManagerCreated += OnManagerCreated;
             PlayerMotor.LocalPlayerStarted += PlayerCamera.Attach;
+            // Bleeding out sends you back to a spawn point at camp.
+            PlayerHealth.RespawnPoint = who =>
+            {
+                GetSpawn(out Vector3 feet, out _);
+                return feet + new Vector3(0f, MovementCvars.Config.HullHalfExtents.Y, 0f);
+            };
+            Game.Root.gameObject.AddComponent<HealthHud>();
             MovementHud.Ensure();
             Game.Root.gameObject.AddComponent<MovementAudio>();
             Game.Root.gameObject.AddComponent<LandingDust>();

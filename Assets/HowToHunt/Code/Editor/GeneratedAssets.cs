@@ -183,6 +183,7 @@ namespace HowToHunt.Editor
                 NetworkObject nob = root.AddComponent<NetworkObject>();
                 root.AddComponent<PlayerMotor>();
                 root.AddComponent<PlayerVisual>();
+                root.AddComponent<PlayerHealth>();
                 root.AddComponent<Hunting.PlayerTools>();
 
                 var visual = new GameObject("Visual");

@@ -52,6 +52,9 @@ namespace HowToHunt.Player
             _followYaw += side * keep;
         }
 
+        /// <summary>Downed: no moving, no jumping (set by PlayerHealth for the local player).</summary>
+        public static bool Incapacitated { get; set; }
+
         private float _push;
 
         /// <summary>A gun shove (m/s backwards along the view) to send with the next command.</summary>
@@ -122,6 +125,13 @@ namespace HowToHunt.Player
             Keyboard kb = Keyboard.current;
             if (kb == null || Game.UiHasFocus)
             {
+                _jumpLatched = false;
+                return cmd;
+            }
+            if (Incapacitated)
+            {
+                // Downed: low on the ground, going nowhere.
+                cmd.Buttons = MoveButtons.Duck;
                 _jumpLatched = false;
                 return cmd;
             }

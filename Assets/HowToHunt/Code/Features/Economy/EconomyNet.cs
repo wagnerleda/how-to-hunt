@@ -126,6 +126,8 @@ namespace HowToHunt.Economy
             // Using a tool requires carrying it (tools can be dropped, lost or picked up by someone else).
             PlayerTools.HostHasTool = (clientId, tool) =>
                 HuntingCvars.AllTools.Value || (Ledger.TryGetValue(clientId, out EconomyProfile l) && l.Inventory.HasTool(tool));
+            PlayerHealth.HostBledOut -= OnBledOut;
+            PlayerHealth.HostBledOut += OnBledOut;
         }
 
         public static void Detach()
@@ -134,6 +136,7 @@ namespace HowToHunt.Economy
             _joined = false;
             Ledger.Clear();
             PlayerTools.HostHasTool = null;
+            PlayerHealth.HostBledOut -= OnBledOut;
             WorldItems.Detach();
         }
 
@@ -407,6 +410,29 @@ namespace HowToHunt.Economy
             WorldItems.HostSpawn(item, start, velocity, thrown ? conn.ClientId : -1);
             Send(conn, p, EconomyEvent.Synced);
         }
+
+        /// <summary>
+        /// Host: a hunter bled out. A tenth of the catch they carried (at least one, if any) is left where they fell,
+        /// for anyone to pick up (design: no permadeath, a small loss).
+        /// </summary>
+        private static void OnBledOut(PlayerHealth who, Vector3 where)
+        {
+            if (!IsHost || !Ledger.TryGetValue(who.OwnerId, out EconomyProfile p)) return;
+            int carried = p.Inventory.PreyCount;
+            if (carried <= 0) return;
+            int drop = Mathf.Max(1, Mathf.RoundToInt(carried * BleedOutDrop));
+            for (int slot = 0; slot < Inventory.MaxSlots && drop > 0; slot++)
+            {
+                while (drop > 0 && p.Inventory[slot].Kind == ItemKind.Prey && p.Inventory.TakeOne(slot, out ItemStack item))
+                {
+                    WorldItems.HostSpawn(item, where + new Vector3(UnityEngine.Random.Range(-0.4f, 0.4f), 0.3f, UnityEngine.Random.Range(-0.4f, 0.4f)), Vector3.up * 1.5f);
+                    drop--;
+                }
+            }
+            if (_manager.ServerManager.Clients.TryGetValue(who.OwnerId, out NetworkConnection conn)) Send(conn, p, EconomyEvent.Synced);
+        }
+
+        private const float BleedOutDrop = 0.1f;
 
         private static void DropAtFeet(int clientId, in ItemStack item)
         {
