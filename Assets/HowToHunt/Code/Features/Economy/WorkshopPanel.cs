@@ -522,7 +522,7 @@ namespace HowToHunt.Economy
             {
                 EconomyRefusal why = EconomyNet.CanBuyAttachment(p, _selected);
                 if (why != EconomyRefusal.None) { HuntFeedback.Message(EconomyHud.RefusalLine(why), warning: true); return; }
-                EconomyNet.RequestBuyAttachment(_selected.Id.Value);
+                EconomyNet.RequestBuyAttachment(_selected.Id.Value, _tool.Id.Value);
             }
             Sfx.Play2D("Kenney/click_001", 0.45f);
         }

@@ -433,7 +433,7 @@ namespace HowToHunt.Editor
             });
             Attach("suppressor", "Suppressor", "Prey hear the shot from a third as far. Slightly shorter reach.", AttachmentSlot.Muzzle, 700, 20, a =>
             {
-                a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, intervention };
+                a.Tools = new List<ToolDefinition> { revolver, glock, handCannon, heavyRifle, intervention }; // the SCAR's on its own flash hider
                 a.NoiseMultiplier = 0.35f;
                 a.RangeMultiplier = 0.9f;
                 a.RecoilMultiplier = 0.9f;
@@ -465,7 +465,7 @@ namespace HowToHunt.Editor
                 a.Tools = new List<ToolDefinition> { scout, glock, uzi, heavyRifle, intervention };
                 a.MagazineAdd = 3;
                 a.ReloadMultiplier = 1.1f;
-                a.Visual = AttachmentModel("ExtendedMag");
+                a.Visual = null; // not shown: the bigger magazine is just more rounds
             });
             Attach("ammo_hollow", "Hollow Points", "Damage +25 %, but it falls off sooner.", AttachmentSlot.Ammo, 650, 50, a =>
             {
@@ -510,8 +510,6 @@ namespace HowToHunt.Editor
             Builtin("uzi_suppressor", "Uzi Suppressor", "Prey hear the shot from a third as far.", AttachmentSlot.Muzzle, 650, 200, uzi, "Body14", a => { a.NoiseMultiplier = 0.35f; a.RangeMultiplier = 0.9f; a.RecoilMultiplier = 0.9f; });
             Builtin("uzi_foregrip", "Uzi Foregrip", "A front grip: recoil -20 %, steadier on the move.", AttachmentSlot.Underbarrel, 400, 201, uzi, "Body19", a => { a.RecoilMultiplier = 0.8f; a.MoveSpreadMultiplier = 0.85f; });
             Builtin("uzi_stock", "Uzi Folding Stock", "Recoil -30 %, a tighter spray.", AttachmentSlot.Stock, 450, 202, uzi, "Body15;Body21", a => { a.RecoilMultiplier = 0.7f; a.SpreadMultiplier = 0.85f; });
-            Builtin("heavyrifle_flash_hider", "SCAR Flash Hider", "Recoil -20 %.", AttachmentSlot.Muzzle, 500, 210, heavyRifle, "Cylinder", a => { a.RecoilMultiplier = 0.8f; });
-            Builtin("heavyrifle_stock", "SCAR Stock", "Recoil -35 %, steadier down the sights.", AttachmentSlot.Stock, 600, 211, heavyRifle, "Plane.005;Plane.006;Plane.010;Plane.014;Plane.031;Plane.038", a => { a.RecoilMultiplier = 0.65f; a.AdsSpreadMultiplier = 0.85f; });
             Builtin("scout_suppressor", "Scout Suppressor", "Prey barely hear it: a third of the range.", AttachmentSlot.Muzzle, 900, 220, scout, "suppressor ", a => { a.NoiseMultiplier = 0.3f; a.RangeMultiplier = 0.95f; });
             Builtin("scout_buttpad", "Scout Butt Pad", "Recoil -25 %.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.RecoilMultiplier = 0.75f; });
             Builtin("intervention_bipod", "Intervention Bipod", "Recoil -30 %, half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low", a => { a.RecoilMultiplier = 0.7f; a.AdsSpreadMultiplier = 0.5f; });

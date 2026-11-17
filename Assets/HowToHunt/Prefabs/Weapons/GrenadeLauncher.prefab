@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -156,7 +156,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -267,7 +267,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.118772954, z: 0.435}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.16396494, z: -0.0251482}
+    Position: {x: 0, y: 0.1472332, z: 0.06678186}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
     Position: {x: 0, y: 0.034033842, z: 0.23925}
@@ -285,6 +285,7 @@ MonoBehaviour:
   - Name: GL37_launcherHead
     Kind: 5
     Pivot: {x: -0.0000120271, y: 0.07401846, z: 0.051835507}
+  IronSights: []
 --- !u!1001 &3854025335145255045
 PrefabInstance:
   m_ObjectHideFlags: 0

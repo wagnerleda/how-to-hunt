@@ -18,6 +18,8 @@ namespace HowToHunt.Net
         public ulong SteamId;
         /// <summary>Per-session secret only the host's own process knows (identifies the host's client).</summary>
         public ulong HostToken;
+        /// <summary>The player's mask (opaque bytes the avatar feature reads; at most MaxMaskBytes).</summary>
+        public byte[] Mask;
     }
 
     /// <summary>Host → client before disconnecting it: why.</summary>
@@ -41,6 +43,14 @@ namespace HowToHunt.Net
         public ushort[] Pings;
         public int HostId;
         public bool Locked;
+    }
+
+    /// <summary>Host → everyone, once per join: every member's mask, packed one after another.</summary>
+    public struct MasksBroadcast : IBroadcast
+    {
+        public int[] Ids;
+        public ushort[] Lengths;
+        public byte[] Data;
     }
 
     public readonly struct PartyMember
@@ -86,6 +96,19 @@ namespace HowToHunt.Net
 
         public static event Action Changed;
 
+        // --- masks: sent once on join (not with the 2 s roster) ------------------------------------------
+        public const int MaxMaskBytes = 1024;
+        private static readonly Dictionary<int, byte[]> ServerMasks = new Dictionary<int, byte[]>();
+        private static readonly Dictionary<int, byte[]> ClientMasks = new Dictionary<int, byte[]>();
+
+        /// <summary>Our own mask, sent in the hello (set by the avatar feature from its saved setting).</summary>
+        public static byte[] LocalMask { get; set; }
+
+        /// <summary>Bumped whenever masks arrive (avatars cache by version).</summary>
+        public static int MasksVersion { get; private set; }
+
+        public static bool TryGetMask(int clientId, out byte[] mask) => ClientMasks.TryGetValue(clientId, out mask);
+
         public static bool TryGet(int clientId, out PartyMember member)
         {
             for (int i = 0; i < MembersList.Count; i++)
@@ -110,6 +133,7 @@ namespace HowToHunt.Net
             manager.ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
             manager.ClientManager.RegisterBroadcast<RejectBroadcast>(OnReject);
             manager.ClientManager.RegisterBroadcast<RosterBroadcast>(OnRoster);
+            manager.ClientManager.RegisterBroadcast<MasksBroadcast>(OnMasks);
             manager.ClientManager.OnClientConnectionState += OnClientConnectionState;
         }
 
@@ -127,11 +151,15 @@ namespace HowToHunt.Net
                 {
                     _manager.ClientManager.UnregisterBroadcast<RejectBroadcast>(OnReject);
                     _manager.ClientManager.UnregisterBroadcast<RosterBroadcast>(OnRoster);
+                    _manager.ClientManager.UnregisterBroadcast<MasksBroadcast>(OnMasks);
                     _manager.ClientManager.OnClientConnectionState -= OnClientConnectionState;
                 }
             }
             _manager = null;
             ServerMembers.Clear();
+            ServerMasks.Clear();
+            ClientMasks.Clear();
+            MasksVersion++;
             MembersList.Clear();
             Locked = false;
             Version++;
@@ -210,6 +238,9 @@ namespace HowToHunt.Net
             if (name.Length > 32) name = name.Substring(0, 32);
             ServerMembers[conn.ClientId] = new PartyMember(conn.ClientId, name, hello.SteamId, 0, isHost);
             if (!isHost) Game.Console.Print($"[party] {name} joined.");
+            if (hello.Mask != null && hello.Mask.Length > 0 && hello.Mask.Length <= MaxMaskBytes) ServerMasks[conn.ClientId] = hello.Mask;
+            else ServerMasks.Remove(conn.ClientId);
+            PushMasks();
             PushRoster();
         }
 
@@ -225,6 +256,7 @@ namespace HowToHunt.Net
             if (ServerMembers.TryGetValue(conn.ClientId, out PartyMember m))
             {
                 ServerMembers.Remove(conn.ClientId);
+                ServerMasks.Remove(conn.ClientId);
                 Game.Console.Print($"[party] {m.Name} left.");
                 PushRoster();
             }
@@ -258,6 +290,42 @@ namespace HowToHunt.Net
             _manager.ServerManager.Broadcast(msg);
         }
 
+        /// <summary>Everyone's masks to everyone (on a join: a few KB at most, never per tick).</summary>
+        private static void PushMasks()
+        {
+            if (_manager == null || !_manager.IsServerStarted) return;
+            int n = ServerMasks.Count, total = 0;
+            foreach (byte[] m in ServerMasks.Values) total += m.Length;
+            var msg = new MasksBroadcast { Ids = new int[n], Lengths = new ushort[n], Data = new byte[total] };
+            int i = 0, at = 0;
+            foreach (KeyValuePair<int, byte[]> kv in ServerMasks)
+            {
+                msg.Ids[i] = kv.Key;
+                msg.Lengths[i] = (ushort)kv.Value.Length;
+                Buffer.BlockCopy(kv.Value, 0, msg.Data, at, kv.Value.Length);
+                at += kv.Value.Length;
+                i++;
+            }
+            _manager.ServerManager.Broadcast(msg);
+        }
+
+        private static void OnMasks(MasksBroadcast msg, Channel channel)
+        {
+            if (msg.Ids == null || msg.Lengths == null || msg.Data == null || msg.Ids.Length != msg.Lengths.Length) return;
+            ClientMasks.Clear();
+            int at = 0;
+            for (int i = 0; i < msg.Ids.Length; i++)
+            {
+                int len = msg.Lengths[i];
+                if (len > MaxMaskBytes || at + len > msg.Data.Length) break;
+                var mask = new byte[len];
+                Buffer.BlockCopy(msg.Data, at, mask, 0, len);
+                ClientMasks[msg.Ids[i]] = mask;
+                at += len;
+            }
+            MasksVersion++;
+        }
+
         // --- client side ----------------------------------------------------------------------------------
 
         private static void OnClientConnectionState(ClientConnectionStateArgs args)
@@ -272,6 +340,7 @@ namespace HowToHunt.Net
                 Name = name,
                 SteamId = p != null && p.IsOnline ? p.LocalUserId : 0,
                 HostToken = _manager.IsServerStarted ? _hostToken : 0,
+                Mask = LocalMask,
             });
             _nextPing = Time.unscaledTime + 1f;
         }

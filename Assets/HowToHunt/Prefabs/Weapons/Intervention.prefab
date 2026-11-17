@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -145,7 +145,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.11732133, z: 1.0220001}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.2496319, z: 0.27471328}
+    Position: {x: 0, y: 0.14714232, z: 0.23014338}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
     Position: {x: 0, y: -0.039242804, z: 0.56210005}
@@ -175,6 +175,11 @@ MonoBehaviour:
   - Name: Cylinder.012_low
     Kind: 2
     Pivot: {x: 0, y: 0.11732133, z: -0.042180575}
+  IronSights:
+  - Cube.007_low
+  - Cube.012_low
+  - Cylinder.006_low
+  - Cylinder.007_low
 --- !u!1 &5978587986775726759
 GameObject:
   m_ObjectHideFlags: 0
@@ -273,7 +278,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

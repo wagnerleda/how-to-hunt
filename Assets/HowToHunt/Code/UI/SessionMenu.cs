@@ -64,7 +64,8 @@ namespace HowToHunt.UI
                 Keyboard kb = Keyboard.current;
                 if (kb != null && kb.escapeKey.wasPressedThisFrame && !DevConsoleView.IsOpen && !(Game.UiHasFocus && !Visible))
                 {
-                    if (_page == Page.Settings) _page = Page.Home;
+                    if (MenuPanels.Open != null) { } // the open panel handles Esc itself
+                    else if (_page == Page.Settings) _page = Page.Home;
                     else if (InSession) _pauseOpen = !_pauseOpen;
                 }
             }
@@ -114,7 +115,7 @@ namespace HowToHunt.UI
             float screenW = Screen.width / scale, screenH = Screen.height / scale;
 
             DrawToast(screenW);
-            if (Visible)
+            if (Visible && MenuPanels.Open == null)
             {
                 _window.height = 10f; // shrink-to-fit every frame (GUILayout.Window only grows)
                 _window = GUILayout.Window(WindowId, _window, DrawWindow, GUIContent.none, _windowStyle, GUILayout.Width(Width));
@@ -182,6 +183,11 @@ namespace HowToHunt.UI
             }
 
             GUILayout.Space(14);
+            foreach (MenuPanels.Entry e in MenuPanels.Buttons)
+            {
+                if (GUILayout.Button(e.Label, _big, GUILayout.Height(40))) e.Open?.Invoke();
+                GUILayout.Space(4);
+            }
             if (GUILayout.Button("Play solo", GUILayout.Height(34))) NetSession.Host(forceLocal: true);
             GUILayout.Space(4);
             if (GUILayout.Button("Settings", GUILayout.Height(30))) _page = Page.Settings;

@@ -86,6 +86,7 @@ namespace HowToHunt.Editor
             // Explosions: low-poly orbs, coloured per orb (fire glows, smoke is lit).
             UnlitFx("M_Fire", Color.white);
             LitFx("M_Smoke", "Universal Render Pipeline/Lit", Color.white, 0.05f);
+            TransparentFx("M_Plasma"); // the Gunlance's layered plasma orbs, tinted per layer
         }
 
         private static void LitFx(string name, string shader, Color color, float smoothness)
@@ -114,6 +115,31 @@ namespace HowToHunt.Editor
                 AssetDatabase.CreateAsset(m, path);
             }
             m.SetColor("_BaseColor", color);
+            EditorUtility.SetDirty(m);
+        }
+
+        /// <summary>Unlit, alpha-blended, no depth writes: see-through layers tinted with a property block.</summary>
+        private static void TransparentFx(string name)
+        {
+            string path = ResourcesDir + "/FX/" + name + ".mat";
+            Material m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            m.SetColor("_BaseColor", Color.white);
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            m.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_ZWrite", 0f);
+            m.SetFloat("_Cull", 2f);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             EditorUtility.SetDirty(m);
         }
 
@@ -162,21 +188,9 @@ namespace HowToHunt.Editor
                 var visual = new GameObject("Visual");
                 visual.transform.SetParent(root.transform, false);
 
-                // Placeholder body until the Blender character lands: orange jumpsuit capsule with a dark visor showing facing.
-                GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                body.name = "Body";
-                UnityEngine.Object.DestroyImmediate(body.GetComponent<Collider>());
-                body.transform.SetParent(visual.transform, false);
-                body.transform.localScale = new Vector3(0.8f, 0.9144f, 0.8f);
-                body.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("PlayerSuit");
-
-                GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                visor.name = "Visor";
-                UnityEngine.Object.DestroyImmediate(visor.GetComponent<Collider>());
-                visor.transform.SetParent(visual.transform, false);
-                visor.transform.localPosition = new Vector3(0f, 0.62f, 0.33f);
-                visor.transform.localScale = new Vector3(0.5f, 0.16f, 0.2f);
-                visor.GetComponent<MeshRenderer>().sharedMaterial = Palette.Get("Visor");
+                // The hunters: a stick figure with a leaf and a painted tribe mask (posed by StickFigure).
+                AvatarBuilder.BuildFigure(visual.transform);
+                root.AddComponent<Avatar.StickFigure>();
 
                 NetworkTickSmoother smoother = visual.AddComponent<NetworkTickSmoother>();
                 var smootherSo = new SerializedObject(smoother);
@@ -275,8 +289,8 @@ namespace HowToHunt.Editor
                 Part(root, "Scope Mount", PrimitiveType.Cube, new Vector3(0f, 0.062f, 0.07f), new Vector3(0.02f, 0.03f, 0.1f), Vector3.zero, "Gunmetal");
                 Part(root, "Bolt", PrimitiveType.Cube, new Vector3(0.035f, 0.035f, -0.02f), new Vector3(0.05f, 0.018f, 0.018f), Vector3.zero, "Gunmetal");
                 Part(root, "Grip", PrimitiveType.Cube, new Vector3(0f, -0.05f, -0.03f), new Vector3(0.035f, 0.09f, 0.04f), new Vector3(-15f, 0f, 0f), "Wood");
-                Part(root, "Hand", PrimitiveType.Sphere, new Vector3(0.01f, -0.075f, -0.03f), Vector3.one * 0.095f, Vector3.zero, "PlayerSuit");
-                Part(root, "FrontHand", PrimitiveType.Sphere, new Vector3(-0.005f, -0.045f, 0.34f), Vector3.one * 0.085f, Vector3.zero, "PlayerSuit");
+                Part(root, "Hand", PrimitiveType.Sphere, new Vector3(0.01f, -0.075f, -0.03f), Vector3.one * 0.095f, Vector3.zero, "Skin");
+                Part(root, "FrontHand", PrimitiveType.Sphere, new Vector3(-0.005f, -0.045f, 0.34f), Vector3.one * 0.085f, Vector3.zero, "Skin");
                 PrefabUtility.SaveAsPrefabAsset(root, ScoutPrefabPath);
             }
             finally

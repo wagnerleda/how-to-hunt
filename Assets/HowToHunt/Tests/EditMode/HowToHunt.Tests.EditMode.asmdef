@@ -7,6 +7,8 @@
         "HowToHunt.Core",
         "HowToHunt.Hunting",
         "HowToHunt.Economy",
+        "HowToHunt.Avatar",
+        "HowToHunt.Net",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

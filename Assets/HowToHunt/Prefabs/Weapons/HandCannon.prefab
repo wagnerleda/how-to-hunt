@@ -54,7 +54,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.07708426, z: 0.3168}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.08926705, z: 0.12672}
+    Position: {x: 0, y: 0.08925299, z: 0.08861146}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
     Position: {x: 0, y: 0.038315598, z: 0.17424001}
@@ -69,6 +69,7 @@ MonoBehaviour:
   - Name: 12
     Kind: 4
     Pivot: {x: 0, y: 0.06699075, z: 0.10173185}
+  IronSights: []
 --- !u!1 &7639312351507777304
 GameObject:
   m_ObjectHideFlags: 0
@@ -167,7 +168,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

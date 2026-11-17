@@ -48,7 +48,7 @@ namespace HowToHunt.Hunting
         // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
         private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
         private const float LaserRange = 80f;
-        private const float ChargeOrbAhead = 0.06f, ChargeOrbNearer = 0.6f;
+        private const float ChargeOrbAhead = 0.06f, ChargeOrbNearer = 0.6f, ChargeOrbMin = 0.03f, ChargeOrbFull = 0.2f;
         private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
         private Vector3 _kick, _kickVel;
         private float _ads;
@@ -377,26 +377,16 @@ namespace HowToHunt.Hunting
             _laserDot.SetPosition(1, hit);
         }
 
-        private Transform _chargeOrb;
+        private PlasmaOrb _chargeOrb;
 
-        /// <summary>A charge weapon grows a glowing orb at its muzzle while you hold Fire.</summary>
+        /// <summary>A charge weapon grows a layered plasma orb at its muzzle while you hold Fire.</summary>
         private void UpdateChargeOrb(bool gun)
         {
             float c = gun && _tool.PlasmaOrb ? PlayerTools.LocalCharge : 0f;
             if (_chargeOrb == null)
             {
                 if (c <= 0f) return;
-                GameObject g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                Destroy(g.GetComponent<Collider>());
-                g.name = "Charge Orb";
-                var r = g.GetComponent<MeshRenderer>();
-                Material fire = Resources.Load<Material>("FX/M_Fire");
-                if (fire != null) r.sharedMaterial = fire;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                var block = new MaterialPropertyBlock();
-                block.SetColor("_BaseColor", new Color(0.45f, 1f, 1f));
-                r.SetPropertyBlock(block);
-                _chargeOrb = g.transform;
+                _chargeOrb = PlasmaOrb.Create("Charge Orb", null);
             }
             bool on = c > 0f && _shown != null && _shown.activeInHierarchy;
             if (_chargeOrb.gameObject.activeSelf != on) _chargeOrb.gameObject.SetActive(on);
@@ -404,9 +394,9 @@ namespace HowToHunt.Hunting
             // Seen from the eye, an opened leaf sits in front of the muzzle: draw the orb nearer the eye on the same
             // line (scaled to match), so on screen it glows at the muzzle in front of the leaves.
             Vector3 eye = _camera.transform.position, muzzle = _holder.TransformPoint(_tool.MuzzleOffset + Vector3.forward * ChargeOrbAhead);
-            _chargeOrb.position = eye + (muzzle - eye) * ChargeOrbNearer;
-            float pulse = c >= 1f ? 1f + 0.12f * Mathf.Sin(Time.time * 30f) : 1f;
-            _chargeOrb.localScale = Vector3.one * (ChargeOrbNearer * (0.02f + 0.12f * c) * pulse / Mathf.Max(1f, PlayerCamera.Zoom));
+            _chargeOrb.transform.position = eye + (muzzle - eye) * ChargeOrbNearer;
+            _chargeOrb.Energy = c;
+            _chargeOrb.Size = ChargeOrbNearer * (ChargeOrbMin + (ChargeOrbFull - ChargeOrbMin) * c) / Mathf.Max(1f, PlayerCamera.Zoom);
         }
 
         private LineRenderer MakeLine(string name, Material m, float width)
@@ -432,12 +422,13 @@ namespace HowToHunt.Hunting
             _kick += _kickVel * dt;
             offset = new Vector3(0f, 0.004f * _kick.x, -_kick.z);
             rotation = Quaternion.Euler(-_kick.x, _kick.y, 0f);
-            // Charging a plasma weapon: cant it left and dip it so you can watch the cannon open and the orb grow.
+            // Charging a plasma weapon: braced in a little and rolled about its own barrel, so you watch the cannon open
+            // while it keeps pointing where you aim (the shot leaves along the barrel). No yaw or pitch here.
             float charge = _tool != null && _tool.PlasmaOrb ? Smooth(PlayerTools.LocalCharge) : 0f;
             if (charge > 0f)
             {
-                offset += new Vector3(-0.05f, -0.035f, 0.02f) * charge;
-                rotation *= Quaternion.Euler(6f * charge, -16f * charge, -24f * charge);
+                offset += new Vector3(-0.025f, -0.01f, -0.02f) * charge;
+                rotation *= Quaternion.Euler(0f, 0f, -20f * charge);
             }
             float r = PlayerTools.LocalReload;
             if (r >= 0f)

@@ -40,6 +40,14 @@ namespace HowToHunt.Hunting
             if (!_models.TryGetValue(tool, out GameObject model) || model == null)
             {
                 model = Instantiate(tool.Viewmodel, _pivot, false);
+                // Keep where the front hand holds a long gun (the hand balls themselves are removed): the body reaches there.
+                Transform front = FindDeep(model.transform, "FrontHand");
+                if (front != null)
+                {
+                    var grip = new GameObject("FrontGrip").transform;
+                    grip.SetParent(model.transform, false);
+                    grip.position = front.position;
+                }
                 IconRenderer.HideParts(model, "Hand");
                 foreach (Animator a in model.GetComponentsInChildren<Animator>()) a.enabled = false;
                 model.transform.localScale = Vector3.one * ToolScale;
@@ -50,6 +58,18 @@ namespace HowToHunt.Hunting
         }
 
         public void Kick() => _kickAt = Time.time;
+
+        private static Transform FindDeep(Transform t, string name)
+        {
+            for (int i = 0; i < t.childCount; i++)
+            {
+                Transform c = t.GetChild(i);
+                if (c.name == name) return c;
+                Transform deeper = FindDeep(c, name);
+                if (deeper != null) return deeper;
+            }
+            return null;
+        }
 
         private void LateUpdate()
         {

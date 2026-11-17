@@ -27,8 +27,7 @@ namespace HowToHunt.Hunting
         private readonly bool[] _live = new bool[BulletPool];
         private readonly bool[] _explosive = new bool[BulletPool]; // the host announces the blast; no bullet impact
         private readonly float[] _orbSize = new float[BulletPool];   // plasma orb size (0 = a plain bullet)
-        private readonly Transform[] _orbs = new Transform[BulletPool];
-        private MaterialPropertyBlock _orbColor;
+        private readonly PlasmaOrb[] _orbs = new PlasmaOrb[BulletPool];
         private const float PlasmaOrbSize = 0.3f, BombletSize = 0.14f;
         private int _nextBullet;
 
@@ -130,27 +129,13 @@ namespace HowToHunt.Hunting
             FireWith(tool.Ballistics, origin, dir, tool.Range, tool.ExplosionRadius > 0f, tool.PlasmaOrb ? PlasmaOrbSize : 0f);
         }
 
-        /// <summary>Plasma rounds are glowing low-poly orbs that pulse as they fly.</summary>
+        /// <summary>Plasma rounds are layered plasma orbs (PlasmaOrb), pooled with the bullets.</summary>
         private void ShowOrb(int i, Vector3 at)
         {
             if (_orbSize[i] <= 0f) { if (_orbs[i] != null) _orbs[i].gameObject.SetActive(false); return; }
-            if (_orbs[i] == null)
-            {
-                GameObject g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                Destroy(g.GetComponent<Collider>());
-                g.name = "Plasma Orb";
-                g.transform.SetParent(transform, false);
-                var r = g.GetComponent<MeshRenderer>();
-                Material fire = Resources.Load<Material>("FX/M_Fire");
-                if (fire != null) r.sharedMaterial = fire;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                _orbColor ??= new MaterialPropertyBlock();
-                _orbColor.SetColor("_BaseColor", new Color(0.45f, 1f, 1f));
-                r.SetPropertyBlock(_orbColor);
-                _orbs[i] = g.transform;
-            }
-            _orbs[i].position = at;
-            _orbs[i].localScale = Vector3.one * _orbSize[i];
+            if (_orbs[i] == null) _orbs[i] = PlasmaOrb.Create("Plasma Orb", transform);
+            _orbs[i].transform.position = at;
+            _orbs[i].Size = _orbSize[i];
             _orbs[i].gameObject.SetActive(true);
         }
 
@@ -206,8 +191,8 @@ namespace HowToHunt.Hunting
                 lr.enabled = true;
                 if (_orbs[i] != null && _orbSize[i] > 0f)
                 {
-                    _orbs[i].position = head;
-                    _orbs[i].localScale = Vector3.one * (_orbSize[i] * (1f + 0.15f * Mathf.Sin(Time.time * 40f + i)));
+                    _orbs[i].transform.position = head;
+                    _orbs[i].Size = _orbSize[i];
                 }
                 if (end)
                 {

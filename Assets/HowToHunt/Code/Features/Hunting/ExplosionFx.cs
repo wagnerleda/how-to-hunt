@@ -37,7 +37,7 @@ namespace HowToHunt.Hunting
         {
             _instance = this;
             _block = new MaterialPropertyBlock();
-            Mesh orb = LowPolyOrb();
+            Mesh orb = OrbMesh;
             Material fire = Resources.Load<Material>("FX/M_Fire"), smoke = Resources.Load<Material>("FX/M_Smoke");
             for (int i = 0; i < OrbPool; i++)
             {
@@ -161,6 +161,11 @@ namespace HowToHunt.Hunting
                 if (_lightLife[i] <= 0f) _lights[i].enabled = false;
             }
         }
+
+        private static Mesh _orbMesh;
+
+        /// <summary>The shared low-poly orb (also the plasma orbs' layers).</summary>
+        public static Mesh OrbMesh => _orbMesh != null ? _orbMesh : _orbMesh = LowPolyOrb();
 
         /// <summary>An icosahedron with one normal per face: flat-shaded, 20 faces.</summary>
         private static Mesh LowPolyOrb()

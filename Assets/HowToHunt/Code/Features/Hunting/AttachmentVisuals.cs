@@ -27,6 +27,20 @@ namespace HowToHunt.Hunting
                     if (t != null && t.gameObject.activeSelf != on) t.gameObject.SetActive(on);
                 }
             }
+            // Iron sights fold away under an optic (they would block the view through it).
+            ViewmodelFit fit = gunModel.GetComponent<ViewmodelFit>();
+            if (fit != null && fit.IronSights != null)
+            {
+                bool optic = false;
+                if (fitted != null)
+                    for (int i = 0; i < fitted.Count; i++)
+                        if (fitted[i] != null && fitted[i].Slot == AttachmentSlot.Optic) optic = true;
+                foreach (string part in fit.IronSights)
+                {
+                    Transform t = Find(gunModel.transform, part);
+                    if (t != null && t.gameObject.activeSelf == optic) t.gameObject.SetActive(!optic);
+                }
+            }
             Transform old = gunModel.transform.Find(ContainerName);
             if (old != null) Object.Destroy(old.gameObject);
             if (fitted == null || fitted.Count == 0) return;

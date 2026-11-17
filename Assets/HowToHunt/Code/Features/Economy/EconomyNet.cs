@@ -161,7 +161,9 @@ namespace HowToHunt.Economy
 
         public static void RequestReclaimTools() => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.ReclaimTools });
 
-        public static void RequestBuyAttachment(uint attachment) => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.BuyAttachment, Upgrade = attachment });
+        /// <summary>Buys an attachment and fits it straight onto that gun (tool 0: just buy it).</summary>
+        public static void RequestBuyAttachment(uint attachment, uint tool = 0)
+            => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.BuyAttachment, Tool = tool, Upgrade = attachment });
 
         public static void RequestFitAttachment(uint tool, uint attachment)
             => Request(new EconomyRequestBroadcast { Kind = (byte)EconomyRequestKind.FitAttachment, Tool = tool, Upgrade = attachment });
@@ -253,7 +255,7 @@ namespace HowToHunt.Economy
                 case EconomyRequestKind.Throw: Release(conn, p, req, thrown: true); break;
                 case EconomyRequestKind.Drop: Release(conn, p, req, thrown: false); break;
                 case EconomyRequestKind.ReclaimTools: Reclaim(conn, p); break;
-                case EconomyRequestKind.BuyAttachment: BuyAttachment(conn, p, req.Upgrade); break;
+                case EconomyRequestKind.BuyAttachment: BuyAttachment(conn, p, req.Upgrade, req.Tool); break;
                 case EconomyRequestKind.FitAttachment: FitAttachment(conn, p, req.Tool, req.Upgrade); break;
                 case EconomyRequestKind.UnfitAttachment: UnfitAttachment(conn, p, req.Tool, (AttachmentSlot)req.Slot); break;
             }
@@ -317,7 +319,7 @@ namespace HowToHunt.Economy
             return EconomyRefusal.None;
         }
 
-        private static void BuyAttachment(NetworkConnection conn, EconomyProfile p, uint id)
+        private static void BuyAttachment(NetworkConnection conn, EconomyProfile p, uint id, uint toolId)
         {
             AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new ContentId(id));
             EconomyRefusal why = CanBuyAttachment(p, a);
@@ -325,6 +327,13 @@ namespace HowToHunt.Economy
             if (why != EconomyRefusal.None) { Refuse(conn, p, why, id); return; }
             p.Coins -= a.CostCoins;
             p.Attachments.Add(id);
+            // Bought at the workbench for the gun on it: fitted at once.
+            ToolDefinition t = toolId != 0 ? ContentRegistry.Get<ToolDefinition>(new ContentId(toolId)) : null;
+            if (t != null && a.Fits(t))
+            {
+                p.Fit(toolId, a);
+                p.ApplyTo(Loadouts.ForClient(conn.ClientId));
+            }
             Send(conn, p, EconomyEvent.AttachmentBought, content: id, coins: a.CostCoins);
         }
 

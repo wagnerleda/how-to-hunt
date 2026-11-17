@@ -55,7 +55,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.10453567, z: 0.5286939}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.1888658, z: 0.21147756}
+    Position: {x: 0, y: 0.12395283, z: 0.11365715}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
     Position: {x: 0, y: 0.03684096, z: 0.29078165}
@@ -79,6 +79,8 @@ MonoBehaviour:
   - Name: bolt_handle .001_low
     Kind: 2
     Pivot: {x: 0, y: 0.10453567, z: 0.15752324}
+  IronSights:
+  - Cylinder
 --- !u!1 &2336705600383303884
 GameObject:
   m_ObjectHideFlags: 0
@@ -145,7 +147,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -235,7 +237,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 85e4f56d723fea34c9f99251e1ff462a, type: 2}
+  - {fileID: 2100000, guid: f4e58491ad8599542a0469234938ee83, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

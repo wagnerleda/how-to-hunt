@@ -34,7 +34,7 @@ namespace HowToHunt.Editor
             new Spec { Name = "SawedOff", Model = W + "Sawed-Off/sawed_off.FBX", Euler = new Vector3(0f, 180f, 0f), Length = 0.55f, GripAlong = 0.12f, GripUp = 0.35f, TwoHanded = true },
             new Spec { Name = "HandCannon", Model = W + "Handcannon/Colt+navy+1851.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 0.36f, GripAlong = 0.12f, GripUp = 0.3f, Rig = "12=Cylinder" },
             new Spec { Name = "ScoutSniper", Model = W + "ScoutSniper/scoutsniper.fbx", Euler = new Vector3(0f, 0f, 0f), Length = 1.05f, GripAlong = 0.27f, GripUp = 0.3f, TwoHanded = true, Rig = "magazine.002_low=Magazine;magazine.003_low=Magazine;bolt_handle .001_low=Bolt", Detachable = "suppressor ;stock.001_low" },
-            new Spec { Name = "HeavyRifle", Model = W + "HeavyAssaultRifle/SCAR_H_PR.fbx", Euler = new Vector3(0f, 90f, 0f), Length = 0.97f, GripAlong = 0.33f, GripUp = 0.3f, TwoHanded = true, Rig = "Plane.017=Magazine;Plane.019=ChargingHandle", Detachable = "Cylinder;Plane.005;Plane.006;Plane.010;Plane.014;Plane.031;Plane.038" },
+            new Spec { Name = "HeavyRifle", Model = W + "HeavyAssaultRifle/SCAR_H_PR.fbx", Euler = new Vector3(0f, 90f, 0f), Length = 0.97f, GripAlong = 0.33f, GripUp = 0.3f, TwoHanded = true, Rig = "Plane.017=Magazine;Plane.019=ChargingHandle" }, // barrel, flash hider and stock are part of the rifle
             new Spec { Name = "Intervention", Model = W + "Intervention/Cheytac3.6.fbx", Euler = new Vector3(0f, 180f, 0f), Length = 1.4f, GripAlong = 0.27f, GripUp = 0.25f, TwoHanded = true, Rig = "Cube_low=Magazine;Cylinder.011_low.001=Magazine;Cylinder.043_low=Magazine;Cylinder.044_low.002=Magazine;Cylinder.012_low=Bolt", Detachable = "Cube.003_low;Cylinder.034_low;Cylinder.038_low" },
             new Spec { Name = "GrenadeLauncher", Model = W + "GrenadeLauncher/GL37.fbx", Euler = new Vector3(0f, -90f, 0f), Length = 0.75f, GripAlong = 0.42f, GripUp = 0.25f, TwoHanded = true, Rig = "GL37_launcherHead=Hinge" },
             new Spec { Name = "Gunlance", Model = W + "scifigun/model/gunlance-closed-static.fbx", Euler = new Vector3(0f, -90f, 0f), Length = 1.0f, GripAlong = 0.35f, GripUp = 0.3f, TwoHanded = true, Rig = "LOD0 | PORT LEAF ASSEMBLY=LeafPort;LOD0 | STARBOARD LEAF ASSEMBLY=LeafStarboard" },
@@ -116,7 +116,18 @@ namespace HowToHunt.Editor
                 float underZ = Mathf.Lerp(0f, b.max.z, 0.55f);
                 float underY = MinY(points, underZ - 0.05f, underZ + 0.05f);
                 fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Muzzle, Position = fit.Muzzle });
-                fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Optic, Position = new Vector3(0f, top, Mathf.Clamp(topZ, b.min.z * 0.3f, b.max.z * 0.4f)) });
+                // The optic sits on the rail just ahead of the rear sight, at the rail's height (not on a sight post).
+                float opticZ = Mathf.Lerp(rearZ, frontZ, 0.2f);
+                float railY = RailY(points, rearZ, frontZ, top);
+                fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Optic, Position = new Vector3(0f, railY, opticZ) });
+                // Iron sights: small parts standing on the rail at the rear or front sight. They fold away under an optic.
+                foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (skip.Contains(mf.name) || mf.name.EndsWith("Hand")) continue;
+                    Bounds sb = PartBounds(root.transform, mf.transform);
+                    bool atSight = Mathf.Abs(sb.center.z - rearZ) < IronSightReach || Mathf.Abs(sb.center.z - frontZ) < IronSightReach;
+                    if (atSight && sb.min.y >= railY - 0.004f && sb.size.z < 0.15f * len && sb.size.y > 0.004f) fit.IronSights.Add(mf.name);
+                }
                 fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Underbarrel, Position = new Vector3(0f, underY, underZ) });
                 fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Magazine, Position = new Vector3(0f, MinY(points, 0.02f, 0.12f), 0.07f) });
                 fit.Anchors.Add(new AttachmentAnchor { Slot = AttachmentSlot.Ammo, Position = new Vector3(0f, muzzle.y * 0.5f, 0.05f) });
@@ -143,7 +154,10 @@ namespace HowToHunt.Editor
 
         public const string RedDotPrefab = GeneratedAssets.Root + "/Prefabs/Attachments/RedDotModel.prefab";
 
-        /// <summary>The owner's red dot sight as the Red Dot attachment: 7.5 cm long, sitting on its base at the mount.</summary>
+        private const float RedDotLength = 0.055f;
+        private const float IronSightReach = 0.07f; // how far from the measured sight point a sight part may sit
+
+        /// <summary>The owner's red dot sight as the Red Dot attachment: 5.5 cm long, sitting on its base at the mount.</summary>
         private static void BuildRedDot()
         {
             const string path = GeneratedAssets.Root + "/Art/Models/RedDotSight/RedDotSight_Open.fbx"; // the pack's model, window glass removed in Blender
@@ -161,7 +175,7 @@ namespace HowToHunt.Editor
                 model.transform.SetParent(turn, false);
                 var points = new List<Vector3>(4096);
                 Bounds b = Measure(root.transform, points);
-                float scale = 0.075f / Mathf.Max(0.001f, b.size.z);
+                float scale = RedDotLength / Mathf.Max(0.001f, b.size.z);
                 turn.localScale = Vector3.one * scale;
                 turn.localPosition = -new Vector3(b.center.x, b.min.y, b.center.z) * scale;
                 b = Measure(root.transform, points);
@@ -307,6 +321,24 @@ namespace HowToHunt.Editor
             return best == float.MinValue ? 0.05f : best;
         }
 
+        /// <summary>The height of the top rail between two points: a low percentile of the top profile, so sight posts and
+        /// other things sticking up (which cover only a few slices) don't count.</summary>
+        private static float RailY(List<Vector3> points, float z0, float z1, float fallback)
+        {
+            const int slices = 40;
+            var tops = new List<float>(slices);
+            for (int i = 0; i < slices; i++)
+            {
+                float a = Mathf.Lerp(z0, z1, i / (float)slices), c = Mathf.Lerp(z0, z1, (i + 1) / (float)slices);
+                float y = float.MinValue;
+                foreach (Vector3 p in points) if (p.z >= a && p.z < c && p.y > y) y = p.y;
+                if (y > float.MinValue) tops.Add(y);
+            }
+            if (tops.Count == 0) return fallback;
+            tops.Sort();
+            return tops[Mathf.FloorToInt(tops.Count * 0.3f)];
+        }
+
         private static float MinY(List<Vector3> points, float z0, float z1)
         {
             float best = float.MaxValue;
@@ -431,7 +463,7 @@ namespace HowToHunt.Editor
             g.transform.localPosition = position;
             g.transform.localScale = Vector3.one * size;
             var r = g.GetComponent<MeshRenderer>();
-            r.sharedMaterial = Palette.Get("PlayerSuit");
+            r.sharedMaterial = Palette.Get("Skin");
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
     }

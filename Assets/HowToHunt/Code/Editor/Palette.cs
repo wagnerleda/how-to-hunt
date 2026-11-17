@@ -23,6 +23,8 @@ namespace HowToHunt.Editor
             { "Ramp", (Hex("E07A5F"), 0.1f) },
             { "PlayerSuit", (Hex("F28C28"), 0.2f) },
             { "Visor", (Hex("27323A"), 0.6f) },
+            { "Skin", (Hex("B97C58"), 0.15f) },   // the players: bare skin (body and first-person hands)
+            { "Leaf", (Hex("3F8A2E"), 0.35f) },
             { "Trim", (Hex("3D5A6C"), 0.1f) },
             { "Hazard", (Hex("C8553D"), 0.3f) },
             { "Pad", (Hex("6C63FF"), 0.4f) },

@@ -59,7 +59,7 @@ MonoBehaviour:
     Position: {x: 0, y: 0.05611615, z: 0.65}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 5
-    Position: {x: 0, y: 0.14890906, z: 0.06863637}
+    Position: {x: 0, y: 0.10645452, z: 0.13814546}
     Euler: {x: 0, y: 0, z: 0}
   - Slot: 2
     Position: {x: 0, y: 0.0034545388, z: 0.3575}

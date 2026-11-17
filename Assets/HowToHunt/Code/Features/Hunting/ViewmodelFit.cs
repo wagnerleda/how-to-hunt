@@ -38,5 +38,7 @@ namespace HowToHunt.Hunting
         public Vector3 SightFront;
         public List<AttachmentAnchor> Anchors = new List<AttachmentAnchor>();
         public List<RigPart> Parts = new List<RigPart>();
+        /// <summary>Iron sight parts standing on the rail: folded away (hidden) while an optic is fitted.</summary>
+        public List<string> IronSights = new List<string>();
     }
 }
