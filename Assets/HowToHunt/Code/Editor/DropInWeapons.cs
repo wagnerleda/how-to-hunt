@@ -146,7 +146,7 @@ namespace HowToHunt.Editor
         /// <summary>The owner's red dot sight as the Red Dot attachment: 7.5 cm long, sitting on its base at the mount.</summary>
         private static void BuildRedDot()
         {
-            const string path = GeneratedAssets.Root + "/Art/Models/RedDotSight/REdDotSight_FBX.fbx";
+            const string path = GeneratedAssets.Root + "/Art/Models/RedDotSight/RedDotSight_Open.fbx"; // the pack's model, window glass removed in Blender
             var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (fbx == null) return;
             GeneratedAssets.EnsureFolder(GeneratedAssets.Root + "/Prefabs/Attachments");
@@ -166,7 +166,7 @@ namespace HowToHunt.Editor
                 turn.localPosition = -new Vector3(b.center.x, b.min.y, b.center.z) * scale;
                 b = Measure(root.transform, points);
 
-                // Clear glass: the colour map with the pack's alpha mask (the window is a hole in it), alpha-clipped.
+                // The window is open (no glass faces), so the body is plain opaque.
                 Material glass = RedDotMaterial();
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
                 {
@@ -174,12 +174,12 @@ namespace HowToHunt.Editor
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
 
-                // The window is in the hood (the tall end): the dot floats in its middle; aiming lines it up with the eye.
+                // The window is in the hood (the tall end), 61% to 97% of the height: the dot floats in its middle.
                 float tall = b.min.y + 0.8f * b.size.y, zSum = 0f;
                 int n = 0;
                 foreach (Vector3 p in points) if (p.y > tall) { zSum += p.z; n++; }
                 float hoodZ = n > 0 ? zSum / n : b.min.z;
-                var dotPos = new Vector3(0f, b.min.y + 0.6f * b.size.y, hoodZ);
+                var dotPos = new Vector3(0f, b.min.y + 0.79f * b.size.y, hoodZ);
                 GameObject dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 dot.name = "Reticle";
                 Object.DestroyImmediate(dot.GetComponent<Collider>());
@@ -201,36 +201,17 @@ namespace HowToHunt.Editor
 
         private const string RedDotTextures = GeneratedAssets.Root + "/Art/Models/RedDotSight/Textures/";
 
-        /// <summary>Colour from the diffuse map, alpha from the pack's mask (1024 px), alpha-clipped: the window is see-through.</summary>
+        /// <summary>The pack's colour and normal maps on an opaque lit material.</summary>
         private static Material RedDotMaterial()
         {
-            string outTex = RedDotTextures + "Generated_RedDot_ColorAlpha.png";
-            Texture2D color = LoadFile(RedDotTextures + "RedDotSight_Diff.png"), alpha = LoadFile(RedDotTextures + "redDot_alpha.png");
-            if (color != null && alpha != null)
-            {
-                const int size = 1024;
-                Color32[] c = Resized(color, size), a = Resized(alpha, size);
-                var combined = new Texture2D(size, size, TextureFormat.RGBA32, false);
-                for (int i = 0; i < c.Length; i++) c[i].a = a[i].a;
-                combined.SetPixels32(c);
-                File.WriteAllBytes(outTex, combined.EncodeToPNG());
-                Object.DestroyImmediate(combined);
-                AssetDatabase.ImportAsset(outTex);
-                var importer = (TextureImporter)AssetImporter.GetAtPath(outTex);
-                importer.alphaIsTransparency = true;
-                importer.SaveAndReimport();
-            }
-            Object.DestroyImmediate(color);
-            Object.DestroyImmediate(alpha);
             string matPath = PrefabDir + "Materials/M_RedDot_Glass.mat";
             GeneratedAssets.EnsureFolder(PrefabDir + "Materials");
             var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
             if (mat == null) { mat = new Material(Shader.Find("Universal Render Pipeline/Lit")); AssetDatabase.CreateAsset(mat, matPath); }
-            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(outTex));
+            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(RedDotTextures + "RedDotSight_Diff.png"));
             mat.SetColor("_BaseColor", Color.white);
-            mat.SetFloat("_AlphaClip", 1f);
-            mat.SetFloat("_Cutoff", 0.5f);
-            mat.EnableKeyword("_ALPHATEST_ON");
+            mat.SetFloat("_AlphaClip", 0f);
+            mat.DisableKeyword("_ALPHATEST_ON");
             mat.SetFloat("_Cull", 0f); // the hood is thin: both faces
             mat.SetFloat("_Smoothness", 0.3f);
             var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(RedDotTextures + "RedDotSight_Nor.png");
@@ -247,30 +228,6 @@ namespace HowToHunt.Editor
             mat.SetColor("_BaseColor", new Color(1f, 0.08f, 0.05f));
             EditorUtility.SetDirty(mat);
             return mat;
-        }
-
-        /// <summary>Reads an image file directly (works whatever its import settings).</summary>
-        private static Texture2D LoadFile(string assetPath)
-        {
-            if (!File.Exists(assetPath)) return null;
-            var t = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            return t.LoadImage(File.ReadAllBytes(assetPath)) ? t : null;
-        }
-
-        private static Color32[] Resized(Texture2D source, int size)
-        {
-            RenderTexture rt = RenderTexture.GetTemporary(size, size, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-            Graphics.Blit(source, rt);
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = rt;
-            var t = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            t.ReadPixels(new Rect(0, 0, size, size), 0, 0);
-            t.Apply();
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(rt);
-            Color32[] pixels = t.GetPixels32();
-            Object.DestroyImmediate(t);
-            return pixels;
         }
 
         // --- measuring ---------------------------------------------------------------------------------------------

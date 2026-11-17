@@ -38,7 +38,7 @@ MonoBehaviour:
   MagazineAdd: 0
   AdsZoom: 1.35
   ScopeOverlay: 0
-  SightLift: 0.028646905
+  SightLift: 0.03771843
   WeightAdd: 0
   PartNames: []
   Laser: 0

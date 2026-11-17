@@ -48,6 +48,7 @@ namespace HowToHunt.Hunting
         // Guns: the kick spring (degrees up, degrees right, metres back), aim-down-sights blend, inspect.
         private const float KickStiffness = 260f, KickDamping = 20f, KickImpulse = 30f, KickBackImpulse = 0.9f;
         private const float LaserRange = 80f;
+        private const float ChargeOrbAhead = 0.06f, ChargeOrbNearer = 0.6f;
         private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
         private Vector3 _kick, _kickVel;
         private float _ads;
@@ -400,9 +401,12 @@ namespace HowToHunt.Hunting
             bool on = c > 0f && _shown != null && _shown.activeInHierarchy;
             if (_chargeOrb.gameObject.activeSelf != on) _chargeOrb.gameObject.SetActive(on);
             if (!on) return;
-            _chargeOrb.position = _shown.transform.TransformPoint(_tool.MuzzleOffset + Vector3.forward * 0.06f);
+            // Seen from the eye, an opened leaf sits in front of the muzzle: draw the orb nearer the eye on the same
+            // line (scaled to match), so on screen it glows at the muzzle in front of the leaves.
+            Vector3 eye = _camera.transform.position, muzzle = _holder.TransformPoint(_tool.MuzzleOffset + Vector3.forward * ChargeOrbAhead);
+            _chargeOrb.position = eye + (muzzle - eye) * ChargeOrbNearer;
             float pulse = c >= 1f ? 1f + 0.12f * Mathf.Sin(Time.time * 30f) : 1f;
-            _chargeOrb.localScale = Vector3.one * (0.02f + 0.12f * c) * pulse / Mathf.Max(1f, PlayerCamera.Zoom);
+            _chargeOrb.localScale = Vector3.one * (ChargeOrbNearer * (0.02f + 0.12f * c) * pulse / Mathf.Max(1f, PlayerCamera.Zoom));
         }
 
         private LineRenderer MakeLine(string name, Material m, float width)
