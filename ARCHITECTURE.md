@@ -53,3 +53,6 @@ Host: start the Fish-Net server on the Steam transport, create a **friends-only*
 | Ambient insects | 500 for ≤ 0.3 ms |
 | Network | ≤ 8 KB/s up per client, ≤ 24 KB/s down per client, ≤ 200 KB/s host up with 8 players |
 | Loads | biome ≤ 5 s, respawn ≤ 2 s, memory ≤ 2 GB |
+
+Measured live with `cl_showfps 2` and over a fixed camera tour with `perf_bench` (DevTools, ADR 0013). Allocations come from
+`AllocationMeter` (Unity's own counter), not `GC.GetAllocatedBytesForCurrentThread`, which is always 0 on Mono.

@@ -46,7 +46,12 @@ if ($editorOpen) {
     $codeFile = Join-Path $root 'Temp/build-eval.cs'
     New-Item -ItemType Directory -Force (Split-Path $codeFile) | Out-Null
     Set-Content -Path $codeFile -Value $code -Encoding UTF8
-    $result = & unity command script eval --project-path $root --file $codeFile --timeout 3600 2>&1
+    # Windows PowerShell 5.1 turns any stderr line of a native command (the unity CLI prints notices there) into
+    # a terminating error under 'Stop' when it is redirected; judge the build by its result instead.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $result = & unity command script eval --project-path $root --file $codeFile --timeout 3600 2>&1 | ForEach-Object { "$_" }
+    $ErrorActionPreference = $previousPreference
     $result | Select-Object -Last 3 | ForEach-Object { Write-Host $_ }
     if (-not (($result -join "`n") -match 'BUILD OK')) { throw "Build failed (see the Unity console)." }
 } else {
@@ -67,7 +72,7 @@ if (-not $SkipSmokeTest) {
     $log = Join-Path $root 'Logs/smoke.log'
     if (Test-Path $log) { Remove-Item $log }
     Write-Host "Smoke test: launching the build headless for a few seconds..."
-    $p = Start-Process -FilePath $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', $log, '+smoke_quit', '4') -PassThru
+    $p = Start-Process -FilePath $exe -ArgumentList @('-batchmode', '-nographics', '-nocfg', '-logFile', "`"$log`"", '+smoke_quit', '4') -PassThru
     if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "Smoke test timed out." }
     $text = if (Test-Path $log) { Get-Content $log -Raw } else { '' }
     if ($text -notmatch 'SMOKE OK') { throw "Smoke test failed: the game did not boot cleanly. See $log" }

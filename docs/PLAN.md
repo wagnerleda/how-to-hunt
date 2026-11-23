@@ -58,6 +58,15 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 - NPCs guide through quests; the first quest chain ends by opening the east clearing to the next zone.
 - Done with it: player health, downed and revive, PvP (host toggle), the Pine Forest reached by a surf route, the Pine Deer, Ash's trading post with forest prices, a pad back to the Plains camp.
 
+## Phase 6.1: fixes after the Phase 6 play test (done 2026-11-23, awaiting the owner's play test)
+| # | Change | Owner report |
+|---|---|---|
+| 1 | **First quest reachable**: a camp character now finds their stall whenever asked, not only when enabled; Tomas (first quest) and Gus were left without a stall when the scene enabled them before it, so Interact sold directly and never opened the dialogue | "couldn't talk to the NPC to unlock the rest of the game" |
+| 2 | **No more freezes at the surf ledge and ravine; fewer frame drops**: SSAO without a second geometry pass, no unused screen copies, bigger scatter chunks, grass and flowers thinning with distance, nothing drawn past `r_drawdistance`, closed menus no longer allocate every frame (ADR 0013) | "freezes and fps drops" |
+| 3 | `fps_max` works again in a party (Fish-Net reset the frame cap) | |
+| 4 | New settings: `r_ssao` (ambient occlusion), `r_scatter_fade` (where grass starts thinning) | |
+| 5 | Build tools: installer toolchain installed (Inno Setup, IL2CPP), build scripts work from a folder with spaces in its path | "an .exe to install and test the game" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

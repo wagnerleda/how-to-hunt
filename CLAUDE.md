@@ -9,11 +9,13 @@
 - Build + smoke test: `powershell -ExecutionPolicy Bypass -File tools/build-windows.ps1` (uses the open editor if any)
 - Console in game: `` ` `` / F1. Movement cvars need `sv_cheats 1`.
 - Scripted test client: `HowToHunt.exe -screen-fullscreen 0 +cl_bot_forward 1 +cl_bot_yawspeed 60 +connect 127.0.0.1`
+- Performance check (dev build): `HowToHunt.exe -screen-fullscreen 0 -nocfg +host local +delay 10 perf_bench 2 quit`, then read the `[perf]` lines in the log (budgets flagged OVER BUDGET; `perf_bench 3 surf-ledge` stays at one stop). See ADR 0013.
 
 ## Rules
 - Branch `dev`; small commits; never push; tag checkpoints (`m0-setup`, `m1-movement-lab`, ...).
 - Foundation and Sim must not reference UnityEngine. Use `System.Numerics`, convert with `VectorConvert`.
-- No allocations in per-tick/per-frame gameplay code (no LINQ/closures in loops, pool everything). Add an allocation test for new hot paths.
+- No allocations in per-tick/per-frame gameplay code (no LINQ/closures in loops, pool everything). Add an allocation test for new hot paths with `AllocationAssert.None` (`GC.GetAllocatedBytesForCurrentThread` is always 0 on Unity's Mono: never measure with it).
+- IMGUI only through `ImGuiHost`, switched on while the panel is on screen (an enabled `OnGUI` allocates every frame even when it returns at once).
 - One MonoBehaviour per file, file named after the class (player builds break otherwise).
 - Every tunable is a cvar (Archive for settings, `Replicated|Cheat` for sv_*). No magic numbers in gameplay code.
 - Content is ScriptableObjects deriving `ContentDefinition`; keys are permanent; `ContentValidationTests` must pass.
