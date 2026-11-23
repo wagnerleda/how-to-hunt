@@ -105,6 +105,25 @@ namespace HowToHunt.Economy
         }
 
         /// <summary>
+        /// Host, cheat (quest_complete): fills the objectives of a player's quests in progress, so they can be handed in
+        /// to their giver as usual (reward, next quest and world flags then follow the normal path). Returns how many.
+        /// </summary>
+        public static int HostCompleteQuests(int clientId)
+        {
+            if (!IsHost || !Ledger.TryGetValue(clientId, out EconomyProfile p) || p.Quests.Count == 0) return 0;
+            int done = 0;
+            foreach (QuestDefinition q in AllQuests())
+            {
+                if (!p.Quests.TryGetValue(q.Id.Value, out int progress) || progress >= q.Count) continue;
+                p.Quests[q.Id.Value] = q.Count;
+                done++;
+            }
+            NetworkConnection conn = Connection(clientId);
+            if (done > 0 && conn != null) Send(conn, p, EconomyEvent.QuestProgress);
+            return done;
+        }
+
+        /// <summary>
         /// Host: purchase quests ("buy an upgrade from Wren") count the gear the player already owns. Otherwise a hunter
         /// who bought everything before accepting could never finish them, and the chain behind (the way east) stayed
         /// shut. Runs on accept and when a player joins (for quests accepted in an older build). True if anything moved.

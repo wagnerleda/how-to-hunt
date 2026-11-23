@@ -43,6 +43,13 @@ namespace HowToHunt.Economy
                 if (NetSession.Manager == null || !NetSession.IsServer) { r.Console.Warn("Only the host can give coins."); return; }
                 foreach (int id in NetSession.Manager.ServerManager.Clients.Keys) EconomyNet.HostGrant(id, coins);
             }, CommandFlags.Cheat);
+            r.Command("quest_complete", "quest_complete: finish the objectives of every hunter's quests in progress; hand them in to their giver (host, sv_cheats 1).", _ =>
+            {
+                if (NetSession.Manager == null || !NetSession.IsServer) { r.Console.Warn("Only the host can complete quests."); return; }
+                int total = 0;
+                foreach (int id in NetSession.Manager.ServerManager.Clients.Keys) total += EconomyNet.HostCompleteQuests(id);
+                r.Console.Print(total > 0 ? $"[quest] {total} quest(s) ready: hand them in to whoever gave them." : "[quest] No quest in progress. Accept one from a camp character first.");
+            }, CommandFlags.Cheat);
             r.Command("econ_status", "Print your coins, bag, research and upgrades.", _ =>
             {
                 EconomyProfile p = EconomyNet.Local;

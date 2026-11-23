@@ -15,6 +15,8 @@ Controls: WASD, mouse, Space or mouse wheel to jump, Ctrl to crouch, Shift to wa
 
 Movement lab: step on the purple pads in the plaza (BHOP, GAPS, SURF). Useful console: `sv_cheats 1`, `noclip`, `getpos`, `setpos x y z`, `record name` / `stop` / `playdemo name`, `cl_showspeed 2`, `net_graph 2`, `find sv_`.
 
+Quests faster (host, `sv_cheats 1`): `quest_complete` finishes the objectives of the quests you have accepted (hand them in to whoever gave them), `econ_give <coins>` gives coins (sales quests only count real sales), `setpos 392 -50 203` teleports to the forest camp.
+
 ## Build
 
 ```bash
