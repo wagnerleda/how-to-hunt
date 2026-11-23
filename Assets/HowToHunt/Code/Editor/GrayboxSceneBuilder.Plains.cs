@@ -609,6 +609,12 @@ namespace HowToHunt.Editor
 
         // --- instanced scatter (grass, flowers, bushes, forest ring) ------------------------------------------
 
+        // Scatter chunks: each chunk x material is one instanced draw call, so chunks hold enough instances to be worth
+        // a call (trees: a hundred metres; ground clutter: smaller, so it can thin out with distance chunk by chunk).
+        private const float TreeChunk = 100f, ClutterChunk = 36f, PropChunk = 48f;
+        // Share of grass, flowers and small props still drawn at the edge of their draw distance (fog hides it).
+        private const float GrassFarDensity = 0.15f, FlowerFarDensity = 0.25f, PropFarDensity = 0.3f;
+
         private static void BuildScatter(Transform plains, System.Random rng)
         {
             var go = new GameObject("Scatter (instanced)");
@@ -635,7 +641,7 @@ namespace HowToHunt.Editor
                 var list = new List<Matrix4x4>();
                 for (int i = k; i < ringPoints.Count; i += ringTrees.Length)
                     list.Add(Instance(ringPoints[i].p, ringPoints[i].s, rng));
-                AddLayer(scatter, ringTrees[k], list, 40f, 420f, true);
+                AddLayer(scatter, ringTrees[k], list, TreeChunk, 420f, true);
             }
 
             // Grass everywhere in the meadow, thicker in hollows; none on paths, camp and water.
@@ -650,7 +656,7 @@ namespace HowToHunt.Editor
                 int k = rng.Next(grass.Length);
                 grassLists[k].Add(Instance(p, Range(rng, 2f, 3.2f), rng));
             }
-            for (int k = 0; k < grass.Length; k++) AddLayer(scatter, grass[k], grassLists[k], 24f, 85f, false);
+            for (int k = 0; k < grass.Length; k++) AddLayer(scatter, grass[k], grassLists[k], ClutterChunk, 85f, false, GrassFarDensity);
 
             // Flowers: thick in the butterfly meadows, sprinkled elsewhere.
             string[] flowers = { "flower_purpleA", "flower_purpleB", "flower_redA", "flower_redB", "flower_yellowA", "flower_yellowB" };
@@ -664,7 +670,7 @@ namespace HowToHunt.Editor
                 if (OutsidePlay(p.x, p.z) > 0f || FlatMask(p.x, p.z) > 0.5f || RiverDistance(p.x, p.z) < 4f) continue;
                 flowerLists[rng.Next(flowers.Length)].Add(Instance(p, Range(rng, 1.8f, 2.6f), rng));
             }
-            for (int k = 0; k < flowers.Length; k++) AddLayer(scatter, flowers[k], flowerLists[k], 24f, 110f, false);
+            for (int k = 0; k < flowers.Length; k++) AddLayer(scatter, flowers[k], flowerLists[k], ClutterChunk, 110f, false, FlowerFarDensity);
 
             // Bushes, small rocks and mushrooms; reeds by the river.
             string[] small = { "plant_bush", "plant_bushSmall", "plant_bushDetailed", "rock_smallA", "rock_smallB", "rock_smallC", "mushroom_redGroup", "mushroom_tanGroup" };
@@ -677,14 +683,14 @@ namespace HowToHunt.Editor
                 int k = rng.Next(small.Length);
                 smallLists[k].Add(Instance(p, Range(rng, 2.2f, 3.4f), rng));
             }
-            for (int k = 0; k < small.Length; k++) AddLayer(scatter, small[k], smallLists[k], 32f, 140f, k < 3);
+            for (int k = 0; k < small.Length; k++) AddLayer(scatter, small[k], smallLists[k], PropChunk, 140f, k < 3, PropFarDensity);
             var reeds = new List<Matrix4x4>();
             for (float x = PlayMinX; x <= PlayMaxX; x += 1.1f)
             {
                 float z = RiverZ(x) + (rng.Next(2) == 0 ? -1f : 1f) * Range(rng, 3.2f, 5f);
                 reeds.Add(Instance(new Vector3(x, 0f, z), Range(rng, 2.4f, 3.4f), rng));
             }
-            AddLayer(scatter, "plant_flatTall", reeds, 24f, 100f, false);
+            AddLayer(scatter, "plant_flatTall", reeds, PropChunk, 100f, false, PropFarDensity);
         }
 
         private static Matrix4x4 Instance(Vector3 p, float scale, System.Random rng)
@@ -694,7 +700,7 @@ namespace HowToHunt.Editor
         }
 
         /// <summary>Adds an instanced layer from a Kenney model (its first mesh, with that mesh's own transform baked in).</summary>
-        private static void AddLayer(ScatterRenderer scatter, string model, List<Matrix4x4> instances, float chunk, float distance, bool shadows)
+        private static void AddLayer(ScatterRenderer scatter, string model, List<Matrix4x4> instances, float chunk, float distance, bool shadows, float farDensity = 1f)
         {
             if (instances.Count == 0) return;
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(KenneyDir + model + ".fbx");
@@ -702,7 +708,7 @@ namespace HowToHunt.Editor
             if (mf == null) { Debug.LogWarning($"[HowToHunt] No mesh in {model}"); return; }
             Matrix4x4 local = asset.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
             for (int i = 0; i < instances.Count; i++) instances[i] = instances[i] * local;
-            scatter.SetLayer(mf.sharedMesh, mf.GetComponent<MeshRenderer>().sharedMaterials, instances, chunk, distance, shadows);
+            scatter.SetLayer(mf.sharedMesh, mf.GetComponent<MeshRenderer>().sharedMaterials, instances, chunk, distance, shadows, farDensity);
         }
 
         // --- horizon ------------------------------------------------------------------------------------------

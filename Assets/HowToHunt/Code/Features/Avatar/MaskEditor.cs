@@ -16,6 +16,7 @@ namespace HowToHunt.Avatar
 
         private static MaskEditor _instance;
         private bool _open;
+        private ImGuiHost _gui;
         private readonly byte[] _cells = new byte[MaskData.Cells];
         private readonly byte[] _undo = new byte[MaskData.Cells];
         private readonly Color32[] _pixels = new Color32[MaskData.Cells];
@@ -38,6 +39,7 @@ namespace HowToHunt.Avatar
 
         private void Awake()
         {
+            _gui = ImGuiHost.Attach(gameObject, DrawGui);
             _instance = this;
             MenuPanels.Open = null; // a panel left open when the Editor stopped playing
         }
@@ -54,6 +56,7 @@ namespace HowToHunt.Avatar
             if (!MaskData.FromText(AvatarModule.MaskSetting.Value, _cells)) System.Array.Copy(MaskData.Default(), _cells, MaskData.Cells);
             System.Array.Copy(_cells, _undo, MaskData.Cells);
             _open = true;
+            _gui.Show(true);
             MenuPanels.Open = this;
             EnsurePreview();
             _stage.SetActive(true);
@@ -64,6 +67,7 @@ namespace HowToHunt.Avatar
         {
             if (save) AvatarModule.MaskSetting.Value = MaskData.ToText(_cells);
             _open = false;
+            _gui.Show(false);
             if (ReferenceEquals(MenuPanels.Open, this)) MenuPanels.Open = null;
             if (_stage != null) _stage.SetActive(false);
         }
@@ -183,7 +187,7 @@ namespace HowToHunt.Avatar
 
         // --- drawing ---------------------------------------------------------------------------------------------
 
-        private void OnGUI()
+        private void DrawGui()
         {
             if (!_open) return;
             EnsureStyles();

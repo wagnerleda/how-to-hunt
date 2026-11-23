@@ -32,11 +32,14 @@ namespace HowToHunt.UI
         private Vector2 _settingsScroll;
         private GUIStyle _windowStyle, _title, _big, _label, _small, _header, _toastStyle, _boardStyle;
         private Texture2D _panel, _toastBg;
+        private ImGuiHost _gui;
 
         private static bool Online => Game.Platform != null && Game.Platform.IsOnline && Game.Platform.Lobbies != null;
         private static bool InSession => NetSession.State == SessionState.Hosting || NetSession.State == SessionState.Connected;
 
         private bool Visible => !InSession || _pauseOpen;
+
+        private void Awake() => _gui = ImGuiHost.Attach(gameObject, DrawGui);
 
         private void OnEnable() => EventBus.Subscribe<SessionStateChanged>(OnSessionStateChanged);
         private void OnDisable() => EventBus.Unsubscribe<SessionStateChanged>(OnSessionStateChanged);
@@ -79,6 +82,11 @@ namespace HowToHunt.UI
                 Cursor.visible = true;
             }
 
+            // Draw only when something is on screen: the menu, a toast, or the scoreboard while its key is held.
+            bool toast = !Visible && Time.unscaledTime <= _toastUntil && !string.IsNullOrEmpty(_toast);
+            bool board = InSession && KeyBindings.IsPressed(GameAction.Scoreboard) && !DevConsoleView.IsOpen;
+            _gui.Show(Visible || toast || board);
+
             if (!InSession && Online && Time.unscaledTime >= _nextFriendRefresh)
             {
                 _nextFriendRefresh = Time.unscaledTime + FriendRefreshSeconds;
@@ -106,7 +114,7 @@ namespace HowToHunt.UI
             _rebinding = null;
         }
 
-        private void OnGUI()
+        private void DrawGui()
         {
             EnsureStyles();
             float scale = Mathf.Max(1f, Screen.height / 720f);

@@ -28,6 +28,7 @@ namespace HowToHunt.Editor
         private const float FMinX = 365f, FMaxX = 485f, FMinZ = 167f, FMaxZ = 287f, FCorner = 26f, FBand = 22f;
         private const double ForestExpectedSale = 120;
         private const float ForestPriceMultiplier = 1.5f;
+        private const float PineChunk = 80f; // ~700 pines per mesh: big chunks keep it to a few dozen draw calls
         private static readonly Vector3 ForestCamp = new Vector3(392f, ForestY, 203f);
         private static readonly Vector3[] DeerGlades = { new Vector3(448f, 0f, 258f), new Vector3(462f, 0f, 196f), new Vector3(410f, 0f, 270f) };
         private static readonly Vector3[] ForestWarrens = { new Vector3(432f, 0f, 214f), new Vector3(470f, 0f, 236f) };
@@ -366,7 +367,7 @@ namespace HowToHunt.Editor
                     pineLists[rng.Next(pines.Length)].Add(Matrix4x4.TRS(p, Quaternion.Euler(0f, Range(rng, 0f, 360f), 0f), Vector3.one * Range(rng, 1.6f, 2.4f)));
                 }
             for (int k = 0; k < pines.Length; k++)
-                if (pineLists[k].Count > 0) scatter.SetLayer(pines[k], new[] { terrainMat }, pineLists[k], 40f, 420f, true);
+                if (pineLists[k].Count > 0) scatter.SetLayer(pines[k], new[] { terrainMat }, pineLists[k], PineChunk, 420f, true);
 
             // Sparse grass, ferny bushes, mushrooms and small rocks on the forest floor.
             string[] floor = { "grass", "grass_leafs", "plant_bush", "plant_bushSmall", "mushroom_redGroup", "mushroom_tanGroup", "rock_smallA", "rock_smallC" };
@@ -381,7 +382,7 @@ namespace HowToHunt.Editor
                 if (k >= 4 && rng.NextDouble() < 0.75) continue; // mushrooms and pebbles: a few here and there
                 lists[k].Add(Instance(p, k >= 4 ? Range(rng, 1.1f, 1.7f) : Range(rng, 2f, 3.2f), rng));
             }
-            for (int k = 0; k < floor.Length; k++) AddLayer(scatter, floor[k], lists[k], 24f, k < 2 ? 85f : 120f, k == 2 || k == 3);
+            for (int k = 0; k < floor.Length; k++) AddLayer(scatter, floor[k], lists[k], ClutterChunk, k < 2 ? 85f : 120f, k == 2 || k == 3, k < 2 ? GrassFarDensity : PropFarDensity);
         }
 
         /// <summary>

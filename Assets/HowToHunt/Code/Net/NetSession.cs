@@ -312,6 +312,7 @@ namespace HowToHunt.Net
 
         private static void OnClientConnectionState(ClientConnectionStateArgs args)
         {
+            CoreCvars.ApplyFrameRate(); // Fish-Net just overrode the frame rate cap
             if (Manager == null) return;
             if (args.ConnectionState == LocalConnectionState.Started && State == SessionState.Connecting)
             {
@@ -347,6 +348,7 @@ namespace HowToHunt.Net
 
         private static void OnServerConnectionState(ServerConnectionStateArgs args)
         {
+            CoreCvars.ApplyFrameRate(); // Fish-Net just overrode the frame rate cap
             if (Manager == null) return;
             if (args.ConnectionState == LocalConnectionState.Stopped && State == SessionState.Hosting)
                 Disconnect("Server stopped.");

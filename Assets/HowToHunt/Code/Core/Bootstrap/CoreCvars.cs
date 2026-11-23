@@ -23,6 +23,8 @@ namespace HowToHunt.Core
             console.Register(VSync);
             console.Register(PlayerName);
             console.Register(ScatterRenderer.Density);
+            console.Register(ScatterRenderer.FadeStart);
+            RenderQuality.Register(console);
 
             Volume.Changed += _ => UnityEngine.AudioListener.volume = Volume.Value;
             FpsMax.Changed += _ => ApplyFrameRate();
@@ -31,7 +33,11 @@ namespace HowToHunt.Core
             ApplyFrameRate();
         }
 
-        private static void ApplyFrameRate()
+        /// <summary>
+        /// Applies mat_vsync and fps_max. Fish-Net sets Application.targetFrameRate to its own maximum (9999) whenever a
+        /// server or client starts or stops, which silently undid fps_max; the network session calls this after it.
+        /// </summary>
+        public static void ApplyFrameRate()
         {
             UnityEngine.QualitySettings.vSyncCount = VSync.Value ? 1 : 0;
             UnityEngine.Application.targetFrameRate = FpsMax.Value <= 0 ? -1 : FpsMax.Value;

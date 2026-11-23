@@ -28,6 +28,7 @@ namespace HowToHunt.Core
         private int _historyIndex = -1;
         private string _input = string.Empty;
         private bool _open;
+        private ImGuiHost _gui;
         private bool _focusField;
         private Vector2 _scroll;
         private int _seenVersion = -1;
@@ -73,6 +74,8 @@ namespace HowToHunt.Core
             }
         }
 
+        private void Awake() => _gui = ImGuiHost.Attach(gameObject, DrawGui);
+
         private void Update()
         {
             Keyboard kb = Keyboard.current;
@@ -86,6 +89,7 @@ namespace HowToHunt.Core
             if (_open == open) return;
             _open = open;
             IsOpen = open;
+            _gui.Show(open);
             if (open)
             {
                 Game.PushUiFocus(this);
@@ -107,7 +111,7 @@ namespace HowToHunt.Core
             }
         }
 
-        private void OnGUI()
+        private void DrawGui()
         {
             if (!_open) return;
             EnsureStyles();

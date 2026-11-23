@@ -38,7 +38,13 @@ namespace HowToHunt.Npcs
         private GUIStyle _name, _role, _body, _button, _hint;
         private Texture2D _white;
 
-        private void Awake() => _instance = this;
+        private ImGuiHost _gui;
+
+        private void Awake()
+        {
+            _instance = this;
+            _gui = ImGuiHost.Attach(gameObject, DrawGui);
+        }
 
         private void OnDestroy()
         {
@@ -55,6 +61,7 @@ namespace HowToHunt.Npcs
         private void Begin(Npc npc)
         {
             _npc = npc;
+            _gui.Show(true);
             Game.PushUiFocus(this);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -65,6 +72,7 @@ namespace HowToHunt.Npcs
         private void End()
         {
             _npc = null;
+            _gui.Show(false);
             Game.PopUiFocus(this);
             PlayerCamera.LockCursor();
         }
@@ -176,7 +184,7 @@ namespace HowToHunt.Npcs
             }
         }
 
-        private void OnGUI()
+        private void DrawGui()
         {
             if (_npc == null) return;
             EnsureStyles();
