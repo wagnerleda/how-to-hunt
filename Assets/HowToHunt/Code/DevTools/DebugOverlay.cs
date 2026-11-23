@@ -11,7 +11,8 @@ namespace HowToHunt.DevTools
     /// <summary>
     /// Debug overlay (top right): fps, frame time, main-thread allocations per frame, tick, ping, players.
     /// Refreshed 4 times a second with TMP's allocation-free SetText, so it never shows up in its own alloc counter.
-    /// The allocation number is the budget check: steady-state gameplay must show 0 B/frame.
+    /// The allocation number is the budget check: steady-state gameplay must show 0 B/frame (AllocationMeter: exact
+    /// in the editor and development builds, heap growth in release builds).
     /// </summary>
     public sealed class DebugOverlay : MonoBehaviour
     {
@@ -24,7 +25,6 @@ namespace HowToHunt.DevTools
         private int _frames;
         private float _accumTime;
         private float _worstFrame;
-        private long _lastAllocated;
         private long _allocAccum;
         private SessionState _shownState = (SessionState)(-1);
         private SessionTransport _shownTransport = (SessionTransport)(-1);
@@ -42,9 +42,7 @@ namespace HowToHunt.DevTools
 
         private void Update()
         {
-            long allocated = GC.GetAllocatedBytesForCurrentThread();
-            if (_lastAllocated != 0) _allocAccum += allocated - _lastAllocated;
-            _lastAllocated = allocated;
+            _allocAccum += AllocationMeter.LastFrameBytes;
 
             float dt = Time.unscaledDeltaTime;
             _frames++;

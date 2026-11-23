@@ -19,9 +19,10 @@ namespace HowToHunt.Tests
             var s = new PreyState { Position = Vector3.Zero, Home = Vector3.Zero, Rng = 99 };
             var threat = new Vector3(0, 0, -3);
             PreyBrain.Step(ref s, behavior, threat, true, world, 0f, 1f / 64f);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++) PreyBrain.Step(ref s, behavior, threat, (i & 1) == 0, world, i / 64f, 1f / 64f);
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+            AllocationAssert.None(() =>
+            {
+                for (int i = 0; i < 1000; i++) PreyBrain.Step(ref s, behavior, threat, (i & 1) == 0, world, i / 64f, 1f / 64f);
+            });
         }
 
         [Test]
@@ -32,14 +33,15 @@ namespace HowToHunt.Tests
             var net = new ToolStats { Archetype = ToolArchetype.Net, Mode = ToolMode.Capture, Tier = 1, CaptureStrength = 1f };
             ButterflyFlight.PoseAt(7, Vector3.Zero, 6f, 0, 64);
             Takedown.Resolve(prey, 10f, knife, false);
-            long before = GC.GetAllocatedBytesForCurrentThread();
             float sum = 0f;
-            for (int i = 0; i < 1000; i++)
+            AllocationAssert.None(() =>
             {
-                sum += ButterflyFlight.PoseAt(7, Vector3.Zero, 6f, i, 64).Position.Y;
-                sum += Takedown.Resolve(prey, 10f, (i & 1) == 0 ? knife : net, (i & 2) == 0).Damage;
-            }
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+                for (int i = 0; i < 1000; i++)
+                {
+                    sum += ButterflyFlight.PoseAt(7, Vector3.Zero, 6f, i, 64).Position.Y;
+                    sum += Takedown.Resolve(prey, 10f, (i & 1) == 0 ? knife : net, (i & 2) == 0).Damage;
+                }
+            });
             Assert.Greater(sum, 0f);
         }
 
@@ -49,13 +51,14 @@ namespace HowToHunt.Tests
             var history = new PoseHistory();
             for (uint t = 0; t < 70; t++) history.Record(t, new EntityPose { Position = new Vector3(t, 0, 0) });
             history.TrySample(60.5, out _);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (uint t = 70; t < 1070; t++)
+            AllocationAssert.None(() =>
             {
-                history.Record(t, new EntityPose { Position = new Vector3(t, 0, 0) });
-                history.TrySample(t - 3.5, out _);
-            }
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+                for (uint t = 70; t < 1070; t++)
+                {
+                    history.Record(t, new EntityPose { Position = new Vector3(t, 0, 0) });
+                    history.TrySample(t - 3.5, out _);
+                }
+            });
         }
     }
 }

@@ -36,10 +36,10 @@ namespace HowToHunt.Tests
             int sum = 0;
             EventBus.Subscribe((in Ping p) => sum += p.Value);
             EventBus.Publish(new Ping { Value = 1 }); // warm up (static ctor, JIT)
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++) EventBus.Publish(new Ping { Value = 1 });
-            long after = GC.GetAllocatedBytesForCurrentThread();
-            Assert.AreEqual(0, after - before, "EventBus.Publish allocated");
+            AllocationAssert.None(() =>
+            {
+                for (int i = 0; i < 1000; i++) EventBus.Publish(new Ping { Value = 1 });
+            }, "EventBus.Publish allocated");
             Assert.AreEqual(1001, sum);
         }
 

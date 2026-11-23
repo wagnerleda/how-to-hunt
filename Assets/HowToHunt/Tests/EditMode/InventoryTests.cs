@@ -114,14 +114,15 @@ namespace HowToHunt.Tests
             Inventory inv = WithTools(12, Net);
             var fly = ItemStack.Prey(Butterfly, true, CarcassQuality.Intact);
             inv.Add(fly, 10);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 200; i++)
+            AllocationAssert.None(() =>
             {
-                ItemPhysics.Step(ref b, world, half, 1f / 64f);
-                inv.Add(fly, 10);
-                inv.TakeOne(1, out _);
-            }
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+                for (int i = 0; i < 200; i++)
+                {
+                    ItemPhysics.Step(ref b, world, half, 1f / 64f);
+                    inv.Add(fly, 10);
+                    inv.TakeOne(1, out _);
+                }
+            });
         }
 
         [Test]

@@ -86,9 +86,10 @@ namespace HowToHunt.Tests
             var poses = new[] { new EntityPose { Position = new Vector3(0, 0, 8) } };
             var world = new BrushWorld();
             HitScan.Raycast(new Vector3(0, 1, 0), Vector3.UnitZ, 50f, world, poses, TargetDummyPath.Hitboxes, out _);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++) HitScan.Raycast(new Vector3(0, 1, 0), Vector3.UnitZ, 50f, world, poses, TargetDummyPath.Hitboxes, out _);
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+            AllocationAssert.None(() =>
+            {
+                for (int i = 0; i < 1000; i++) HitScan.Raycast(new Vector3(0, 1, 0), Vector3.UnitZ, 50f, world, poses, TargetDummyPath.Hitboxes, out _);
+            });
         }
     }
 }

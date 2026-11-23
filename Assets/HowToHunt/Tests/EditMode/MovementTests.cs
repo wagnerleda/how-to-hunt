@@ -267,9 +267,10 @@ namespace HowToHunt.Tests
             MoveState s = Spawn(Vector3.Zero);
             var cmd = new MoveCmd { Forward = 1f, Side = 0.5f, Buttons = MoveButtons.Jump };
             PlayerMove.Step(ref s, in cmd, _cfg, _world, Dt);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++) PlayerMove.Step(ref s, in cmd, _cfg, _world, Dt);
-            Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before);
+            AllocationAssert.None(() =>
+            {
+                for (int i = 0; i < 1000; i++) PlayerMove.Step(ref s, in cmd, _cfg, _world, Dt);
+            });
         }
     }
 }

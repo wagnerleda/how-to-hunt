@@ -15,6 +15,7 @@ namespace HowToHunt.DevTools
             r.Cvar(DebugOverlay.ShowFps);
             r.Command("net_graph", "net_graph <0|1|2>: alias of cl_showfps.", args =>
                 r.Console.Execute($"cl_showfps {(args.Count > 0 ? args[0] : "2")}"));
+            PerfBench.Register(r.Console);
         }
 
         public void Initialize() => Game.Root.gameObject.AddComponent<DebugOverlay>();
