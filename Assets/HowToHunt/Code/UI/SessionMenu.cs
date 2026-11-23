@@ -312,7 +312,9 @@ namespace HowToHunt.UI
             ToggleByName("Auto-hop (hold jump to keep hopping)", "cl_autohop");
             ToggleByName("Crosshair", "cl_crosshair");
             ToggleByName("Speedometer", "cl_showspeed");
-            Toggle("Vertical sync", CoreCvars.VSync);
+            FrameRateLimit();
+            if (CoreCvars.FpsMax.Value <= 0) Toggle("Vertical sync", CoreCvars.VSync);
+            else GUILayout.Label("Vertical sync: off while a frame rate limit is set", _small);
 
             GUILayout.Space(10);
             GUILayout.Label("Keys (click, then press a key; Esc cancels)", _header);
@@ -343,6 +345,22 @@ namespace HowToHunt.UI
             GUILayout.Label(format == "0%" ? $"{v * 100f:0}%" : v.ToString(format), _small, GUILayout.Width(50));
             GUILayout.EndHorizontal();
             if (!Mathf.Approximately(v, cvar.Value)) cvar.Value = v;
+        }
+
+        private static readonly int[] FrameRateChoices = { 0, 30, 60, 120, 144, 165, 240 };
+
+        /// <summary>fps_max as a row of buttons (0 = none, then vsync applies).</summary>
+        private void FrameRateLimit()
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Frame rate limit", _label, GUILayout.Width(170));
+            for (int i = 0; i < FrameRateChoices.Length; i++)
+            {
+                int fps = FrameRateChoices[i];
+                bool on = CoreCvars.FpsMax.Value == fps;
+                if (GUILayout.Toggle(on, fps == 0 ? "None" : fps.ToString(), GUI.skin.button, GUILayout.Height(24)) && !on) CoreCvars.FpsMax.Value = fps;
+            }
+            GUILayout.EndHorizontal();
         }
 
         private void SliderByName(string label, string name, float min, float max, string format)
