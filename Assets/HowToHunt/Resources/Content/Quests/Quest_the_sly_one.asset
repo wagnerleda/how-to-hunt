@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_the_sly_one
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.the_sly_one
+  _displayName: The Sly One
+  _description: Take down 2 red foxes
+  Giver: {fileID: 11400000, guid: 9be2c6121454e554c9233f69b20b47af, type: 2}
+  Requires: {fileID: 11400000, guid: c6569b4c54b539f47bdcc5d1596e99c5, type: 2}
+  Objective: 2
+  Prey: {fileID: 11400000, guid: 3bd6f0eeaa8757f4ab863a0f5db8c328, type: 2}
+  Count: 2
+  RewardCoins: 220
+  Unlocks: 
+  Offer: A pair of foxes has been raiding my stores. They see you from far off and they're quicker than you on foot. Two of them, any way you can.
+  Task: Take down 2 red foxes
+  Waiting: Foxes watch the open ground. Come at them through the trees, crouched.
+  Done: That'll teach them. My stores thank you.
+  Order: 7

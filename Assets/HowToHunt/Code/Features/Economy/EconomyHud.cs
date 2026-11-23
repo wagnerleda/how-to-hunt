@@ -96,6 +96,15 @@ namespace HowToHunt.Economy
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
                 }
+                case EconomyEvent.BossReward:
+                {
+                    PreyDefinition boss = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(msg.EventContent));
+                    string title = boss != null && !string.IsNullOrEmpty(boss.BossTitle) ? boss.BossTitle : "The boss";
+                    HuntFeedback.Message($"{title} is down! Your share: +{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins, +{msg.EventCount} trophies");
+                    Sfx.Play2D("Kenney/handleCoins", 0.8f);
+                    if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
+                    break;
+                }
                 case EconomyEvent.AttachmentBought:
                 {
                     AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(msg.EventContent));

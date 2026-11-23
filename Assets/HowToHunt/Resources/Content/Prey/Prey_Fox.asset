@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2876ba8925b5104082614fae68a5006, type: 3}
+  m_Name: Prey_Fox
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
+  _key: prey.fox
+  _displayName: Red Fox
+  _description: 'Sly and wary: sees you from 40 m and outruns a sprint. Too strong for any net yet; a clean shot or a sneaky blade.'
+  Allowed: 3
+  MaxHealth: 25
+  CaptureDifficulty: 3
+  MinKillTier: 1
+  OverkillRatio: 3.5
+  Hitboxes:
+  - A: {x: 0, y: 0.38, z: -0.25}
+    B: {x: 0, y: 0.4, z: 0.25}
+    Radius: 0.14
+    WeakPoint: 0
+  - A: {x: 0, y: 0.15, z: -0.2}
+    B: {x: 0, y: 0.15, z: 0.2}
+    Radius: 0.07
+    WeakPoint: 0
+  - A: {x: 0, y: 0.51, z: 0.36}
+    B: {x: 0, y: 0.48, z: 0.52}
+    Radius: 0.1
+    WeakPoint: 1
+  BaseValue: 28
+  TrophiesOnKill: 2
+  Movement: 1
+  WalkSpeed: 1.3
+  FleeSpeed: 9.5
+  FleeRadius: 11
+  SightRange: 30
+  HearingRange: 55
+  Wariness: 1.3
+  CalmDownSeconds: 4
+  WanderRadius: 18
+  StunSeconds: 0.25
+  StaminaSeconds: 5
+  TiredSpeed: 6.2
+  HalfExtents: {x: 0.15, y: 0.25, z: 0.35}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
+  Visual: {fileID: 7594043501823472588, guid: 1161e9cebc3382a4597eca39bfe6f933, type: 3}
+  VisualScale: 1
+  Noun: a fox
+  BloodColor: {r: 0.7, g: 0.06, b: 0.05, a: 1}
+  GibColor: {r: 0.9, g: 0.45, b: 0.15, a: 1}
+  GibCount: 6
+  Voice: 0
+  StackSize: 1

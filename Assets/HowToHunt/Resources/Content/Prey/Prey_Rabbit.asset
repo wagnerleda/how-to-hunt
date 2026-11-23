@@ -39,10 +39,26 @@ MonoBehaviour:
   HearingRange: 45
   Wariness: 1
   CalmDownSeconds: 3
+  WanderRadius: 18
   StunSeconds: 0.15
   StaminaSeconds: 5
   TiredSpeed: 5.4
   HalfExtents: {x: 0.15, y: 0.15, z: 0.2}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
   Visual: {fileID: 919132149155446097, guid: 0980ee2c0eb77b34e9427ab988049f77, type: 3}
   VisualScale: 1
   Noun: a rabbit

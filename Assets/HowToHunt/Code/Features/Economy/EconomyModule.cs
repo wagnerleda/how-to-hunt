@@ -76,6 +76,7 @@ namespace HowToHunt.Economy
             NetSession.SessionEnded += EconomyNet.Detach;
             PlayerMotor.LocalPlayerStarted += OnLocalPlayer;
             EventBus.Subscribe<PreyTakenDown>(EconomyNet.OnPreyTakenDown);
+            EventBus.Subscribe<BossDefeated>(EconomyNet.OnBossDefeated);
         }
 
         public void Shutdown()
@@ -84,6 +85,7 @@ namespace HowToHunt.Economy
             NetSession.SessionEnded -= EconomyNet.Detach;
             PlayerMotor.LocalPlayerStarted -= OnLocalPlayer;
             EventBus.Unsubscribe<PreyTakenDown>(EconomyNet.OnPreyTakenDown);
+            EventBus.Unsubscribe<BossDefeated>(EconomyNet.OnBossDefeated);
             EconomyNet.Detach();
         }
 

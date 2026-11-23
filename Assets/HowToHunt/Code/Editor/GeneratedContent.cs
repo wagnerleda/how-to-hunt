@@ -569,6 +569,7 @@ namespace HowToHunt.Editor
             Builtin("scout_buttpad", "Scout Butt Pad", "The gun kicks 25 % less in the hand and settles faster.", AttachmentSlot.Stock, 450, 221, scout, "stock.001_low", a => { a.KickMultiplier = 0.75f; a.SpringMultiplier = 1.3f; });
             Builtin("intervention_bipod", "Intervention Bipod", "Braced: the gun kicks half as much in the hand; half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low;Cylinder.008_low", a => { a.KickMultiplier = 0.5f; a.AdsSpreadMultiplier = 0.5f; });
 
+            BuildForestFauna();
             BuildNpcsAndQuests();
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).

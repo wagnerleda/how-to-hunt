@@ -41,11 +41,43 @@ namespace HowToHunt.Hunting
         [Tooltip("Rare prey are warier: multiplies FleeRadius and SightRange.")]
         public float Wariness = 1f;
         public float CalmDownSeconds = 2.5f;
+        [Tooltip("Wanders this far from its spawn point when calm (m). Bosses stay close to their den.")]
+        public float WanderRadius = 18f;
         public float StunSeconds = 0.6f;
         [Tooltip("Seconds of full-speed flight before it tires (0 = never). Sprint above run speed, tire below it.")]
         public float StaminaSeconds;
         public float TiredSpeed = 4f;
         public Vector3 HalfExtents = new Vector3(0.2f, 0.18f, 0.25f);
+
+        [Header("Aggression (boars, bosses)")]
+        [Tooltip("None: only flees. WhenHurt: flees, but charges whoever hurts it. Always: charges hunters near its home.")]
+        public PreyAggression Aggression = PreyAggression.None;
+        [Tooltip("Always-aggressive: charges a hunter this close (m).")]
+        public float AggroRange = 20f;
+        [Tooltip("Gives up and walks home once the hunter is this far from its home (m).")]
+        public float LeashRadius = 40f;
+        [Tooltip("Its strike reaches hunters this close in front of it (m).")]
+        public float AttackRange = 1.8f;
+        [Tooltip("Visible wind-up before each strike (s): the time hunters get to dodge.")]
+        public float AttackWindup = 0.6f;
+        public float AttackCooldown = 1.5f;
+        public float AttackDamage = 15f;
+        [Tooltip("A strike throws the hunter back this fast (m/s).")]
+        public float AttackPush = 7f;
+        public float ChargeSpeed = 7f;
+        [Tooltip("WhenHurt: how long it keeps charging after a hit (s).")]
+        public float ProvokeSeconds = 8f;
+        [Tooltip("Health regained per second once nobody has hurt it for a while (bosses reset when you run).")]
+        public float RegenPerSecond;
+
+        [Header("Boss")]
+        [Tooltip("A boss: health bar for everyone nearby, announced when it wakes and falls, and every hunter who hurt it shares the reward.")]
+        public bool IsBoss;
+        [Tooltip("Shown on the boss bar: 'The Old Bear of the Pines'.")]
+        public string BossTitle = "";
+        [Tooltip("Coins for every hunter who hurt it, on top of the carcass.")]
+        public double BossRewardCoins;
+        public double BossRewardTrophies;
 
         [Header("Presentation")]
         public GameObject Visual;
@@ -81,11 +113,19 @@ namespace HowToHunt.Hunting
             SightRange = SightRange * Wariness,
             HearingRange = HearingRange,
             CalmDownSeconds = CalmDownSeconds,
-            HomeRadius = 18f,
+            HomeRadius = WanderRadius,
             StunSeconds = StunSeconds,
             HalfExtents = HalfExtents.ToSim(),
             StaminaSeconds = StaminaSeconds,
             TiredSpeed = TiredSpeed,
+            Aggression = Aggression,
+            AggroRange = AggroRange,
+            LeashRadius = LeashRadius,
+            AttackRange = AttackRange,
+            AttackWindup = AttackWindup,
+            AttackCooldown = AttackCooldown,
+            ChargeSpeed = ChargeSpeed,
+            ProvokeSeconds = ProvokeSeconds,
         };
 
         private HitCapsule[] _capsules;
@@ -112,6 +152,19 @@ namespace HowToHunt.Hunting
             if (BaseValue < 0) errors.Add("BaseValue must be >= 0.");
             if (Visual == null) errors.Add("Visual prefab missing.");
             if (Allowed == 0) errors.Add("Allowed must include Capture, Kill or both.");
+            if (Aggression != PreyAggression.None)
+            {
+                if (Movement != PreyMovement.Ground) errors.Add("Only ground prey can be aggressive.");
+                if (AttackRange <= 0f || AttackDamage <= 0f || ChargeSpeed <= 0f) errors.Add("An aggressive prey needs AttackRange, AttackDamage and ChargeSpeed > 0.");
+                if (LeashRadius <= AttackRange) errors.Add("LeashRadius must be larger than AttackRange.");
+                if (AttackWindup < 0.25f) errors.Add("AttackWindup under 0.25 s can't be dodged.");
+            }
+            if (IsBoss)
+            {
+                if (Aggression != PreyAggression.Always) errors.Add("A boss must be Always aggressive.");
+                if (string.IsNullOrEmpty(BossTitle)) errors.Add("A boss needs a BossTitle.");
+                if ((Allowed & TakedownMethods.Capture) != 0) errors.Add("A boss can't be caught in a net.");
+            }
         }
     }
 

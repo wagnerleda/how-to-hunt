@@ -39,6 +39,8 @@ namespace HowToHunt.Economy
         QuestAccepted,
         QuestDone,
         QuestProgress,
+        /// <summary>A boss this hunter fought fell: EventContent the boss, EventCoins the reward (trophies in EventCount).</summary>
+        BossReward,
     }
 
     public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull }

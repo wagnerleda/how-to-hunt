@@ -1,0 +1,14 @@
+{
+    "name": "HowToHunt.Bosses",
+    "rootNamespace": "HowToHunt.Bosses",
+    "references": ["HowToHunt.Foundation", "HowToHunt.Sim", "HowToHunt.Core", "HowToHunt.Net", "HowToHunt.Player", "HowToHunt.Hunting", "FishNet.Runtime", "Unity.TextMeshPro", "UnityEngine.UI"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

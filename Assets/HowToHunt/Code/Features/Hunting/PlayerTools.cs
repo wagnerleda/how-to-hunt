@@ -695,12 +695,14 @@ namespace HowToHunt.Hunting
                     Vector3 push = target.Point - transform.position;
                     push.y = 0f;
                     push = push.sqrMagnitude > 1e-4f ? push.normalized * tool.Knockback : Vector3.zero;
-                    PreyWorld.HostDamage(prey, r.HealthAfter, push);
+                    PreyWorld.HostDamage(prey, r.HealthAfter, push, Owner.ClientId);
                     break;
                 }
                 case TakedownOutcome.Killed:
                 case TakedownOutcome.Captured:
+                    PreyWorld.HostCredit(prey, Owner.ClientId);
                     PreyWorld.HostRemove(prey);
+                    if (prey.Def.IsBoss) EventBus.Publish(new BossDefeated { Prey = prey.Def.Id, Instance = prey.Id, Killer = Owner.ClientId });
                     // A kill flings the carcass away from the hunter: harder hits fling it further.
                     Vector3 away = target.Point - transform.position;
                     away.y = 0f;

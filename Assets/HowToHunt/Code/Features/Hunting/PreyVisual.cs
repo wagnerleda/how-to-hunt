@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HowToHunt.Core;
 using HowToHunt.Net;
 using HowToHunt.Sim.Combat;
+using HowToHunt.Sim.Hunting;
 using UnityEngine;
 
 namespace HowToHunt.Hunting
@@ -17,8 +18,12 @@ namespace HowToHunt.Hunting
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly Color HitColor = new Color(1f, 0.12f, 0.08f);
 
+        private const float RearDegrees = 22f, RearLift = 0.12f, LungeSeconds = 0.3f, LungeDegrees = 16f, LungeReach = 0.35f;
+
         private Transform _model;
         private float _hopPhase;
+        private PreyAiState _lastAi;
+        private float _lungeAt = -10f;
         private float _hitAt = -10f;
         private bool _tinted;
         private Renderer[] _renderers;
@@ -96,11 +101,31 @@ namespace HowToHunt.Hunting
             Vector3 position = pose.Position.ToUnity();
             Quaternion rotation = Quaternion.Euler(0f, pose.Yaw, 0f);
             float hit = Mathf.Clamp01(1f - (Time.time - _hitAt) / HitSeconds);
+            // Fighters: a cry and a rear-back while winding up (the cue to dodge), a lunge when the strike lands.
+            PreyAiState ai = p.RenderAi;
+            if (ai != _lastAi)
+            {
+                if (ai == PreyAiState.Attack) PreySounds.PlayWindup(p.Def, position);
+                else if (_lastAi == PreyAiState.Attack) _lungeAt = Time.time;
+                _lastAi = ai;
+            }
             if (_model != null)
             {
                 Vector3 offset = Vector3.zero;
                 Quaternion tilt = Quaternion.identity;
-                if (!p.IsFlyer)
+                float scale = p.Def.VisualScale;
+                float lunge = Mathf.Clamp01(1f - (Time.time - _lungeAt) / LungeSeconds);
+                if (ai == PreyAiState.Attack)
+                {
+                    offset.y += RearLift * scale;
+                    tilt = Quaternion.Euler(-RearDegrees, 0f, 0f);
+                }
+                else if (lunge > 0f)
+                {
+                    offset += new Vector3(0f, 0f, LungeReach * scale * lunge);
+                    tilt = Quaternion.Euler(LungeDegrees * lunge, 0f, 0f);
+                }
+                if (!p.IsFlyer && ai != PreyAiState.Attack && lunge <= 0f)
                 {
                     float speed = p.RenderSpeed;
                     if (speed > 0.3f)

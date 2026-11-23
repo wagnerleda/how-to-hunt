@@ -9,6 +9,8 @@ namespace HowToHunt.Editor
     public static partial class GeneratedContent
     {
         public const string EastClearingFlag = "east_clearing";
+        /// <summary>Set when the party brings down the Old Bear (the forest boss): the key to the next biome, later.</summary>
+        public const string ForestBossFlag = "forest_boss";
 
         private static void BuildNpcsAndQuests()
         {
@@ -60,11 +62,39 @@ namespace HowToHunt.Editor
                 "Done. The way east is clear. Ride the slopes down to the pines, and don't fall: it's a long climb back. There's a way home from the forest camp.");
             beyond.Unlocks = EastClearingFlag;
             EditorUtility.SetDirty(beyond);
-            Quest("ghost_of_the_pines", "Ghost of the Pines", 5, ash, beyond, QuestObjective.TakeDown, deer, 1, 300,
+            QuestDefinition ghost = Quest("ghost_of_the_pines", "Ghost of the Pines", 5, ash, beyond, QuestObjective.TakeDown, deer, 1, 300,
                 deer != null ? "Take down a deer" : "Take down anything in the forest",
                 "Deer here are wary: they hear you long before you see them. Bring one down, caught or killed, and I'll know you're the real thing.",
                 "No deer yet? Move slowly, stay downwind... or don't, and chase it.",
                 "A real deer. You'll do well out here. That's the best I've paid all season.");
+
+            // Forest chain (2026-11-24): the new animals, then the forest boss. Squirrels need the Sturdy Net.
+            PreyDefinition squirrel = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Squirrel.asset");
+            PreyDefinition fox = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Fox.asset");
+            PreyDefinition boar = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Boar.asset");
+            PreyDefinition bear = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_OldBear.asset");
+            QuestDefinition paws = Quest("quick_paws", "Quick Paws", 6, ash, ghost, QuestObjective.Capture, squirrel, 3, 150,
+                "Catch 3 red squirrels alive",
+                "The traders down south want live squirrels, of all things. Three of them, alive: a Sturdy Net holds them. They live up in the pine stands.",
+                "Squirrels dart off fast but tire quickly. Sprint after them and swing.",
+                "Three live ones, still cross about it. Good work.");
+            QuestDefinition sly = Quest("the_sly_one", "The Sly One", 7, ash, paws, QuestObjective.TakeDown, fox, 2, 220,
+                "Take down 2 red foxes",
+                "A pair of foxes has been raiding my stores. They see you from far off and they're quicker than you on foot. Two of them, any way you can.",
+                "Foxes watch the open ground. Come at them through the trees, crouched.",
+                "That'll teach them. My stores thank you.");
+            QuestDefinition tusks = Quest("tusks_and_temper", "Tusks and Temper", 8, ash, sly, QuestObjective.Kill, boar, 3, 300,
+                "Kill 3 wild boars",
+                "Boars run from you until you hurt them. Then they turn and charge. Bring down three, and when one rears up, get out of the way.",
+                "A charging boar can't follow a hunter who jumps aside. Keep moving.",
+                "Three boars! You're ready for the worst of it, then.");
+            QuestDefinition king = Quest("the_old_bear", "The Old Bear", 9, ash, tusks, QuestObjective.TakeDown, bear, 1, 800,
+                "Bring down the Old Bear of the Pines",
+                "There's a bear in the south-east glade older than this trading post. It charges anyone who comes near its den and it doesn't tire. Bring friends. Keep your distance, and when it roars, move.",
+                "It heals if you all run off. Stay on it, and stay out of its reach.",
+                "The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.");
+            king.Unlocks = ForestBossFlag;
+            EditorUtility.SetDirty(king);
         }
 
         private static NpcDefinition Npc(string id, string name, string role, string description, CampStationKind station, params string[] greetings) =>

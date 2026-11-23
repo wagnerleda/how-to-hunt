@@ -154,6 +154,17 @@ namespace HowToHunt.Hunting
     }
 
     /// <summary>Published on the host when a player catches or kills prey (economy listens).</summary>
+    /// <summary>
+    /// Host: a boss fell. Every hunter who hurt it (PreyWorld.Get(Instance).Damagers) shares the reward; the killer
+    /// also gets the usual PreyTakenDown (carcass, quest credit).
+    /// </summary>
+    public struct BossDefeated
+    {
+        public ContentId Prey;
+        public ushort Instance;
+        public int Killer;
+    }
+
     public struct PreyTakenDown
     {
         public int ClientId;

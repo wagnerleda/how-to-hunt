@@ -28,9 +28,16 @@ namespace HowToHunt.Editor
         private const float FMinX = 365f, FMaxX = 485f, FMinZ = 167f, FMaxZ = 287f, FCorner = 26f, FBand = 22f;
         private const double ForestExpectedSale = 120;
         private const float ForestPriceMultiplier = 1.5f;
+        private const float LandingHalfWidth = 14f; // the forest's opening for the surf route
         private const float PineChunk = 80f; // ~700 pines per mesh: big chunks keep it to a few dozen draw calls
         private static readonly Vector3 ForestCamp = new Vector3(392f, ForestY, 203f);
-        private static readonly Vector3[] DeerGlades = { new Vector3(448f, 0f, 258f), new Vector3(462f, 0f, 196f), new Vector3(410f, 0f, 270f) };
+        // The middle glade moved north (was 462, 196) to keep deer hunters out of the Old Bear's reach.
+        private static readonly Vector3[] DeerGlades = { new Vector3(448f, 0f, 258f), new Vector3(452f, 0f, 232f), new Vector3(410f, 0f, 270f) };
+        // The forest boss's den (south-east), ~70 m from Ash's camp: the bear never chases further than its leash.
+        private static readonly Vector3 BearDen = new Vector3(456f, 0f, 180f);
+        private static readonly Vector3[] SquirrelPines = { new Vector3(408f, 0f, 240f), new Vector3(440f, 0f, 270f), new Vector3(478f, 0f, 212f), new Vector3(414f, 0f, 220f) };
+        private static readonly Vector3[] FoxDens = { new Vector3(380f, 0f, 262f), new Vector3(472f, 0f, 254f) };
+        private static readonly Vector3[] BoarWallows = { new Vector3(428f, 0f, 250f), new Vector3(402f, 0f, 180f) };
         private static readonly Vector3[] ForestWarrens = { new Vector3(432f, 0f, 214f), new Vector3(470f, 0f, 236f) };
 
         private static void BuildEastRoute(Transform level, Transform zones, Transform signs)
@@ -40,12 +47,15 @@ namespace HowToHunt.Editor
             // The trail out of the clearing ends on a rock ledge over the ravine; step off its north edge onto ramp 1.
             Box(root, "Cliff Ledge", new Vector3(140.5f, LedgeTop - 10f, ClearingZ), new Vector3(21f, 20f, 6f), "Rock");
             Transform walls = Group(root, "Trail Walls (collision)");
-            InvisibleWall(walls, new Vector2(98f, ClearingZ - 8.5f), new Vector2(135f, ClearingZ - 8.5f));
-            InvisibleWall(walls, new Vector2(135f, ClearingZ - 8.5f), new Vector2(135f, ClearingZ - 3.4f));
+            InvisibleWall(walls, new Vector2(98f, ClearingZ - TrailHalfWidth), new Vector2(135f, ClearingZ - TrailHalfWidth));
+            InvisibleWall(walls, new Vector2(135f, ClearingZ - TrailHalfWidth), new Vector2(135f, ClearingZ - 3.4f));
             InvisibleWall(walls, new Vector2(135f, ClearingZ - 3.4f), new Vector2(151.6f, ClearingZ - 3.4f));
             InvisibleWall(walls, new Vector2(151.6f, ClearingZ - 3.4f), new Vector2(151.6f, ClearingZ + 3f));
-            InvisibleWall(walls, new Vector2(98f, ClearingZ + 8.5f), new Vector2(135f, ClearingZ + 8.5f));
-            InvisibleWall(walls, new Vector2(135f, ClearingZ + 8.5f), new Vector2(135f, ClearingZ + 3.2f));
+            InvisibleWall(walls, new Vector2(98f, ClearingZ + TrailHalfWidth), new Vector2(135f, ClearingZ + TrailHalfWidth));
+            InvisibleWall(walls, new Vector2(135f, ClearingZ + TrailHalfWidth), new Vector2(135f, ClearingZ + 3.2f));
+            // Where the trail narrows to the ledge, show the walls: rocks across the trail's sides, not thin air.
+            for (int s = -1; s <= 1; s += 2)
+                Visual(root, s < 0 ? "Ledge Rocks S" : "Ledge Rocks N", new Vector3(134.6f, LedgeTop + 1.2f, ClearingZ + s * 5.95f), new Vector3(1.6f, 2.4f, 5.6f), "Rock");
             Sign(signs, "SURF TO THE PINE FOREST\n<size=55%>step off to the left onto the ramp, hold strafe INTO it, ride it down</size>",
                 new Vector3(145f, LedgeTop + 3.2f, ClearingZ - 2.6f), 90f, 1.3f);
             ZoneAt(zones, "Surf Route Start", new Vector3(144f, LedgeTop + 1f, ClearingZ), new Vector3(6f, 2f, 6f), ZoneKind.Checkpoint, 60f);
@@ -58,7 +68,7 @@ namespace HowToHunt.Editor
                 float baseY = ridgeStart - RampHeight * cos - RampLength * 0.5f * sin;
                 // Yaw -90: the prism's raised end faces west (the ledge), it runs and descends toward +x.
                 MeshBrush(root, $"Surf Ramp {i + 1}", GeneratedAssets.SurfPrismMesh, new Vector3(x0 + RampLength * 0.5f, baseY, RouteZ),
-                    new Vector3(RampWidth, RampHeight, RampLength), -90f, "Surf", SurfaceFlags.Surf, -RampPitch);
+                    new Vector3(RampWidth, RampHeight, RampLength), -90f, "SurfRamp", SurfaceFlags.Surf, -RampPitch);
                 ridgeStart -= RampLength * sin + RampStep;
                 x0 += RampLength + RampGap;
             }
@@ -232,7 +242,48 @@ namespace HowToHunt.Editor
 
             BuildForestScatter(forest, props, rng);
             BuildForestBackdrop(forest, rng);
+            BuildForestFauna(forest, props, signs);
             _terrain = plainsTerrain;
+        }
+
+        /// <summary>
+        /// The forest's own animals (2026-11-24): squirrels in the pines, foxes, boars, and the Old Bear's den. Own
+        /// random sequence, so adding them leaves the rest of the forest where it was.
+        /// </summary>
+        private static void BuildForestFauna(Transform forest, Transform props, Transform signs)
+        {
+            var rng = new System.Random(20261124);
+            for (int i = 0; i < SquirrelPines.Length; i++)
+                Spawner(forest, $"Squirrels {i + 1}", "prey.squirrel", OnGround(SquirrelPines[i]) + new Vector3(0f, 0.2f, 0f), 3, 8f, 30f);
+            for (int i = 0; i < FoxDens.Length; i++)
+            {
+                Vector3 c = OnGround(FoxDens[i]);
+                Prop(props, "stump_old", c + Ring(rng, 4f, 6f), 3f, rng, collide: true);
+                Spawner(forest, $"Foxes {i + 1}", "prey.fox", c + new Vector3(0f, 0.2f, 0f), 2, 12f, 60f);
+            }
+            for (int i = 0; i < BoarWallows.Length; i++)
+            {
+                Vector3 c = OnGround(BoarWallows[i]);
+                Visual(props, $"Wallow {i + 1}", c + new Vector3(0f, 0.02f, 0f), new Vector3(5f, 0.04f, 4f), "Sand");
+                Spawner(forest, $"Boars {i + 1}", "prey.boar", c + new Vector3(0f, 0.2f, 0f), 2, 12f, 75f);
+            }
+
+            // The den: a ring of boulders with gaps, old bones, a warning sign facing the camp.
+            Vector3 den = OnGround(BearDen);
+            string[] boulders = { "rock_largeA", "rock_largeB", "rock_largeC", "rock_tallA" };
+            for (int i = 0; i < 6; i++)
+            {
+                float a = (i + 0.25f + (float)rng.NextDouble() * 0.4f) / 6f * Mathf.PI * 2f;
+                Vector3 at = den + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * Range(rng, 10f, 12f);
+                Prop(props, boulders[i % boulders.Length], OnGround(at), Range(rng, 3.5f, 4.5f), rng, collide: true);
+            }
+            for (int i = 0; i < 7; i++)
+            {
+                Vector3 at = OnGround(den + new Vector3(Range(rng, -6f, 6f), 0f, Range(rng, -6f, 6f)));
+                Visual(props, "Bone", at + new Vector3(0f, 0.06f, 0f), new Vector3(0.09f, 0.09f, Range(rng, 0.5f, 0.9f)), "Wall", Range(rng, 0f, 360f));
+            }
+            Sign(signs, "BEAR DEN\n<size=55%>the Old Bear of the Pines sleeps here - come in numbers</size>", den + new Vector3(-14f, 3.4f, 0f), 90f, 1.2f);
+            Spawner(forest, "Boss Old Bear", "prey.old_bear", den + new Vector3(0f, 0.3f, 0f), 1, 2f, 420f);
         }
 
         private static void BuildForestBoundary(Transform forest)
@@ -245,17 +296,21 @@ namespace HowToHunt.Editor
             {
                 Vector3 a = ring[i], b = ring[(i + 1) % segments];
                 Vector3 mid = (a + b) * 0.5f;
-                if (mid.x < FMinX && Mathf.Abs(mid.z - RouteZ) < 14f) continue; // the landing strip from the ravine
-                float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
-                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
-                GameObject w = Box(walls, $"Wall {i}", new Vector3(mid.x, ForestY + 15f, mid.z), new Vector3(1f, 50f, len), "Wall", yaw);
-                w.GetComponent<MeshRenderer>().enabled = false;
+                if (mid.x >= FMinX)
+                {
+                    RingWall(walls, $"Wall {i}", a, b, ForestY + 15f, 50f);
+                    continue;
+                }
+                // West side: the landing strip from the ravine is cut out exactly, so surfers arriving off-centre
+                // don't meet a leftover piece of invisible wall in the air.
+                SplitAtOpening(a, b, RouteZ, LandingHalfWidth, out _, out _, Pieces);
+                for (int k = 0; k < Pieces.Count; k += 2) RingWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], ForestY + 15f, 50f);
             }
             // Sides of the landing strip, from the ravine edge to the ring (the ravine end itself stays open).
             float edge = RouteStartX + (RampLength + RampGap) * RampCount - RampGap - 3f;
             for (int s = -1; s <= 1; s += 2)
             {
-                float z = RouteZ + s * 14f;
+                float z = RouteZ + s * LandingHalfWidth;
                 float ringX = FMinX;
                 for (int k = 0; k < 40; k++) if (OutsideForest(ringX, z) < 3f) ringX -= 0.5f;
                 GameObject w = Box(walls, $"Landing Side {(s < 0 ? "S" : "N")}", new Vector3((edge + ringX) * 0.5f, ForestY + 15f, z), new Vector3(ringX - edge, 50f, 1f), "Wall");
@@ -312,6 +367,7 @@ namespace HowToHunt.Editor
                 bool blocked = false;
                 foreach (Vector3 g in DeerGlades) if ((p - g).sqrMagnitude < (9f + clearance) * (9f + clearance)) blocked = true;
                 foreach (Vector3 w in ForestWarrens) if ((p - w).sqrMagnitude < (5f + clearance) * (5f + clearance)) blocked = true;
+                if ((p - BearDen).sqrMagnitude < (12f + clearance) * (12f + clearance)) blocked = true; // the den stays open
                 if (!blocked) return p;
             }
             return new Vector3(Range(rng, FMinX + 30f, FMaxX - 30f), 0f, Range(rng, FMinZ + 30f, FMaxZ - 30f));

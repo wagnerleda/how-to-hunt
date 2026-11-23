@@ -41,6 +41,7 @@ namespace HowToHunt.Editor
             BuildScoutPrefab();
             DropInWeapons.BuildAll();
             BuildAttachmentPrefabs();
+            CreatureModels.BuildAll();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();

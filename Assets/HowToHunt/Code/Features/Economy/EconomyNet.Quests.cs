@@ -5,6 +5,7 @@ using FishNet.Connection;
 using FishNet.Transporting;
 using HowToHunt.Core;
 using HowToHunt.Foundation;
+using HowToHunt.Hunting;
 using HowToHunt.Sim.Economy;
 
 namespace HowToHunt.Economy
@@ -102,6 +103,30 @@ namespace HowToHunt.Economy
             p.Quests[id] = 0;
             CountOwnedGear(p);
             Send(conn, p, EconomyEvent.QuestAccepted, content: id);
+        }
+
+        /// <summary>
+        /// Host: a boss fell. Every hunter who hurt it gets its reward (coins and trophies) and the take-down for their
+        /// quests; the killer already had the take-down from PreyTakenDown (and the carcass).
+        /// </summary>
+        public static void OnBossDefeated(in BossDefeated e)
+        {
+            if (!IsHost) return;
+            PreyInstance boss = PreyWorld.Get(e.Instance);
+            PreyDefinition def = ContentRegistry.Get<PreyDefinition>(e.Prey);
+            if (boss == null || def == null) return;
+            for (int i = 0; i < boss.Damagers.Count; i++)
+            {
+                int id = boss.Damagers[i];
+                if (!Ledger.TryGetValue(id, out EconomyProfile p)) continue;
+                BigDouble coins = def.BossRewardCoins;
+                p.Coins += coins;
+                p.LifetimeCoins += coins;
+                p.Trophies += def.BossRewardTrophies;
+                if (id != e.Killer) CountQuest(id, p, QuestObjective.TakeDown, e.Prey.Value, false, 1);
+                NetworkConnection conn = Connection(id);
+                if (conn != null) Send(conn, p, EconomyEvent.BossReward, content: e.Prey.Value, coins: coins, count: (int)def.BossRewardTrophies);
+            }
         }
 
         /// <summary>

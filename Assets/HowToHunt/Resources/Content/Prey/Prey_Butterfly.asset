@@ -35,10 +35,26 @@ MonoBehaviour:
   HearingRange: 45
   Wariness: 1
   CalmDownSeconds: 2.5
+  WanderRadius: 18
   StunSeconds: 0.6
   StaminaSeconds: 0
   TiredSpeed: 4
   HalfExtents: {x: 0.2, y: 0.18, z: 0.25}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
   Visual: {fileID: 4474246509603341136, guid: 0f51219bdfad1d641b1613a380fcf19d, type: 3}
   VisualScale: 1.5
   Noun: a butterfly

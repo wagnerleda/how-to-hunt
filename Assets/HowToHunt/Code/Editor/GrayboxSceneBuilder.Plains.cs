@@ -326,11 +326,16 @@ namespace HowToHunt.Editor
                 Vector3 a = ring[i], b = ring[(i + 1) % segments];
                 Vector3 mid = (a + b) * 0.5f;
                 if (Mathf.Abs(mid.x - GateX) < 7f && mid.z < PlayMinZ + 10f) continue; // corridor opening
-                float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
-                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
-                bool clearing = mid.x > PlayMaxX - 6f && Mathf.Abs(mid.z - ClearingZ) < 8f;
-                GameObject w = Box(clearing ? blocked : walls, $"Wall {i}", new Vector3(mid.x, 15f, mid.z), new Vector3(1f, 40f, len), "Wall", yaw);
-                w.GetComponent<MeshRenderer>().enabled = false;
+                if (mid.x < PlayMaxX - 6f)
+                {
+                    RingWall(walls, $"Wall {i}", a, b, 15f, 40f);
+                    continue;
+                }
+                // East side: cut the ring exactly at the trail's edges. Segments used to go whole into the gate or stay
+                // whole, so the ones straddling an edge left invisible walls across the trail once it opened.
+                SplitAtOpening(a, b, ClearingZ, TrailHalfWidth, out Vector3 inA, out Vector3 inB, Pieces);
+                for (int k = 0; k < Pieces.Count; k += 2) RingWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], 15f, 40f);
+                if ((inB - inA).sqrMagnitude > 0.01f) RingWall(blocked, $"Wall {i} (gate)", inA, inB, 15f, 40f);
             }
             // Corridor sides from the lab gate to the meadow.
             for (int s = -1; s <= 1; s += 2)
@@ -361,6 +366,51 @@ namespace HowToHunt.Editor
         }
 
         /// <summary>A point on the rounded play rectangle (t = 0..1 around), pushed <paramref name="outward"/> metres out.</summary>
+        /// <summary>Half the width of the east trail between its side walls (the opening cut into the boundary ring).</summary>
+        private const float TrailHalfWidth = 8.5f;
+        private static readonly List<Vector3> Pieces = new List<Vector3>();
+
+        /// <summary>
+        /// Splits the boundary segment a-b at an opening |z - centerZ| &lt; halfWidth: the pieces outside it go in
+        /// <paramref name="outside"/> (pairs of end points), the piece inside comes back as inA-inB (zero length if none).
+        /// </summary>
+        private static void SplitAtOpening(Vector3 a, Vector3 b, float centerZ, float halfWidth, out Vector3 inA, out Vector3 inB, List<Vector3> outside)
+        {
+            outside.Clear();
+            inA = inB = a;
+            float za = a.z - centerZ, zb = b.z - centerZ;
+            float t0, t1;
+            if (Mathf.Abs(zb - za) < 1e-4f)
+            {
+                bool inside = Mathf.Abs(za) < halfWidth;
+                t0 = inside ? 0f : 1f;
+                t1 = inside ? 1f : 1f;
+            }
+            else
+            {
+                t0 = (-halfWidth - za) / (zb - za);
+                t1 = (halfWidth - za) / (zb - za);
+                if (t0 > t1) (t0, t1) = (t1, t0);
+                t0 = Mathf.Clamp01(t0);
+                t1 = Mathf.Clamp01(t1);
+            }
+            if (t1 <= t0) { outside.Add(a); outside.Add(b); return; }
+            if (t0 > 0.01f) { outside.Add(a); outside.Add(Vector3.Lerp(a, b, t0)); }
+            if (t1 < 0.99f) { outside.Add(Vector3.Lerp(a, b, t1)); outside.Add(b); }
+            inA = Vector3.Lerp(a, b, t0);
+            inB = Vector3.Lerp(a, b, t1);
+        }
+
+        /// <summary>An invisible boundary wall from a to b (slightly longer, so neighbours overlap at the corners).</summary>
+        private static void RingWall(Transform parent, string name, Vector3 a, Vector3 b, float centerY, float height)
+        {
+            Vector3 mid = (a + b) * 0.5f;
+            float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
+            float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
+            GameObject w = Box(parent, name, new Vector3(mid.x, centerY, mid.z), new Vector3(1f, height, len), "Wall", yaw);
+            w.GetComponent<MeshRenderer>().enabled = false;
+        }
+
         private static Vector3 RingPoint(float t, float outward)
         {
             float cx = (PlayMinX + PlayMaxX) * 0.5f, cz = (PlayMinZ + PlayMaxZ) * 0.5f;

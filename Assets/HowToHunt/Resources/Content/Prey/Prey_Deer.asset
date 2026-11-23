@@ -43,10 +43,26 @@ MonoBehaviour:
   HearingRange: 70
   Wariness: 1.6
   CalmDownSeconds: 5
+  WanderRadius: 18
   StunSeconds: 0.3
   StaminaSeconds: 6
   TiredSpeed: 6.8
   HalfExtents: {x: 0.3, y: 0.55, z: 0.6}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
   Visual: {fileID: 919132149155446097, guid: 991e1220ead2d8e4aba8f5e0082f964a, type: 3}
   VisualScale: 1
   Noun: a deer

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_the_old_bear
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.the_old_bear
+  _displayName: The Old Bear
+  _description: Bring down the Old Bear of the Pines
+  Giver: {fileID: 11400000, guid: 9be2c6121454e554c9233f69b20b47af, type: 2}
+  Requires: {fileID: 11400000, guid: 6b1b6ab0cf528724cbfaf1f781bea82f, type: 2}
+  Objective: 2
+  Prey: {fileID: 11400000, guid: aab77f0ddfc4a344190b0caa9491b8ac, type: 2}
+  Count: 1
+  RewardCoins: 800
+  Unlocks: forest_boss
+  Offer: There's a bear in the south-east glade older than this trading post. It charges anyone who comes near its den and it doesn't tire. Bring friends. Keep your distance, and when it roars, move.
+  Task: Bring down the Old Bear of the Pines
+  Waiting: It heals if you all run off. Stay on it, and stay out of its reach.
+  Done: The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.
+  Order: 9

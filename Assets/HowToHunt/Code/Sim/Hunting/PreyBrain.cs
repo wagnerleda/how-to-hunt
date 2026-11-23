@@ -5,7 +5,18 @@ using HowToHunt.Sim.Collision;
 
 namespace HowToHunt.Sim.Hunting
 {
-    public enum PreyAiState : byte { Idle, Wander, Flee, Stunned, Captured, Dead }
+    public enum PreyAiState : byte { Idle, Wander, Flee, Stunned, Captured, Dead, Chase, Attack }
+
+    /// <summary>Does this animal fight back? (Bosses and boars; everything else only flees.)</summary>
+    public enum PreyAggression : byte
+    {
+        /// <summary>Flees, never attacks.</summary>
+        None,
+        /// <summary>Flees like any prey, but charges whoever hurts it for a while (a boar).</summary>
+        WhenHurt,
+        /// <summary>Charges any hunter it can reach from its home (a boss guarding its den).</summary>
+        Always,
+    }
 
     /// <summary>Behavior profile numbers (from content).</summary>
     public struct PreyBehavior
@@ -25,6 +36,22 @@ namespace HowToHunt.Sim.Hunting
         public float SightRange;
         /// <summary>Flees from gunshots heard within this distance (0 = unbothered: predators, deaf prey).</summary>
         public float HearingRange;
+
+        // Aggression (bosses, boars). Ignored when Aggression is None.
+        public PreyAggression Aggression;
+        /// <summary>Always-aggressive animals charge a hunter this close (m).</summary>
+        public float AggroRange;
+        /// <summary>Never chases a hunter further than this from its home: lead it away and it gives up and goes back.</summary>
+        public float LeashRadius;
+        /// <summary>A hit lands on hunters within this distance in front of it (m).</summary>
+        public float AttackRange;
+        /// <summary>The visible wind-up before a strike (s): long enough to dodge.</summary>
+        public float AttackWindup;
+        /// <summary>Pause after a strike before the next (s).</summary>
+        public float AttackCooldown;
+        public float ChargeSpeed;
+        /// <summary>How long a hurt WhenHurt animal keeps charging (s).</summary>
+        public float ProvokeSeconds;
     }
 
     /// <summary>Everything the host simulates for one ground prey. Small, copyable, deterministic.</summary>
@@ -45,6 +72,8 @@ namespace HowToHunt.Sim.Hunting
         public Vector3 Knock;      // horizontal shove from a hit, m/s, fades quickly
         public float SlowTime;     // seconds left slowed by a thrown item
         public float SlowFactor;   // speed multiplier meanwhile
+        public float ProvokedUntil; // time: a WhenHurt animal charges until then
+        public float Cooldown;      // seconds until it may strike again
     }
 
     /// <summary>
@@ -130,6 +159,116 @@ namespace HowToHunt.Sim.Hunting
         }
 
         public static void Stun(ref PreyState s, in PreyBehavior b) => Enter(ref s, PreyAiState.Stunned, b.StunSeconds);
+
+        /// <summary>Hurt by a hunter: an aggressive animal turns on them (WhenHurt animals for ProvokeSeconds).</summary>
+        public static void Provoke(ref PreyState s, in PreyBehavior b, float time)
+        {
+            if (b.Aggression == PreyAggression.None || s.Ai == PreyAiState.Dead || s.Ai == PreyAiState.Captured) return;
+            s.ProvokedUntil = MathF.Max(s.ProvokedUntil, time + MathF.Max(b.ProvokeSeconds, b.CalmDownSeconds));
+        }
+
+        /// <summary>
+        /// One tick for an animal that fights back. <paramref name="target"/> is the nearest hunter still standing.
+        /// It charges while the target is in reach of its home (always-aggressive: within AggroRange; WhenHurt: while
+        /// provoked), winds up when close, then strikes: returns true on the tick of the strike, and the caller hurts
+        /// whoever stands within AttackRange in front of it. Past its leash it walks home. Otherwise it behaves like
+        /// any prey (WhenHurt animals still flee; always-aggressive ones never do). Deterministic, no allocations.
+        /// </summary>
+        public static bool StepAggressive(ref PreyState s, in PreyBehavior b, Vector3 target, bool hasTarget, bool seesTarget, ICollisionWorld world, float time, float dt)
+        {
+            if (s.Ai == PreyAiState.Dead || s.Ai == PreyAiState.Captured) return false;
+            s.Cooldown = MathF.Max(0f, s.Cooldown - dt);
+            if (s.SlowTime > 0f) s.SlowTime = MathF.Max(0f, s.SlowTime - dt);
+
+            if (s.Ai == PreyAiState.Stunned)
+            {
+                s.Timer -= dt;
+                if (s.Timer <= 0f) Enter(ref s, PreyAiState.Chase, 0f);
+                s.Speed = 0f;
+                Move(ref s, b, world, dt);
+                return false;
+            }
+
+            Vector3 toTarget = hasTarget ? Horizontal(target - s.Position) : Vector3.Zero;
+            float dist = toTarget.Length();
+            bool inLeash = hasTarget && Horizontal(target - s.Home).Length() <= b.LeashRadius;
+            bool provoked = time < s.ProvokedUntil;
+            bool engage = inLeash && (provoked || (b.Aggression == PreyAggression.Always && dist <= b.AggroRange));
+
+            if (!engage)
+            {
+                bool fighting = s.Ai == PreyAiState.Chase || s.Ai == PreyAiState.Attack;
+                if (fighting)
+                {
+                    // Lost the fight (target out of reach, down or gone): head home before anything else.
+                    s.ProvokedUntil = 0f;
+                    Vector3 home = Horizontal(s.Home - s.Position);
+                    if (home.Length() > HomeArrival)
+                    {
+                        s.Ai = PreyAiState.Chase;
+                        s.MoveDir = Vector3.Normalize(home);
+                        s.Speed = b.WalkSpeed * ReturnSpeedFactor;
+                        Move(ref s, b, world, dt);
+                        if (Horizontal(s.Home - s.Position).Length() > HomeArrival) return false;
+                    }
+                    Enter(ref s, PreyAiState.Idle, 1f);
+                    return false;
+                }
+                // Calm: graze and wander like any prey. A boss holds its ground; a boar still runs from hunters.
+                bool flees = b.Aggression == PreyAggression.WhenHurt;
+                Step(ref s, in b, target, flees && hasTarget, flees && seesTarget, world, time, dt);
+                return false;
+            }
+
+            s.LastThreatTime = time;
+            if (dist > 1e-3f) s.MoveDir = toTarget / dist;
+            if (s.Ai == PreyAiState.Attack)
+            {
+                // Winding up: rooted, turning to follow the target, then the strike.
+                s.Speed = 0f;
+                s.Yaw = LerpAngle(s.Yaw, MathF.Atan2(s.MoveDir.X, s.MoveDir.Z) * 180f / MathF.PI, MathF.Min(1f, dt * AttackTurnRate));
+                s.Timer -= dt;
+                Move(ref s, b, world, dt);
+                if (s.Timer > 0f) return false;
+                Enter(ref s, PreyAiState.Chase, 0f);
+                s.Cooldown = b.AttackCooldown;
+                return true;
+            }
+
+            s.Ai = PreyAiState.Chase;
+            if (dist <= b.AttackRange && s.Cooldown <= 0f)
+            {
+                Enter(ref s, PreyAiState.Attack, b.AttackWindup);
+                s.Speed = 0f;
+                Move(ref s, b, world, dt);
+                return false;
+            }
+            // Close in; just after a strike it circles in at half speed (a window to hit back).
+            s.Speed = dist <= b.AttackRange * 0.8f ? 0f : b.ChargeSpeed * (s.Cooldown > 0f ? 0.5f : 1f);
+            if (s.SlowTime > 0f) s.Speed *= s.SlowFactor;
+            Move(ref s, b, world, dt);
+            return false;
+        }
+
+        private const float HomeArrival = 2f;        // m: close enough to its home to settle down
+        private const float ReturnSpeedFactor = 1.6f; // walks home a little faster than it wanders
+        private const float AttackTurnRate = 6f;      // per second while winding up
+
+        /// <summary>Would a strike from this pose hit a hunter standing at <paramref name="hunterFeet"/>? (in front, in reach, level)</summary>
+        public static bool StrikeReaches(in PreyState s, in PreyBehavior b, Vector3 hunterFeet, float reachSlack, float heightSlack)
+        {
+            Vector3 d = hunterFeet - s.Position;
+            if (MathF.Abs(d.Y) > heightSlack) return false;
+            Vector3 flat = Horizontal(d);
+            float dist = flat.Length();
+            if (dist > b.AttackRange + reachSlack) return false;
+            if (dist < 0.5f) return true;
+            float yaw = s.Yaw * MathF.PI / 180f;
+            var facing = new Vector3(MathF.Sin(yaw), 0f, MathF.Cos(yaw));
+            return Vector3.Dot(flat / dist, facing) > StrikeCone;
+        }
+
+        private const float StrikeCone = 0.2f; // cos of ~78 degrees each side: a wide swipe
 
         /// <summary>A hit shoves the prey along the ground (m/s, horizontal); it slides to a stop within half a second.</summary>
         public static void Knock(ref PreyState s, Vector3 velocity) => s.Knock += Horizontal(velocity);

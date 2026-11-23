@@ -48,6 +48,9 @@ namespace HowToHunt.Hunting
         // Host simulation (ground prey).
         public PreyState State;
         public bool SeesThreat;
+        /// <summary>Host: client ids of the hunters who hurt it since it spawned (a boss rewards them all).</summary>
+        public readonly List<int> Damagers = new List<int>(8);
+        public float LastHurtAt = -1000f;
         public readonly PoseHistory History = new PoseHistory();
 
         // Client interpolation buffer (ground prey).
@@ -213,6 +216,8 @@ namespace HowToHunt.Hunting
         {
             p.Alive = true;
             p.Health = p.Def.MaxHealth;
+            p.Damagers.Clear();
+            p.LastHurtAt = -1000f;
             p.Seed = (uint)Rng.Next(1, int.MaxValue);
             Vector3 home = p.Spawner.transform.position + PreyInstance.HomeOffset(p.Seed, p.Spawner.Radius);
             if (!p.IsFlyer)
@@ -260,16 +265,66 @@ namespace HowToHunt.Hunting
             }
         }
 
-        /// <summary>Host: damaged but alive (ground prey get stunned and shoved by the hit, then flee).</summary>
-        public static void HostDamage(PreyInstance p, float healthAfter, Vector3 push = default)
+        /// <summary>
+        /// Host: damaged but alive (ground prey get stunned and shoved by the hit, then flee; aggressive ones turn on
+        /// the hunter). <paramref name="attacker"/>: the hunter's client id (-1: unknown), remembered for boss rewards.
+        /// </summary>
+        public static void HostDamage(PreyInstance p, float healthAfter, Vector3 push = default, int attacker = -1)
         {
             p.Health = healthAfter;
+            HostCredit(p, attacker);
             if (!p.IsFlyer)
             {
                 p.State.Health = healthAfter;
-                PreyBrain.Stun(ref p.State, p.Def.Behavior);
+                PreyBehavior b = p.Def.Behavior;
+                PreyBrain.Stun(ref p.State, in b);
                 PreyBrain.Knock(ref p.State, push.ToSim());
+                PreyBrain.Provoke(ref p.State, in b, Time.time);
             }
+        }
+
+        /// <summary>Host: this hunter took part in bringing it down (hurt it or finished it).</summary>
+        public static void HostCredit(PreyInstance p, int attacker)
+        {
+            p.LastHurtAt = Time.time;
+            if (attacker >= 0 && !p.Damagers.Contains(attacker)) p.Damagers.Add(attacker);
+        }
+
+        /// <summary>Host: an aggressive animal's strike lands on every standing hunter in front of it and in reach.</summary>
+        private static void HostStrike(PreyInstance p, in PreyBehavior b)
+        {
+            var players = PlayerMotor.All;
+            float hullY = MovementCvars.Config.HullHalfExtents.Y;
+            for (int k = 0; k < players.Count; k++)
+            {
+                PlayerMotor m = players[k];
+                PlayerHealth health = m.GetComponent<PlayerHealth>();
+                if (health == null || health.Downed) continue;
+                Vec3 feet = m.State.Position - new Vec3(0f, hullY, 0f);
+                if (!PreyBrain.StrikeReaches(in p.State, in b, feet, HuntingCvars.StrikeReachSlack.Value, HuntingCvars.StrikeHeightSlack.Value)) continue;
+                health.HostDamage(p.Def.AttackDamage, -1);
+                Vector3 away = (feet - p.State.Position).ToUnity();
+                away.y = 0f;
+                away = away.sqrMagnitude > 1e-4f ? away.normalized : Quaternion.Euler(0f, p.State.Yaw, 0f) * Vector3.forward;
+                m.HostPush(away * p.Def.AttackPush + Vector3.up * (p.Def.AttackPush * HuntingCvars.StrikeLift.Value));
+            }
+        }
+
+        /// <summary>Nearest hunter still on their feet (aggressive animals ignore downed ones), or -1.</summary>
+        private static int NearestStanding(IReadOnlyList<PlayerMotor> players, Vec3 from, out Vec3 position)
+        {
+            position = default;
+            int nearest = -1;
+            float best = float.MaxValue;
+            for (int k = 0; k < players.Count; k++)
+            {
+                PlayerHealth health = players[k].GetComponent<PlayerHealth>();
+                if (health != null && health.Downed) continue;
+                Vec3 pos = players[k].State.Position;
+                float d = Vec3.DistanceSquared(pos, from);
+                if (d < best) { best = d; position = pos; nearest = k; }
+            }
+            return nearest;
         }
 
         private static void OnTick()
@@ -291,18 +346,27 @@ namespace HowToHunt.Hunting
                 }
                 if (p.IsFlyer) continue;
 
-                // Nearest player is the threat.
+                PreyBehavior b = p.Def.Behavior;
+                bool aggressive = b.Aggression != PreyAggression.None;
+                // Nearest player is the threat (fighters pick the nearest one still standing).
                 Vec3 threat = default;
                 bool hasThreat = false;
                 int nearest = -1;
-                float best = float.MaxValue;
-                for (int k = 0; k < players.Count; k++)
+                if (aggressive)
                 {
-                    Vec3 pos = players[k].State.Position;
-                    float d = Vec3.DistanceSquared(pos, p.State.Position);
-                    if (d < best) { best = d; threat = pos; hasThreat = true; nearest = k; }
+                    nearest = NearestStanding(players, p.State.Position, out threat);
+                    hasThreat = nearest >= 0;
                 }
-                PreyBehavior b = p.Def.Behavior;
+                else
+                {
+                    float best = float.MaxValue;
+                    for (int k = 0; k < players.Count; k++)
+                    {
+                        Vec3 pos = players[k].State.Position;
+                        float d = Vec3.DistanceSquared(pos, p.State.Position);
+                        if (d < best) { best = d; threat = pos; hasThreat = true; nearest = k; }
+                    }
+                }
                 // Sight: a line-of-sight trace every few ticks per prey (staggered by id), only when in range.
                 if (nearest < 0) p.SeesThreat = false;
                 else if ((tick + p.Id) % SightEveryTicks == 0)
@@ -312,7 +376,19 @@ namespace HowToHunt.Hunting
                     float scale = ms.Ducked ? HuntingCvars.CrouchSight.Value : 1f;
                     p.SeesThreat = PreyBrain.CanSee(in p.State, in b, eye, scale, SimWorld.Current);
                 }
-                PreyBrain.Step(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt);
+                if (aggressive)
+                {
+                    if (PreyBrain.StepAggressive(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt)) HostStrike(p, in b);
+                    // Left alone for a while (everyone ran or went down), a fighter licks its wounds back to full; a
+                    // boss that heals completely forgets who fought it.
+                    if (p.Def.RegenPerSecond > 0f && p.Health < p.Def.MaxHealth && time - p.LastHurtAt > HuntingCvars.RegenDelay.Value)
+                    {
+                        p.Health = Mathf.Min(p.Def.MaxHealth, p.Health + p.Def.RegenPerSecond * dt);
+                        p.State.Health = p.Health;
+                        if (p.Health >= p.Def.MaxHealth) p.Damagers.Clear();
+                    }
+                }
+                else PreyBrain.Step(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt);
                 p.History.Record(tick, new EntityPose { Position = p.State.Position, Yaw = p.State.Yaw });
                 p.SetHostRender();
 

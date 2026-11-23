@@ -244,6 +244,25 @@ namespace HowToHunt.Core
             });
         }
 
+        /// <summary>A big animal's roar: a low growl that swells and falls, with a rough throat.</summary>
+        public static AudioClip Roar()
+        {
+            var rng = new System.Random(77);
+            var band = new BandPass();
+            float phase = 0f;
+            const float len = 0.9f;
+            return Make("roar", len, (t, i) =>
+            {
+                float u = t / len;
+                float f = Mathf.Lerp(95f, 70f, u) + 8f * Mathf.Sin(2f * Mathf.PI * 5f * t);
+                phase += 2f * Mathf.PI * f / Rate;
+                float voice = Mathf.Sin(phase) + 0.6f * Mathf.Sin(2f * phase) + 0.35f * Mathf.Sin(3f * phase) + 0.2f * Mathf.Sin(5f * phase);
+                float throat = band.Process(Noise(rng), Mathf.Lerp(420f, 300f, u), 1.2f) * 2.4f;
+                float env = Mathf.Min(1f, t * 8f) * Mathf.Pow(1f - u, 0.8f);
+                return (voice * 0.45f + throat * (0.7f + 0.3f * Mathf.Sin(2f * Mathf.PI * 31f * t))) * env;
+            });
+        }
+
         /// <summary>RBJ cookbook band-pass (constant peak gain), coefficients recomputed per sample for sweeps.</summary>
         private sealed class BandPass
         {
