@@ -69,6 +69,16 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 7 | Cheat `quest_complete` (host, `sv_cheats 1`): fills the objectives of every hunter's quests in progress; hand them in to their giver as usual (reward, next quest, the way east) | "how can I get through the quests faster" |
 | 5 | Build tools: installer toolchain installed (Inno Setup, IL2CPP), build scripts work from a folder with spaces in its path | "an .exe to install and test the game" |
 
+## Phase 6.2: owner requests after the 6.1 play test (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner report |
+|---|---|---|
+| 1 | **fps_max works**: with vertical sync on (the default) Unity ignored the limit; a set limit now replaces vsync. Frame rate limit buttons in Settings (none, 30, 60, 120, 144, 165, 240) | "can't change the frame rate, even with the command" |
+| 2 | **No invisible walls between the worlds**: the boundary rings are cut exactly at the trail and at the forest landing (pieces used to stick into both, one in the air where surfers arrive); rocks show where the trail narrows to the ledge | "watch out for the invisible wall between worlds" |
+| 3 | **Surf ramps visible**: orange with cream bands and a dark ridge line, no longer the water's blue | "the ramps are all blue, hard to see" |
+| 4 | **Downed body on the ground**, not in it: lifted by its thickness and tilted to follow the slope behind | "the body sinks into the ground while waiting to be revived" |
+| 5 | **Forest animals and quests**: red squirrel, red fox, wild boar (charges when hurt); four new Ash quests | "more missions with other animals in the second biome" |
+| 6 | **Boss system** (ADR 0014) and the forest boss, the Old Bear of the Pines: den, boss bar, telegraphed strikes, shared reward, Ash's last quest | "a boss for each biome from the forest on" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

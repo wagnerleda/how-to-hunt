@@ -14,6 +14,7 @@ HowToHunt.Net          Unity + Fish-Net  NetSession (host / join by code / local
 HowToHunt.Player       feature           PlayerMotor (predicted), input, camera, spawns, movement cvars
 HowToHunt.DevTools     feature           DebugOverlay, net_graph
 HowToHunt.UI           feature           Session menu (M0; real lobby UI in M2)
+HowToHunt.Bosses       feature           Boss bar and announcements (bosses are aggressive prey, ADR 0014)
 HowToHunt.Editor       editor            generated prefabs, graybox builder, build script, content validator, model import rules
 ```
 

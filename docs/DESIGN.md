@@ -61,3 +61,23 @@ Hunters: everyone has the same body, a skin-coloured stick figure (thin limbs, b
 
 ## Pine Forest (second map, Phase 6)
 The east clearing of the Plains is blocked by fallen trees until the party finishes "Beyond the Trees" (Tomas). Then a trail leads to a cliff ledge; three surf ramps (7 degrees down, 8 m gaps, each 7 m lower) cross a wooded ravine to the Pine Forest. Holding strafe into the ramp is enough to make it (about 12 s); a fall puts you back on the ledge. The forest is a smaller valley (120 m) 50 m below the Plains: pines, deer glades, rabbit warrens, Ash's trading post (forest prices x1.5, bigger cash bursts) and a pad back to the Plains camp (the quick way home). Once you have landed, falls respawn you at the forest landing. New prey: the Pine Deer (60 HP, wary, flees fast, worth 45; Ash's quest "Ghost of the Pines").
+
+## Forest fauna and the first boss (2026-11-24)
+New forest prey, each with an Ash quest after "Ghost of the Pines":
+
+| Prey | HP | Take-down | Value | Behaviour | Ash's quest |
+|---|---|---|---|---|---|
+| Red Squirrel | 6 | either (Sturdy Net holds it) | 9, stacks 4 | darts off, tires after 3 s | Quick Paws: catch 3 alive (150) |
+| Red Fox | 25 | either (no net strong enough yet) | 28 | wary (sees 40 m), outruns a sprint for 5 s | The Sly One: take down 2 (220) |
+| Wild Boar | 90 | kill only | 60 | flees, but **charges whoever hurts it** for 9 s: 15 damage a hit, after a short rear-up | Tusks and Temper: kill 3 (300) |
+| **The Old Bear of the Pines** (boss) | 1,500 | kill only | 250 carcass | guards its den (south-east glade), charges any hunter within 24 m: 35 damage a swipe after a 0.75 s roar; gives up 42 m from its den and heals if everyone runs | The Old Bear: bring it down (800) |
+
+**Bosses** (one per biome from the forest on; the others come later): a boss bar shows its health to everyone
+nearby; the party hears when it wakes and when it falls; every hunter who hurt it gets its reward (the bear: 400
+coins and 25 trophies each, plus the quest credit), the killer also gets the carcass. A boss respawns a few minutes
+after it falls (the bear: 7). Fair to fight: every strike is telegraphed (the animal rears back and cries), a charge is
+slower than a sprint or a bunny hop, jumping over a swipe dodges it, and downed hunters are left alone. Rules and
+numbers: ADR 0014.
+
+Surf ramps are orange with cream bands across the slope and a dark ridge line (they shared the water's blue and
+were hard to see). A frame rate limit (Settings, or `fps_max`) now replaces vertical sync while it is set.

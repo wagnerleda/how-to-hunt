@@ -33,6 +33,8 @@ Every asset and third-party package is listed here with its source and license. 
 | Wedge / SurfPrism meshes | Procedural (`ProceduralMeshes.cs`) | Ours | Level brushes |
 | Pine trees, forest terrain | Procedural (`GrayboxSceneBuilder.Forest.cs`) | Ours | Low-poly conifers in vertex colours |
 | Pine Deer | Modelled in Blender for this game (`Art/Source/Deer.blend`) | Ours | `Art/Models/Deer/Deer.fbx`, 332 faces |
+| Red squirrel, red fox, wild boar, the Old Bear | Procedural (`CreatureModels.cs`): flat-shaded tapered blocks in vertex colours | Ours | `Prefabs/Prey/*.prefab`, M_Terrain; placeholders a Blender model can replace via `Visual` |
+| Surf ramp bands (`T_SurfRamp.png`, `M_SurfRamp`) | Generated (`Palette.cs`) | Ours | 64 px; orange, cream bands, dark ridge and base lines |
 | Palette materials `M_*` | Generated (`Palette.cs`) | Ours | Art direction A |
 | Scout rifle, attachment models | Generated from primitives (`GeneratedAssets.cs`) | Ours | Stand-ins until the owner's gun assets land |
 

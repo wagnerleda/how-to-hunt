@@ -32,3 +32,6 @@ Not approved for building. Each needs the owner's yes before work starts.
 - **Red canyon map** (owner, 2026-11-17): a later zone of mesas, arches and dry riverbeds whose **canyon walls are surfable** (steep sides you can ride like surf ramps to cross and climb the map). Prey that fit: goats, coyotes. Parked when the pine forest was chosen as map 2.
 - **GPU-driven scatter** (from ADR 0013): grass, flowers and trees through BatchRendererGroup or indirect draws, to bring the plains under the 250 SetPass budget (now ~400). Needs a custom instanced shader.
 - **Graphics settings in the menu**: `r_ssao`, `r_drawdistance`, `r_scatter_distance`, `r_scatter_density`, `fps_max` as sliders in Settings (console only for now).
+- **Bosses for the later biomes** (owner: "we'll see the others later"): one per biome, each with its own attack (a slam, a charge across the arena, a ranged one) as new strike kinds in `PreyBrain.StepAggressive` (ADR 0014).
+- **Blender models** for the squirrel, fox, boar and the Old Bear (now procedural blocks), with a walk cycle.
+- **Boss loot**: a unique trophy or cosmetic (a bear-claw mask) for everyone in the fight.
