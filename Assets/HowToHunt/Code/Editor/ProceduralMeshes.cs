@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HowToHunt.Editor
 {
-    /// <summary>Flat-shaded low-poly meshes for level geometry (wedge ramps, surf prisms).</summary>
+    /// <summary>Flat-shaded low-poly meshes for level geometry (wedge ramps, surf prisms), with planar UVs (u along z).</summary>
     public static class ProceduralMeshes
     {
         /// <summary>Unit wedge: base 1x1 on y=0, rises to height 1 at z=+0.5. Pivot at base center.</summary>
@@ -45,6 +45,7 @@ namespace HowToHunt.Editor
         {
             var verts = new List<Vector3>();
             var normals = new List<Vector3>();
+            var uvs = new List<Vector2>();
             var tris = new List<int>();
             Vector3 centroid = Vector3.zero;
             int count = 0;
@@ -65,6 +66,8 @@ namespace HowToHunt.Editor
                 {
                     verts.Add(v);
                     normals.Add(n);
+                    // u runs along the length (z), v up the face: textured surf ramps get bands across the course.
+                    uvs.Add(new Vector2(v.z + 0.5f, Mathf.Abs(n.y) > 0.9f ? v.x + 0.5f : v.y));
                 }
                 for (int i = 1; i + 1 < face.Length; i++)
                 {
@@ -77,6 +80,7 @@ namespace HowToHunt.Editor
             var mesh = new Mesh { name = name };
             mesh.SetVertices(verts);
             mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
             return mesh;

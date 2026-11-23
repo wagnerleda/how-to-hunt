@@ -203,7 +203,7 @@ namespace HowToHunt.Editor
             Zone(zones, "Surf Checkpoint", new Vector3(28f, 15f, -17f), new Vector3(6, 2, 6), ZoneKind.Checkpoint);
             Sign(signs, "SURF\n<size=60%>step off onto the ramp, look down the course (left), hold strafe INTO the ramp</size>", new Vector3(28f, 18f, -14f), 90f, 2.2f);
             // One 58 m ramp descending 5° along the course so gravity turns into forward speed (like real surf maps).
-            MeshBrush(root, "Surf Ramp", GeneratedAssets.SurfPrismMesh, new Vector3(40f, -1.5f, -42f), new Vector3(18, 12, 58), 0f, "Surf", SurfaceFlags.Surf, -5f);
+            MeshBrush(root, "Surf Ramp", GeneratedAssets.SurfPrismMesh, new Vector3(40f, -1.5f, -42f), new Vector3(18, 12, 58), 0f, "SurfRamp", SurfaceFlags.Surf, -5f);
             Box(root, "Surf End", new Vector3(40f, 2f, -75f), new Vector3(12, 4, 6), "Rock");
             Zone(zones, "Surf Finish", new Vector3(40f, 5f, -76.5f), new Vector3(12, 2, 3), ZoneKind.Teleport, plazaReturn);
             Zone(zones, "Surf Pit", new Vector3(40f, 0.6f, -41f), new Vector3(30, 1.4f, 62f), ZoneKind.Hazard);
@@ -221,7 +221,7 @@ namespace HowToHunt.Editor
                 float length = 3f / Mathf.Tan(a * Mathf.Deg2Rad);
                 float x = 22f + i * 5f;
                 MeshBrush(root, $"Slope {a:0}°", GeneratedAssets.WedgeMesh, new Vector3(x, 0f, 12f + length * 0.5f), new Vector3(4, 3, length), 0f,
-                    a > 45.5f ? "Surf" : "Ramp", a > 45.5f ? SurfaceFlags.Surf : SurfaceFlags.None);
+                    a > 45.5f ? "SurfRamp" : "Ramp", a > 45.5f ? SurfaceFlags.Surf : SurfaceFlags.None);
                 Sign(signs, $"{a:0}°", new Vector3(x, 1.2f, 11f), 0f, 1.4f);
             }
         }
