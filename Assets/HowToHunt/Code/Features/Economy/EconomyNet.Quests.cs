@@ -100,7 +100,30 @@ namespace HowToHunt.Economy
             QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new ContentId(id));
             if (q == null || StateOf(p, q) != QuestState.Available) { Refuse(conn, p, EconomyRefusal.Locked, id); return; }
             p.Quests[id] = 0;
+            CountOwnedGear(p);
             Send(conn, p, EconomyEvent.QuestAccepted, content: id);
+        }
+
+        /// <summary>
+        /// Host: purchase quests ("buy an upgrade from Wren") count the gear the player already owns. Otherwise a hunter
+        /// who bought everything before accepting could never finish them, and the chain behind (the way east) stayed
+        /// shut. Runs on accept and when a player joins (for quests accepted in an older build). True if anything moved.
+        /// </summary>
+        private static bool CountOwnedGear(EconomyProfile p)
+        {
+            if (p.Quests.Count == 0) return false;
+            bool changed = false;
+            foreach (QuestDefinition q in AllQuests())
+            {
+                int owned = q.Objective == QuestObjective.BuyUpgrade ? p.Upgrades.Count
+                    : q.Objective == QuestObjective.BuyAttachment ? p.Attachments.Count : 0;
+                if (owned <= 0 || !p.Quests.TryGetValue(q.Id.Value, out int progress)) continue;
+                int caught = Math.Min(q.Count, owned);
+                if (caught <= progress) continue;
+                p.Quests[q.Id.Value] = caught;
+                changed = true;
+            }
+            return changed;
         }
 
         private static void HostTurnInQuest(NetworkConnection conn, EconomyProfile p, uint id)

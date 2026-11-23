@@ -218,6 +218,7 @@ namespace HowToHunt.Economy
             var p = new EconomyProfile();
             Unpack(msg, p, exact: false); // re-lays the slots with this build's tools and capacity
             Ledger[conn.ClientId] = p;
+            CountOwnedGear(p); // purchase quests accepted before owning everything (see CountOwnedGear)
             p.ApplyTo(Loadouts.ForClient(conn.ClientId));
             HostPushFlags(); // what the party has unlocked, including anything this player brought
             Send(conn, p, EconomyEvent.Synced);

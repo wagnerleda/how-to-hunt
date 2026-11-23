@@ -65,6 +65,7 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 2 | **No more freezes at the surf ledge and ravine; fewer frame drops**: SSAO without a second geometry pass, no unused screen copies, bigger scatter chunks, grass and flowers thinning with distance, nothing drawn past `r_drawdistance`, closed menus no longer allocate every frame (ADR 0013) | "freezes and fps drops" |
 | 3 | `fps_max` works again in a party (Fish-Net reset the frame cap) | |
 | 4 | New settings: `r_ssao` (ambient occlusion), `r_scatter_fade` (where grass starts thinning) | |
+| 6 | **Purchase quests count gear you already own**: "Kitted Out" (buy an upgrade from Wren) could never finish for a hunter who had bought everything before accepting it, which blocked the chain to the east clearing; owned upgrades (and attachments) now count on accept and when you join, so a stuck quest is ready to hand in | "can't do the quests, I already unlocked the purchases" |
 | 5 | Build tools: installer toolchain installed (Inno Setup, IL2CPP), build scripts work from a folder with spaces in its path | "an .exe to install and test the game" |
 
 ## Phase 7: traps and bigger prey
