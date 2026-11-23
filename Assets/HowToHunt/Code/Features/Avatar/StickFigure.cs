@@ -30,7 +30,12 @@ namespace HowToHunt.Avatar
         private Vector3 _lastPos, _velocity;
         private float _phase, _crouch, _lie;
         private PlayerHealth _health;
-        private const float LieDegrees = 82f;
+        // Downed: the body lies on its back along the ground behind the feet. It used to tip 82 degrees about the
+        // feet, so the back of the head and torso (0.15 m thick) sank into the ground, and slopes swallowed the head.
+        private const float LieFlatDegrees = 90f, LieMinDegrees = 50f, LieMaxDegrees = 115f;
+        private const float LieLift = 0.17f;     // the back's thickness: the body rests on the ground, not in it
+        private const float LieReach = 1.55f;    // feet to the back of the head, along the ground
+        private static readonly System.Numerics.Vector3 GroundProbe = new System.Numerics.Vector3(0.1f, 0.05f, 0.1f);
         private bool _ready;
 
         private Renderer _maskRenderer;
@@ -74,6 +79,21 @@ namespace HowToHunt.Avatar
             _ready = true;
         }
 
+        /// <summary>
+        /// How far to tip back so the head rests on the ground behind the feet: 90 degrees on flat ground, less when
+        /// the ground behind rises, more when it falls away. One short trace per frame, only while downed.
+        /// </summary>
+        private static float LieAngle(Vector3 feetWorld, Quaternion facing)
+        {
+            Vector3 head = feetWorld + facing * (Vector3.back * LieReach);
+            var trace = Core.SimWorld.Current.TraceBox(new System.Numerics.Vector3(head.x, feetWorld.y + LieReach, head.z),
+                new System.Numerics.Vector3(head.x, feetWorld.y - LieReach * 2f, head.z), GroundProbe);
+            if (trace.StartSolid || trace.Fraction >= 1f) return LieFlatDegrees;
+            float rise = trace.EndPosition.Y - GroundProbe.Y - feetWorld.y;
+            float slope = Mathf.Atan2(rise, LieReach) * Mathf.Rad2Deg;
+            return Mathf.Clamp(LieFlatDegrees - slope, LieMinDegrees, LieMaxDegrees);
+        }
+
         private void OnDestroy()
         {
             if (_maskTexture != null) Destroy(_maskTexture);
@@ -91,10 +111,11 @@ namespace HowToHunt.Avatar
             if (_health == null) _health = GetComponent<PlayerHealth>();
             _lie = Mathf.MoveTowards(_lie, _health != null && _health.Downed ? 1f : 0f, dt * 2.5f);
             Quaternion facing = Quaternion.Euler(0f, _motor.ViewYaw, 0f);
-            Quaternion tip = Quaternion.Euler(-LieDegrees * _lie, 0f, 0f);
             Vector3 feet = new Vector3(0f, -MovementCvars.Config.HullHalfExtents.Y, 0f);
+            float lieDegrees = _lie > 0f ? LieAngle(_visual.position + feet, facing) : LieFlatDegrees;
+            Quaternion tip = Quaternion.Euler(-lieDegrees * _lie, 0f, 0f);
             _figure.rotation = facing * tip;
-            _figure.position = _visual.position + facing * (feet - tip * feet);
+            _figure.position = _visual.position + facing * (feet - tip * feet) + Vector3.up * (LieLift * _lie);
 
             // Speed from how the smoothed body moved.
             Vector3 pos = _visual.position, step = (pos - _lastPos) / dt;
