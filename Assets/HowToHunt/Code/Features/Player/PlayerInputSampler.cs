@@ -15,6 +15,28 @@ namespace HowToHunt.Player
         // Source's m_yaw/m_pitch: 0.022 degrees per mouse count, times sensitivity.
         private const float DegreesPerCount = 0.022f;
 
+        // Gamepad look: degrees per second at full right-stick deflection, the response curve (1 = linear, 2 =
+        // gentle near the centre for fine aim), and its own invert. Movement uses the left stick, analog.
+        public static readonly Foundation.FloatCvar JoySensitivity = new Foundation.FloatCvar("joy_sensitivity", 220f, "Gamepad look speed, degrees per second at full right-stick deflection.", Foundation.CvarFlags.Archive, 30f, 720f);
+        public static readonly Foundation.FloatCvar JoyCurve = new Foundation.FloatCvar("joy_curve", 2f, "Gamepad look response curve: 1 linear, 2 or more finer near the centre.", Foundation.CvarFlags.Archive, 1f, 4f);
+        public static readonly Foundation.BoolCvar JoyInvertY = new Foundation.BoolCvar("joy_invert_y", false, "Invert the gamepad's vertical look.", Foundation.CvarFlags.Archive);
+
+        public static void Register(Foundation.ConsoleSystem console)
+        {
+            console.Register(JoySensitivity);
+            console.Register(JoyCurve);
+            console.Register(JoyInvertY);
+        }
+
+        /// <summary>A stick with a radial dead zone, rescaled so movement starts at 0 just past it.</summary>
+        public static Vector2 Stick(Vector2 raw)
+        {
+            float dz = KeyBindings.PadDeadzone.Value;
+            float m = raw.magnitude;
+            if (m <= dz) return Vector2.zero;
+            return raw / m * Mathf.Clamp01((m - dz) / Mathf.Max(0.01f, 1f - dz));
+        }
+
         private bool _jumpLatched;
         private int _playIndex;
         private MoveDemo _playback;
@@ -94,6 +116,19 @@ namespace HowToHunt.Player
                 // Mouse-wheel jump: the classic bunny hop bind.
                 if (Mathf.Abs(mouse.scroll.ReadValue().y) > 0.01f) _jumpLatched = true;
             }
+            Gamepad pad = Gamepad.current;
+            if (pad != null)
+            {
+                Vector2 look = Stick(pad.rightStick.ReadValue());
+                float m = look.magnitude;
+                if (m > 0f)
+                {
+                    look = look / m * Mathf.Pow(m, JoyCurve.Value);
+                    float rate = JoySensitivity.Value * SensitivityScale * Time.deltaTime;
+                    Yaw = Mathf.Repeat(Yaw + look.x * rate, 360f);
+                    Pitch = Mathf.Clamp(Pitch + look.y * rate * (JoyInvertY.Value ? 1f : -1f), -89f, 89f);
+                }
+            }
             if (KeyBindings.WasPressedThisFrame(GameAction.Jump)) _jumpLatched = true;
         }
 
@@ -122,8 +157,7 @@ namespace HowToHunt.Player
             }
 
             var cmd = new MoveCmd { Yaw = Yaw, Pitch = Pitch, Push = TakePush() };
-            Keyboard kb = Keyboard.current;
-            if (kb == null || Game.UiHasFocus)
+            if (Game.UiHasFocus)
             {
                 _jumpLatched = false;
                 return cmd;
@@ -135,8 +169,12 @@ namespace HowToHunt.Player
                 _jumpLatched = false;
                 return cmd;
             }
-            cmd.Forward = (KeyBindings.IsPressed(GameAction.Forward) ? 1f : 0f) - (KeyBindings.IsPressed(GameAction.Back) ? 1f : 0f);
-            cmd.Side = (KeyBindings.IsPressed(GameAction.Right) ? 1f : 0f) - (KeyBindings.IsPressed(GameAction.Left) ? 1f : 0f);
+            // Keys give full steps; the left stick is analog (walk slowly with a light push).
+            Vector2 move = Gamepad.current != null ? Stick(Gamepad.current.leftStick.ReadValue()) : Vector2.zero;
+            float keysForward = (KeysHeld(GameAction.Forward) ? 1f : 0f) - (KeysHeld(GameAction.Back) ? 1f : 0f);
+            float keysSide = (KeysHeld(GameAction.Right) ? 1f : 0f) - (KeysHeld(GameAction.Left) ? 1f : 0f);
+            cmd.Forward = Mathf.Clamp(keysForward + move.y, -1f, 1f);
+            cmd.Side = Mathf.Clamp(keysSide + move.x, -1f, 1f);
             if (KeyBindings.IsPressed(GameAction.Jump) || _jumpLatched) cmd.Buttons |= MoveButtons.Jump;
             if (KeyBindings.IsPressed(GameAction.Crouch)) cmd.Buttons |= MoveButtons.Duck;
             if (KeyBindings.IsPressed(GameAction.Sprint)) cmd.Buttons |= MoveButtons.Sprint;
@@ -145,6 +183,9 @@ namespace HowToHunt.Player
             _jumpLatched = false;
             return cmd;
         }
+
+        /// <summary>A movement key on the keyboard (the stick is read analog above, not as a key).</summary>
+        private static bool KeysHeld(GameAction action) => KeyBindings.IsKeyPressed(action);
 
         /// <summary>Scripted input for automated tests and bots (cl_bot_* cvars).</summary>
         private MoveCmd BuildBotCmd(float tickDelta)

@@ -330,6 +330,12 @@ namespace HowToHunt.UI
             if (CoreCvars.FpsMax.Value <= 0) ToggleCvar("vsync", "Vertical sync", CoreCvars.VSync);
             else Small("Vertical sync: off while a frame rate limit is set");
 
+            Header("Gamepad");
+            if (Game.Console.TryGetCvar("joy_sensitivity", out Cvar joySens) && joySens is FloatCvar joySensF) Slider("joysens", "Look speed", joySensF, 30f, 720f, "0");
+            if (Game.Console.TryGetCvar("joy_deadzone", out Cvar joyDz) && joyDz is FloatCvar joyDzF) Slider("joydz", "Stick dead zone", joyDzF, 0f, 0.6f, "0.00");
+            ToggleByName("joyinvert", "Invert gamepad look", "joy_invert_y");
+            Small("Left stick move, right stick look. A jump, B crouch, L-stick click sprint, RT fire, LT aim, X interact, Y reload, RB throw (hold), R-stick click inspect, D-pad left/right hotbar, View scoreboard, Start menu.");
+
             Header("Keys (choose one, then press a key; Esc cancels)");
             for (int i = 0; i < KeyBindings.Count; i++)
             {

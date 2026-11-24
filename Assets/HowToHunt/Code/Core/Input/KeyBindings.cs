@@ -1,5 +1,6 @@
 using System;
 using HowToHunt.Foundation;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
@@ -54,6 +55,7 @@ namespace HowToHunt.Core
 
         public static void Register(ConsoleSystem console)
         {
+            console.Register(PadDeadzone);
             for (int i = 0; i < Cvars.Length; i++)
             {
                 int index = i;
@@ -63,8 +65,95 @@ namespace HowToHunt.Core
             }
         }
 
+        // --- gamepad ------------------------------------------------------------------------------------------------
+        // A fixed Xbox-style layout (docs/DESIGN.md): every action also answers to a gamepad button, so keyboard,
+        // mouse and gamepad can be mixed freely. Movement and looking use the sticks (PlayerInputSampler).
+
+        public static readonly FloatCvar PadDeadzone = new FloatCvar("joy_deadzone", 0.15f, "Gamepad stick dead zone (0..0.6).", CvarFlags.Archive, 0f, 0.6f);
+        private const float StickPress = 0.5f; // a stick pushed this far counts as a movement key
+
+        /// <summary>The last input came from a gamepad (prompts show gamepad buttons).</summary>
+        public static bool UsingGamepad { get; private set; }
+        private static int _deviceFrame = -1;
+
+        private static ButtonControl PadButton(GameAction action)
+        {
+            Gamepad pad = Gamepad.current;
+            if (pad == null) return null;
+            switch (action)
+            {
+                case GameAction.Jump: return pad.buttonSouth;
+                case GameAction.Crouch: return pad.buttonEast;
+                case GameAction.Fire: return pad.rightTrigger;
+                case GameAction.Aim: return pad.leftTrigger;
+                case GameAction.Interact: return pad.buttonWest;
+                case GameAction.Reload: return pad.buttonNorth;
+                case GameAction.Throw: return pad.rightShoulder;
+                case GameAction.Sprint: return pad.leftStickButton;
+                case GameAction.Inspect: return pad.rightStickButton;
+                case GameAction.Scoreboard: return pad.selectButton;
+                default: return null;
+            }
+        }
+
+        private static string PadName(GameAction action)
+        {
+            switch (action)
+            {
+                case GameAction.Jump: return "A";
+                case GameAction.Crouch: return "B";
+                case GameAction.Fire: return "RT";
+                case GameAction.Aim: return "LT";
+                case GameAction.Interact: return "X";
+                case GameAction.Reload: return "Y";
+                case GameAction.Throw: return "RB";
+                case GameAction.Sprint: return "L-stick click";
+                case GameAction.Inspect: return "R-stick click";
+                case GameAction.Scoreboard: return "View";
+                case GameAction.Forward: case GameAction.Back: case GameAction.Left: case GameAction.Right: return "Left stick";
+                default: return "?";
+            }
+        }
+
+        /// <summary>A movement key's worth of left stick (for code that asks IsPressed(Forward) and friends).</summary>
+        private static bool StickHeld(GameAction action)
+        {
+            Gamepad pad = Gamepad.current;
+            if (pad == null) return false;
+            Vector2 s = pad.leftStick.ReadValue();
+            switch (action)
+            {
+                case GameAction.Forward: return s.y > StickPress;
+                case GameAction.Back: return s.y < -StickPress;
+                case GameAction.Right: return s.x > StickPress;
+                case GameAction.Left: return s.x < -StickPress;
+                default: return false;
+            }
+        }
+
+        /// <summary>Notes whether the player is on the gamepad or the keyboard and mouse (once per frame).</summary>
+        private static void TrackDevice()
+        {
+            if (_deviceFrame == Time.frameCount) return;
+            _deviceFrame = Time.frameCount;
+            Gamepad pad = Gamepad.current;
+            if (pad != null)
+            {
+                bool padActive = pad.wasUpdatedThisFrame && (pad.leftStick.ReadValue().sqrMagnitude > 0.09f || pad.rightStick.ReadValue().sqrMagnitude > 0.09f
+                                                              || pad.buttonSouth.isPressed || pad.buttonWest.isPressed || pad.buttonEast.isPressed || pad.buttonNorth.isPressed
+                                                              || pad.rightTrigger.isPressed || pad.leftTrigger.isPressed || pad.startButton.isPressed || pad.dpad.ReadValue().sqrMagnitude > 0f);
+                if (padActive) UsingGamepad = true;
+            }
+            else UsingGamepad = false;
+            Keyboard kb = Keyboard.current;
+            Mouse m = Mouse.current;
+            if ((kb != null && kb.anyKey.wasPressedThisFrame) || (m != null && (m.delta.ReadValue().sqrMagnitude > 4f || m.leftButton.wasPressedThisFrame))) UsingGamepad = false;
+        }
+
         public static string DisplayName(GameAction action)
         {
+            TrackDevice();
+            if (UsingGamepad) return PadName(action);
             string value = Cvars[(int)action].Value;
             if (value == "Mouse0") return "Left mouse";
             if (value == "Mouse1") return "Right mouse";
@@ -80,8 +169,21 @@ namespace HowToHunt.Core
 
         public static void BindMouse(GameAction action) => Cvars[(int)action].Value = "Mouse0";
 
+        /// <summary>The keyboard/mouse binding alone (no gamepad).</summary>
+        public static bool IsKeyPressed(GameAction action)
+        {
+            int i = (int)action;
+            ButtonControl mb = MouseButton(Cvars[i].Value);
+            if (mb != null) return mb.isPressed;
+            if (Cvars[i].Value.StartsWith("Mouse", StringComparison.Ordinal)) return false;
+            Keyboard kb = Keyboard.current;
+            return kb != null && Resolved[i] != Key.None && kb[Resolved[i]].isPressed;
+        }
+
         public static bool IsPressed(GameAction action)
         {
+            ButtonControl pb = PadButton(action);
+            if ((pb != null && pb.isPressed) || StickHeld(action)) return true;
             int i = (int)action;
             ButtonControl mb = MouseButton(Cvars[i].Value);
             if (mb != null) return mb.isPressed;
@@ -92,6 +194,8 @@ namespace HowToHunt.Core
 
         public static bool WasPressedThisFrame(GameAction action)
         {
+            ButtonControl pb = PadButton(action);
+            if (pb != null && pb.wasPressedThisFrame) return true;
             int i = (int)action;
             ButtonControl mb = MouseButton(Cvars[i].Value);
             if (mb != null) return mb.wasPressedThisFrame;

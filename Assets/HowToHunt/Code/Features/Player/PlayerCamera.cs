@@ -161,7 +161,8 @@ namespace HowToHunt.Player
 
             // Click to recapture the mouse after alt-tab or closing the console.
             if (!Game.UiHasFocus && Cursor.lockState != CursorLockMode.Locked &&
-                UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
+                ((UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
+                 || (UnityEngine.InputSystem.Gamepad.current != null && UnityEngine.InputSystem.Gamepad.current.wasUpdatedThisFrame && UnityEngine.InputSystem.Gamepad.current.buttonSouth.wasPressedThisFrame)))
                 LockCursor();
         }
 

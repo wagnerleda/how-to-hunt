@@ -257,8 +257,8 @@ namespace HowToHunt.Economy
         private void Update()
         {
             if (!_open || Time.frameCount == _openedFrame) return;
-            Keyboard kb = Keyboard.current;
-            bool close = KeyBindings.WasPressedThisFrame(GameAction.Interact) || (kb != null && kb.escapeKey.wasPressedThisFrame);
+            UiInput.KeepGamepadSelection(_panel); // gamepad: D-pad/stick and A drive the buttons
+            bool close = KeyBindings.WasPressedThisFrame(GameAction.Interact) || UiInput.Back; // Esc or gamepad B
             if (PlayerMotor.Local == null || _station == null) close = true;
             else if (CampStation.Nearest(PlayerMotor.Local.transform.position, CampStationKind.Shop, 1.5f) == null) close = true;
             // Close at the end of the frame so the pause menu doesn't also see this Escape press.

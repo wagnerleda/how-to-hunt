@@ -532,8 +532,8 @@ namespace HowToHunt.Economy
         private void Update()
         {
             if (!_open || Time.frameCount == _openedFrame) return;
-            Keyboard kb = Keyboard.current;
-            bool close = KeyBindings.WasPressedThisFrame(GameAction.Interact) || (kb != null && kb.escapeKey.wasPressedThisFrame);
+            UiInput.KeepGamepadSelection(_root); // gamepad: D-pad/stick and A drive the buttons
+            bool close = KeyBindings.WasPressedThisFrame(GameAction.Interact) || UiInput.Back; // Esc or gamepad B
             if (PlayerMotor.Local == null || _station == null) close = true;
             else if (CampStation.Nearest(PlayerMotor.Local.transform.position, CampStationKind.Workshop, 1.5f) == null) close = true;
             if (close) _closeRequested = true;

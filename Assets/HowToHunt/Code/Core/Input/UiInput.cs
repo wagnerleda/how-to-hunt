@@ -25,6 +25,21 @@ namespace HowToHunt.Core
         /// <summary>A gamepad is plugged in (show its prompts).</summary>
         public static bool HasGamepad => Gamepad.current != null;
 
+        /// <summary>
+        /// uGUI panels (shop, workshop): with a gamepad plugged in, keep one of the panel's buttons selected so the
+        /// D-pad/stick and A drive it through the EventSystem. Cheap when nothing needs to change.
+        /// </summary>
+        public static void KeepGamepadSelection(Transform panel)
+        {
+            if (!HasGamepad || panel == null) return;
+            UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null) return;
+            GameObject current = es.currentSelectedGameObject;
+            if (current != null && current.activeInHierarchy && current.transform.IsChildOf(panel)) return;
+            UnityEngine.UI.Selectable first = panel.GetComponentInChildren<UnityEngine.UI.Selectable>();
+            if (first != null) es.SetSelectedGameObject(first.gameObject);
+        }
+
         private static void Sample()
         {
             if (_frame == Time.frameCount) return;

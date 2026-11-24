@@ -200,6 +200,13 @@ namespace HowToHunt.Economy
                 for (int i = 0; i < 9 && i < inv.Capacity; i++)
                     if (kb[Key.Digit1 + i].wasPressedThisFrame) Select(i);
             }
+            Gamepad pad = Gamepad.current;
+            if (pad != null && inv.Capacity > 0)
+            {
+                // D-pad left/right walks the hotbar (wrapping round).
+                if (pad.dpad.right.wasPressedThisFrame) Select((_selected + 1) % inv.Capacity);
+                if (pad.dpad.left.wasPressedThisFrame) Select((_selected - 1 + inv.Capacity) % inv.Capacity);
+            }
 
             ItemStack held = inv[_selected];
             Camera cam = Camera.main;
