@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.gun_gunlance
   _displayName: Gunlance
-  _description: Sold at the Gunsmith.
+  _description: Sold at the armory in the movement lab.
   Tool: {fileID: 11400000, guid: 4cf9e6b1a5fca034da2e1796b65b81c8, type: 2}
   Effect: 3
   Value: 0
@@ -24,4 +24,5 @@ MonoBehaviour:
   SortOrder: 180
   Unlisted: 0
   SoldByGunsmith: 1
+  CampGunsmith: 0
   Summons: {fileID: 0}

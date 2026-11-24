@@ -23,5 +23,6 @@ MonoBehaviour:
   Requires: {fileID: 0}
   SortOrder: 40
   Unlisted: 0
-  SoldByGunsmith: 0
+  SoldByGunsmith: 1
+  CampGunsmith: 1
   Summons: {fileID: 0}

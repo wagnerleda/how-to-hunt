@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 1
   RewardCoins: 800
   Unlocks: forest_boss
-  Offer: 'There''s a bear in the south-east glade older than this trading post. It sleeps until it smells honey: buy a Honeycomb Bait at the stall behind me and it comes out of its den. It charges, it leaps at anyone who keeps their distance, and every third blow it slams the ground. Bring friends.'
+  Offer: The Old Bear sleeps in the south-east glade. A Honeycomb Bait from the stall behind me wakes it. Bring friends.
   Task: Bring down the Old Bear of the Pines
-  Waiting: 'A deep roar means the slam: get out or jump. When it crouches low, it''s about to leap. It heals if you all run off.'
-  Done: The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.
+  Waiting: 'Deep roar: jump. Low crouch: sidestep.'
+  Done: The Old Bear... the whole forest will be talking about you.
   Order: 9

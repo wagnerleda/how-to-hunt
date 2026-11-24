@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 3
   RewardCoins: 60
   Unlocks: 
-  Offer: New out here? Then you'll want coin. Bring me three catches, caught or killed, and I'll pay a bonus on top.
+  Offer: New out here? Bring me three catches and I'll pay a bonus on top.
   Task: Sell 3 catches to Tomas
-  Waiting: Still waiting on those catches. The rabbit warrens are by the logs.
-  Done: That's the spirit. Here's your bonus. Go see Wren at the outfitter, she'll want to see you kitted out.
+  Waiting: Rabbits are by the logs.
+  Done: Here's your bonus. Go and see Wren at the outfitter.
   Order: 1

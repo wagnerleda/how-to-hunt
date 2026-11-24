@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 1
   RewardCoins: 80
   Unlocks: 
-  Offer: 'Tomas says you can hunt. Let''s see you spend some of that coin: buy anything off my rack.'
+  Offer: Tomas says you can hunt. Spend some of that coin on my rack.
   Task: Buy an upgrade from Wren
-  Waiting: Have a look at the rack. There's something for every budget.
-  Done: Suits you. Gus at the gunsmith was asking about you, too.
+  Waiting: Something for every budget.
+  Done: Suits you. Gus at the gunsmith was asking about you.
   Order: 2

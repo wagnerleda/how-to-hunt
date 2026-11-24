@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.gun_scout
   _displayName: Scout Rifle
-  _description: Sold at the Gunsmith.
+  _description: Sold at the armory in the movement lab.
   Tool: {fileID: 11400000, guid: c8748dc2584035a4e93830151cd25bac, type: 2}
   Effect: 3
   Value: 0
@@ -24,4 +24,5 @@ MonoBehaviour:
   SortOrder: 140
   Unlisted: 0
   SoldByGunsmith: 1
+  CampGunsmith: 0
   Summons: {fileID: 0}

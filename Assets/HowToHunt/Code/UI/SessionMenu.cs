@@ -50,6 +50,10 @@ namespace HowToHunt.UI
         private int _dragging = -1;
         private string _boardShown;
         private float _boardAt;
+        private float _confirmResetUntil;
+        private bool ConfirmingReset => Time.unscaledTime < _confirmResetUntil;
+        private const float ConfirmResetSeconds = 5f;
+        private const float MainMenuPanelX = 0.3f;
 
         private static bool Online => Game.Platform != null && Game.Platform.IsOnline && Game.Platform.Lobbies != null;
         private static bool InSession => NetSession.State == SessionState.Hosting || NetSession.State == SessionState.Connected;
@@ -191,6 +195,7 @@ namespace HowToHunt.UI
                 h = h * 17 + _inviteHint.Length;
                 h = h * 17 + MenuPanels.Buttons.Count;
                 h = h * 17 + (CoreCvars.FpsMax.Value > 0 ? 1 : 0);
+                h = h * 17 + (ConfirmingReset ? 1 : 0);
                 if (Online) h = h * 17 + Game.Platform.Lobbies.FriendParties.Count;
                 IReadOnlyList<PartyMember> members = PartyRoster.Members;
                 h = h * 17 + members.Count + (PartyRoster.Locked ? 1000 : 0);
@@ -342,8 +347,30 @@ namespace HowToHunt.UI
                 var action = (GameAction)i;
                 Captioned("key" + i, action.ToString(), _rebinding == action ? "press a key..." : KeyBindings.DisplayName(action), () => _rebinding = action, true);
             }
+            // Starting over: only from the main menu (in a party the host holds your progress), and asked twice.
+            Header("Progress");
+            if (InSession) Small("Leave the party to reset your progress.");
+            else
+            {
+                Button("reset", ConfirmingReset ? "Really reset? Press again: coins, gear, quests all gone" : "Reset progress",
+                    () =>
+                    {
+                        if (!ConfirmingReset) { _confirmResetUntil = Time.unscaledTime + ConfirmResetSeconds; return; }
+                        _confirmResetUntil = 0f;
+                        ProfileStore.ResetAll();
+                        ShowToast("Progress reset: you start again as a new hunter.");
+                    });
+                Small("Back to a new hunter: coins, gear, attachments, quests and opened paths. Your mask and settings stay.");
+            }
             Spacer(6f);
             Button("back", "Back", () => SwitchTo(Page.Home), big: true);
+        }
+
+        private void ShowToast(string text)
+        {
+            _toast = text;
+            _toastUntil = Time.unscaledTime + ToastSeconds;
+            _toastAge = 0f;
         }
 
         private void SwitchTo(Page page)
@@ -683,6 +710,9 @@ namespace HowToHunt.UI
             _panelAge += dt;
             float p = Mathf.Clamp01(_panelAge / Mathf.Max(0.01f, theme.PanelInSeconds));
             _panelGroup.alpha = Mathf.Clamp01(p * 2f);
+            // Main menu: the panel stands left of the sunset and its hunter; the pause menu stays centred.
+            float panelX = Mathf.Lerp(_panel.anchorMin.x, InSession ? 0.5f : MainMenuPanelX, 1f - Mathf.Exp(-10f * dt));
+            _panel.anchorMin = _panel.anchorMax = new Vector2(panelX, 0.5f);
             float ps = calm ? 1f : Mathf.LerpUnclamped(0.92f, 1f, Ease.OutBack(p));
             _panel.localScale = new Vector3(ps, ps, 1f);
             _panelFill.color = theme.Panel;

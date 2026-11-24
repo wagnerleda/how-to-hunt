@@ -46,16 +46,16 @@ namespace HowToHunt.Editor
 
             // The trail out of the clearing ends on a rock ledge over the ravine; step off its north edge onto ramp 1.
             Box(root, "Cliff Ledge", new Vector3(140.5f, LedgeTop - 10f, ClearingZ), new Vector3(21f, 20f, 6f), "Rock");
+            // The trail between rock walls you can see (no invisible walls: owner, 2026-11-24). The ledge itself is
+            // open on every side: step off north onto ramp 1; a fall into the ravine brings you back to the ledge.
             Transform walls = Group(root, "Trail Walls (collision)");
-            InvisibleWall(walls, new Vector2(98f, ClearingZ - TrailHalfWidth), new Vector2(135f, ClearingZ - TrailHalfWidth));
-            InvisibleWall(walls, new Vector2(135f, ClearingZ - TrailHalfWidth), new Vector2(135f, ClearingZ - 3.4f));
-            InvisibleWall(walls, new Vector2(135f, ClearingZ - 3.4f), new Vector2(151.6f, ClearingZ - 3.4f));
-            InvisibleWall(walls, new Vector2(151.6f, ClearingZ - 3.4f), new Vector2(151.6f, ClearingZ + 3f));
-            InvisibleWall(walls, new Vector2(98f, ClearingZ + TrailHalfWidth), new Vector2(135f, ClearingZ + TrailHalfWidth));
-            InvisibleWall(walls, new Vector2(135f, ClearingZ + TrailHalfWidth), new Vector2(135f, ClearingZ + 3.2f));
-            // Where the trail narrows to the ledge, show the walls: rocks across the trail's sides, not thin air.
+            var rocks = new System.Random(211);
             for (int s = -1; s <= 1; s += 2)
-                Visual(root, s < 0 ? "Ledge Rocks S" : "Ledge Rocks N", new Vector3(134.6f, LedgeTop + 1.2f, ClearingZ + s * 5.95f), new Vector3(1.6f, 2.4f, 5.6f), "Rock");
+            {
+                float side = ClearingZ + s * (TrailHalfWidth + 1f);
+                RockWall(walls, s < 0 ? "Trail S" : "Trail N", new Vector3(98f, 0f, side), new Vector3(134.5f, 0f, side), GroundY, 40f, rocks);
+                RockWall(walls, s < 0 ? "Ledge S" : "Ledge N", new Vector3(134.5f, 0f, side), new Vector3(134.5f, 0f, ClearingZ + s * 4.6f), GroundY, 40f, rocks);
+            }
             Sign(signs, "SURF TO THE PINE FOREST\n<size=55%>step off to the left onto the ramp, hold strafe INTO it, ride it down</size>",
                 new Vector3(145f, LedgeTop + 3.2f, ClearingZ - 2.6f), 90f, 1.3f);
             ZoneAt(zones, "Surf Route Start", new Vector3(144f, LedgeTop + 1f, ClearingZ), new Vector3(6f, 2f, 6f), ZoneKind.Checkpoint, 60f);
@@ -101,13 +101,7 @@ namespace HowToHunt.Editor
         private static void CliffFace(Transform parent, string name, float x0, float x1, float z0, float z1, float bottom, float top) =>
             Visual(parent, name, new Vector3((x0 + x1) * 0.5f, (bottom + top) * 0.5f, (z0 + z1) * 0.5f), new Vector3(x1 - x0, top - bottom, z1 - z0), "Rock");
 
-        private static void InvisibleWall(Transform parent, Vector2 a, Vector2 b)
-        {
-            float len = (b - a).magnitude + 0.6f;
-            float yaw = Mathf.Atan2(b.x - a.x, b.y - a.y) * Mathf.Rad2Deg;
-            GameObject w = Box(parent, "Wall", new Vector3((a.x + b.x) * 0.5f, 10f, (a.y + b.y) * 0.5f), new Vector3(1f, 60f, len), "Wall", yaw);
-            w.GetComponent<MeshRenderer>().enabled = false;
-        }
+
 
         private static void ZoneAt(Transform parent, string name, Vector3 center, Vector3 size, ZoneKind kind, float yaw = 0f)
         {
@@ -289,6 +283,7 @@ namespace HowToHunt.Editor
         private static void BuildForestBoundary(Transform forest)
         {
             Transform walls = Group(forest, "Forest Wall (collision)");
+            var rocks = new System.Random(96);
             const int segments = 96;
             var ring = new List<Vector3>();
             for (int i = 0; i < segments; i++) ring.Add(ForestRingPoint(i / (float)segments, 3f));
@@ -298,13 +293,13 @@ namespace HowToHunt.Editor
                 Vector3 mid = (a + b) * 0.5f;
                 if (mid.x >= FMinX)
                 {
-                    RingWall(walls, $"Wall {i}", a, b, ForestY + 15f, 50f);
+                    RockWall(walls, $"Wall {i}", a, b, ForestHeight, ForestY + 40f, rocks);
                     continue;
                 }
                 // West side: the landing strip from the ravine is cut out exactly, so surfers arriving off-centre
                 // don't meet a leftover piece of invisible wall in the air.
                 SplitAtOpening(a, b, RouteZ, LandingHalfWidth, out _, out _, Pieces);
-                for (int k = 0; k < Pieces.Count; k += 2) RingWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], ForestY + 15f, 50f);
+                for (int k = 0; k < Pieces.Count; k += 2) RockWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], ForestHeight, ForestY + 40f, rocks);
             }
             // Sides of the landing strip, from the ravine edge to the ring (the ravine end itself stays open).
             float edge = RouteStartX + (RampLength + RampGap) * RampCount - RampGap - 3f;
@@ -313,8 +308,7 @@ namespace HowToHunt.Editor
                 float z = RouteZ + s * LandingHalfWidth;
                 float ringX = FMinX;
                 for (int k = 0; k < 40; k++) if (OutsideForest(ringX, z) < 3f) ringX -= 0.5f;
-                GameObject w = Box(walls, $"Landing Side {(s < 0 ? "S" : "N")}", new Vector3((edge + ringX) * 0.5f, ForestY + 15f, z), new Vector3(ringX - edge, 50f, 1f), "Wall");
-                w.GetComponent<MeshRenderer>().enabled = false;
+                RockWall(walls, $"Landing Side {(s < 0 ? "S" : "N")}", new Vector3(edge + 1f, 0f, z), new Vector3(ringX, 0f, z), ForestHeight, ForestY + 40f, rocks);
             }
         }
 

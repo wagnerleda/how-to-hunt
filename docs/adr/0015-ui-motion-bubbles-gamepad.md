@@ -22,6 +22,20 @@ Status: accepted (2026-11-24, owner request: livelier menus, NPC speech bubbles,
   only: no shake, flashes, particles or overshoot).
 - **No new dependency**: easing (`Ease`), procedural sprites (`UiSprites`) and the voice blip are ours.
 
+### Amendment (2026-11-24, owner: shorter talks, a 3D gunsmith counter, a living menu background)
+- **Dialogue settles the quest in one line**: no "Got any work?" / "I'll do it" / "Back" steps. Talking takes on an
+  available quest (offer + task + reward), hands in a finished one (and takes the giver's next one), or shows the
+  progress of one under way; the replies are only the stall's business and goodbye. Quest lines are one or two
+  short sentences (CONTENT_GUIDE).
+- **The gunsmith counter is the world**: `WorkshopPanel` no longer renders the gun to a texture on black. It lays
+  the gun on the station's counter (`CampStation.CounterPoint`) and asks `PlayerCamera.FrameShot` for a pose
+  looking down at it; the camera glides there and back (`PlayerCamera.Framed` hides the first-person gun). The
+  panels are rounded glass over the picture; leader lines project the real mounts through the real camera.
+- **Main menu background**: `MenuVista` (Avatar feature, placed by the scene builder) owns the camera and the light
+  while no party runs (a sunset copy of the procedural sky, low orange sun, warm ambient and fog, the HUD hidden)
+  and restores them when a party starts; `RestingHunter` poses the figure. `MenuBackdrop` keeps the pollen, tint
+  and vignette on top; its drawn sun is off. The main menu panel stands at 30 % of the width.
+
 ## Consequences
 - IMGUI remains only for the developer console and the mask editor (both through `ImGuiHost`).
 - The gamepad layout is not rebindable yet; the mask editor needs a mouse.

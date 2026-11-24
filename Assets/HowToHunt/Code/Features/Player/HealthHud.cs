@@ -74,7 +74,9 @@ namespace HowToHunt.Player
                 if (seconds != _shownSeconds || _shownBanner == null)
                 {
                     _shownSeconds = seconds;
-                    SetBanner(revive > 0f ? "DOWNED: being revived..." : $"DOWNED: {seconds} s. A teammate can revive you (hold {KeyBindings.DisplayName(GameAction.Interact)} next to you).");
+                    SetBanner(revive > 0f ? "DOWNED: being revived..."
+                        : me.AnyoneStanding() ? $"DOWNED: {seconds} s. A teammate can revive you (hold {KeyBindings.DisplayName(GameAction.Interact)} next to you)."
+                        : $"DOWNED: back to camp in {seconds} s.");
                 }
             }
             else if (PlayerHealth.LocalReviving != null)

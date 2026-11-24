@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 2
   RewardCoins: 220
   Unlocks: 
-  Offer: A pair of foxes has been raiding my stores. They see you from far off and they're quicker than you on foot. Two of them, any way you can.
+  Offer: Two foxes raid my stores. They're quick and they see you coming.
   Task: Take down 2 red foxes
-  Waiting: Foxes watch the open ground. Come at them through the trees, crouched.
-  Done: That'll teach them. My stores thank you.
+  Waiting: Come at them through the trees, crouched.
+  Done: That'll teach them.
   Order: 7

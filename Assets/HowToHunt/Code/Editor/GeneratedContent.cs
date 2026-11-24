@@ -298,7 +298,7 @@ namespace HowToHunt.Editor
                 });
             void GunsmithSells(ToolDefinition t, double cost, int order) =>
                 Asset<UpgradeDefinition>("Upgrades/Upgrade_Gun_" + t.Key.Substring(5), "upgrade.gun_" + t.Key.Substring(5), t.DisplayName,
-                    "Sold at the Gunsmith.", u =>
+                    "Sold at the armory in the movement lab.", u =>
                 {
                     u.Tool = t;
                     u.Effect = UpgradeEffect.UnlockTool;
@@ -308,6 +308,7 @@ namespace HowToHunt.Editor
                     u.Requires = null;
                     u.Unlisted = false;
                     u.SoldByGunsmith = true;
+                    u.CampGunsmith = false; // the full armory only (the movement lab); the camp gunsmith has the revolver
                 });
 
             // The scout keeps its key and numbers; the owner's model replaces the stand-in.
@@ -438,6 +439,7 @@ namespace HowToHunt.Editor
                 u.Requires = sturdy;
             });
 
+            // The Plains gunsmith's only gun (owner, 2026-11-24); the armory in the movement lab has every gun.
             Asset<UpgradeDefinition>("Upgrades/Upgrade_Revolver", "upgrade.revolver", "Old Revolver",
                 "Hunt from afar. Bullets ruin small catches: keep the net for butterflies.", u =>
             {
@@ -447,6 +449,8 @@ namespace HowToHunt.Editor
                 u.CostCoins = 200;
                 u.SortOrder = 40;
                 u.Requires = null;
+                u.SoldByGunsmith = true;
+                u.CampGunsmith = true;
             });
 
             UpgradeDefinition pack = Asset<UpgradeDefinition>("Upgrades/Upgrade_PackSmall", "upgrade.pack_small", "Hunter's Satchel",

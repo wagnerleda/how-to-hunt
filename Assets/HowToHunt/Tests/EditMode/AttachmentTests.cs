@@ -89,5 +89,32 @@ namespace HowToHunt.Tests
             Assert.IsTrue(again.Unfit(revolver.Id.Value, AttachmentSlot.Muzzle));
             Assert.IsNull(again.FittedIn(revolver.Id.Value, AttachmentSlot.Muzzle));
         }
+
+        [Test]
+        public void TheCampGunsmithSellsOnlyTheOldRevolver_TheArmoryEveryGun()
+        {
+            var camp = new UnityEngine.GameObject("Camp Gunsmith").AddComponent<CampStation>();
+            var armory = new UnityEngine.GameObject("Armory").AddComponent<CampStation>();
+            try
+            {
+                camp.Configure(CampStationKind.Workshop, 2.8f, "Gunsmith");
+                armory.Configure(CampStationKind.Workshop, 2.8f, "Armory", fullArmory: true);
+                int guns = 0;
+                foreach (UpgradeDefinition u in ContentRegistry.All<UpgradeDefinition>())
+                {
+                    if (u.Effect != UpgradeEffect.UnlockTool || u.Tool == null || u.Tool.Archetype != HowToHunt.Sim.Hunting.ToolArchetype.Firearm) continue;
+                    guns++;
+                    Assert.IsTrue(armory.Sells(u), $"the armory sells {u.Key}");
+                    Assert.AreEqual(u.Key == "upgrade.revolver", camp.Sells(u), $"the camp gunsmith and {u.Key}");
+                }
+                Assert.Greater(guns, 5, "every gun is sold somewhere");
+                Assert.IsFalse(armory.Sells(Get<UpgradeDefinition>("upgrade.net_sturdy")), "nets are the outfitter's");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(camp.gameObject);
+                UnityEngine.Object.DestroyImmediate(armory.gameObject);
+            }
+        }
     }
 }

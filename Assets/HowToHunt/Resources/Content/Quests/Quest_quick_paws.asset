@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 3
   RewardCoins: 150
   Unlocks: 
-  Offer: 'The traders down south want live squirrels, of all things. Three of them, alive: a Sturdy Net holds them. They live up in the pine stands.'
+  Offer: Three live squirrels, from the pine stands. A Sturdy Net holds them.
   Task: Catch 3 red squirrels alive
-  Waiting: Squirrels dart off fast but tire quickly. Sprint after them and swing.
-  Done: Three live ones, still cross about it. Good work.
+  Waiting: 'They tire quickly: sprint after them.'
+  Done: Three live ones, still cross about it.
   Order: 6

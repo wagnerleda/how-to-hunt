@@ -102,6 +102,18 @@ namespace HowToHunt.Core
             Loaded?.Invoke();
         }
 
+        /// <summary>
+        /// Start over (the main menu's "Reset progress"): every slice back to a new hunter's, saved at once (locally and
+        /// to Steam Cloud) so the old progress can't come back. The previous file stays as the .bak next to it.
+        /// </summary>
+        public static void ResetAll()
+        {
+            foreach (ISaveSlice slice in Slices) slice.Reset();
+            SaveNow();
+            Game.Console.Print("[profile] Progress reset.");
+            Loaded?.Invoke();
+        }
+
         /// <summary>Ask for a save soon (coalesces bursts of changes).</summary>
         public static void MarkDirty()
         {

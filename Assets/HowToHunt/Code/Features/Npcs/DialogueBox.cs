@@ -12,13 +12,15 @@ namespace HowToHunt.Npcs
     /// Talking to a camp character. What they say appears in a speech bubble over their head (SpeechBubble), typed
     /// out; a long line comes in pages (a blank line in the text starts a new one). Interact, Enter, Space, a click or
     /// gamepad A hurries the typing, then moves on; once they have said their piece, your replies appear (ChoiceList).
-    /// They offer their stall's business (sell, browse, attachments), their quest (offer, how it's going, turn it in),
-    /// and goodbye. Escape, gamepad B or walking away ends it. Lines come from NpcDefinition and QuestDefinition and
+    /// Short and to the point (owner, 2026-11-24: the quests are set, so no questions to click through): talking to a
+    /// character settles their quest at once in one line (a new one is taken on, a finished one handed in and the
+    /// next one taken, one in progress shows how far you are), then the only replies are their stall's business
+    /// (sell, browse, guns) and goodbye. Escape, gamepad B or walking away ends it. Lines come from NpcDefinition and QuestDefinition and
     /// may use the bubble markup (BubbleText: [shout], &lt;shake&gt;...).
     /// </summary>
     public sealed class DialogueBox : MonoBehaviour
     {
-        private enum Act : byte { None, Bye, Back, Sell, Shop, Workshop, AskWork, Accept, TurnIn, AskProgress }
+        private enum Act : byte { None, Bye, Sell, Shop, Workshop }
 
         private static DialogueBox _instance;
         /// <summary>The character the local player is talking to (null: nobody).</summary>
@@ -33,7 +35,6 @@ namespace HowToHunt.Npcs
         private readonly Act[] _acts = new Act[ChoiceList.MaxChoices];
         private readonly bool[] _enabled = new bool[ChoiceList.MaxChoices];
         private int _choiceCount;
-        private QuestDefinition _quest;
         private int _openedFrame;
         private System.Action<int> _onPick;
 
@@ -125,28 +126,55 @@ namespace HowToHunt.Npcs
         private void Root(string line)
         {
             EconomyProfile me = EconomyNet.Local;
-            _quest = EconomyNet.QuestFrom(_npc.Definition, me, out QuestState state);
-            if (_quest == null && !string.IsNullOrEmpty(_npc.Definition.Idle) && Random.value < 0.5f) line = _npc.Definition.Idle;
-            Say(line);
-            if (_quest != null)
+            QuestDefinition quest = EconomyNet.QuestFrom(_npc.Definition, me, out QuestState state);
+            if (quest != null && state == QuestState.Ready)
             {
-                if (state == QuestState.Ready) Add($"It's done: {_quest.Task}.", Act.TurnIn);
-                else if (state == QuestState.Available) Add("Got any work for me?", Act.AskWork);
-                else if (state == QuestState.Active) Add($"About \"{_quest.DisplayName}\"...", Act.AskProgress);
+                // Handed in on the spot; the next job from them (if any) is taken on in the same breath.
+                EconomyNet.RequestTurnInQuest(quest);
+                line = $"{quest.Done} {Reward(quest)}";
+                QuestDefinition next = NextFrom(quest);
+                if (next != null)
+                {
+                    EconomyNet.RequestAcceptQuest(next);
+                    line += $"\n{Job(next)}";
+                }
             }
+            else if (quest != null && state == QuestState.Available)
+            {
+                EconomyNet.RequestAcceptQuest(quest);
+                line = $"{quest.Offer}\n{Job(quest)}";
+            }
+            else if (quest != null && state == QuestState.Active)
+                line = $"{quest.Waiting}\n<b>{quest.Task}</b>: {EconomyNet.ProgressOf(me, quest)} / {quest.Count}";
+            else if (!string.IsNullOrEmpty(_npc.Definition.Idle) && Random.value < 0.5f) line = _npc.Definition.Idle;
+            Say(line);
             if (_npc.Definition.HasStation)
             {
                 switch (_npc.Definition.Station)
                 {
                     case CampStationKind.Sell:
                         int n = me.Inventory.PreyCount;
-                        Add(n > 0 ? $"I've got {n} {(n == 1 ? "catch" : "catches")} to sell." : "(Nothing to sell yet.)", Act.Sell, n > 0);
+                        if (n > 0) Add($"Sell my {n} {(n == 1 ? "catch" : "catches")}.", Act.Sell);
                         break;
                     case CampStationKind.Shop: Add("Show me what you've got.", Act.Shop); break;
-                    case CampStationKind.Workshop: Add("Let's look at my guns.", Act.Workshop); break;
+                    case CampStationKind.Workshop: Add("Let's look at the guns.", Act.Workshop); break;
                 }
             }
             Add("Goodbye.", Act.Bye);
+        }
+
+        private static string Job(QuestDefinition q) =>
+            $"<b>{q.DisplayName}</b>: {q.Task}. <color=#b8741a><b>{((BigDouble)q.RewardCoins).ToShortString()} coins</b></color>";
+
+        private static string Reward(QuestDefinition q) =>
+            $"<color=#b8741a><b>+{((BigDouble)q.RewardCoins).ToShortString()} coins</b></color>";
+
+        /// <summary>Their next quest in the chain right after this one (they hand it over as you finish), or null.</summary>
+        private QuestDefinition NextFrom(QuestDefinition done)
+        {
+            foreach (QuestDefinition q in ContentRegistry.All<QuestDefinition>())
+                if (q.Giver == _npc.Definition && q.Requires == done) return q;
+            return null;
         }
 
         private void Choose(Act act)
@@ -154,7 +182,6 @@ namespace HowToHunt.Npcs
             switch (act)
             {
                 case Act.Bye: End(); break;
-                case Act.Back: Root(_npc.Definition.Greetings.Count > 0 ? _npc.Definition.Greetings[0] : "..."); break;
                 case Act.Sell:
                     EconomyNet.RequestSell();
                     End();
@@ -173,26 +200,6 @@ namespace HowToHunt.Npcs
                     if (s != null) WorkshopPanel.Open(s);
                     break;
                 }
-                case Act.AskWork:
-                    Say($"{_quest.Offer}\n\n<b>{_quest.DisplayName}</b>: {_quest.Task}.\nReward: <color=#b8741a><b>{((BigDouble)_quest.RewardCoins).ToShortString()} coins</b></color>.");
-                    Add("I'll do it.", Act.Accept);
-                    Add("Not now.", Act.Back);
-                    break;
-                case Act.Accept:
-                    EconomyNet.RequestAcceptQuest(_quest);
-                    Say($"Good. {_quest.Task}, then come back to me.");
-                    Add("Goodbye.", Act.Bye);
-                    break;
-                case Act.AskProgress:
-                    Say($"{_quest.Waiting}\n\n{_quest.Task}: <b>{EconomyNet.ProgressOf(EconomyNet.Local, _quest)} / {_quest.Count}</b>.");
-                    Add("Back.", Act.Back);
-                    Add("Goodbye.", Act.Bye);
-                    break;
-                case Act.TurnIn:
-                    EconomyNet.RequestTurnInQuest(_quest);
-                    Say(_quest.Done);
-                    Add("Goodbye.", Act.Bye);
-                    break;
             }
         }
 

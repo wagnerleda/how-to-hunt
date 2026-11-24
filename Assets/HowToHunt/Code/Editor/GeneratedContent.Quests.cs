@@ -29,7 +29,7 @@ namespace HowToHunt.Editor
                 "Everything on the rack is tested on actual rabbits.");
             wren.Idle = "If it tears, bring it back. It won't tear.";
             Voice(wren, 1.25f, "Nets! <wave>Sturdy nets!</wave>", "[whisper] Psst... the bigger bags are in the back.", "Mind the butterflies, they bruise.");
-            NpcDefinition gus = Npc("gunsmith", "Gus", "Gunsmith", "Sells guns and attachments, fits them while you wait.", CampStationKind.Workshop,
+            NpcDefinition gus = Npc("gunsmith", "Gus", "Gunsmith", "Sells the Old Revolver and attachments, fits them while you wait.", CampStationKind.Workshop,
                 "Mind the bench. What are we shooting today?",
                 "A good gun's a quiet gun. Mostly.",
                 "Bring it here, I'll make it kick less. Or more, if that's your thing.");
@@ -46,31 +46,31 @@ namespace HowToHunt.Editor
 
             QuestDefinition freshStock = Quest("fresh_stock", "Fresh Stock", 1, tomas, null, QuestObjective.Sell, null, 3, 60,
                 "Sell 3 catches to Tomas",
-                "New out here? Then you'll want coin. Bring me three catches, caught or killed, and I'll pay a bonus on top.",
-                "Still waiting on those catches. The rabbit warrens are by the logs.",
-                "That's the spirit. Here's your bonus. Go see Wren at the outfitter, she'll want to see you kitted out.");
+                "New out here? Bring me three catches and I'll pay a bonus on top.",
+                "Rabbits are by the logs.",
+                "Here's your bonus. Go and see Wren at the outfitter.");
             QuestDefinition kittedOut = Quest("kitted_out", "Kitted Out", 2, wren, freshStock, QuestObjective.BuyUpgrade, null, 1, 80,
                 "Buy an upgrade from Wren",
-                "Tomas says you can hunt. Let's see you spend some of that coin: buy anything off my rack.",
-                "Have a look at the rack. There's something for every budget.",
-                "Suits you. Gus at the gunsmith was asking about you, too.");
+                "Tomas says you can hunt. Spend some of that coin on my rack.",
+                "Something for every budget.",
+                "Suits you. Gus at the gunsmith was asking about you.");
             QuestDefinition steadyHands = Quest("steady_hands", "Steady Hands", 3, gus, kittedOut, QuestObjective.Kill, null, 5, 120,
                 "Take down 5 prey (killed, not caught)",
-                "A net's fine for rabbits. A hunter brings things down. Five of them, any way you like, but no catching alive.",
-                "Five. Down. Off you go.",
-                "Not bad at all. Tomas has been going on about the fallen trees to the east. Go and see him.");
+                "A hunter brings things down. Five of them, no catching alive.",
+                "Five. Down.",
+                "Not bad. Tomas wants a word about the trees to the east.");
             QuestDefinition beyond = Quest("beyond_the_trees", "Beyond the Trees", 4, tomas, steadyHands, QuestObjective.EarnCoins, null, 300, 150,
                 "Earn 300 coins selling your catch",
-                "Past the east clearing there's a pine forest, better hunting than here. Fallen trees block the way. Earn me 300 coins in trade and I'll get them cleared. Mind you, past the trees the land drops away in steep slopes: you'll have to surf down.",
-                "Keep it coming. The forest won't wait forever.",
-                "Done. The way east is clear. Ride the slopes down to the pines, and don't fall: it's a long climb back. There's a way home from the forest camp.");
+                "Fallen trees block the way to the pine forest. Earn me 300 coins in trade and I'll get them cleared.",
+                "Keep it coming.",
+                "The way east is clear. Surf the slopes down to the pines; a pad at the forest camp brings you home.");
             beyond.Unlocks = EastClearingFlag;
             EditorUtility.SetDirty(beyond);
             QuestDefinition ghost = Quest("ghost_of_the_pines", "Ghost of the Pines", 5, ash, beyond, QuestObjective.TakeDown, deer, 1, 300,
                 deer != null ? "Take down a deer" : "Take down anything in the forest",
-                "Deer here are wary: they hear you long before you see them. Bring one down, caught or killed, and I'll know you're the real thing.",
-                "No deer yet? Move slowly, stay downwind... or don't, and chase it.",
-                "A real deer. You'll do well out here. That's the best I've paid all season.");
+                "Deer hear you long before you see them. Bring one down.",
+                "Move slowly near the deer... or chase it.",
+                "A real deer. You'll do well out here.");
 
             // Forest chain (2026-11-24): the new animals, then the forest boss. Squirrels need the Sturdy Net.
             PreyDefinition squirrel = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Squirrel.asset");
@@ -79,24 +79,24 @@ namespace HowToHunt.Editor
             PreyDefinition bear = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_OldBear.asset");
             QuestDefinition paws = Quest("quick_paws", "Quick Paws", 6, ash, ghost, QuestObjective.Capture, squirrel, 3, 150,
                 "Catch 3 red squirrels alive",
-                "The traders down south want live squirrels, of all things. Three of them, alive: a Sturdy Net holds them. They live up in the pine stands.",
-                "Squirrels dart off fast but tire quickly. Sprint after them and swing.",
-                "Three live ones, still cross about it. Good work.");
+                "Three live squirrels, from the pine stands. A Sturdy Net holds them.",
+                "They tire quickly: sprint after them.",
+                "Three live ones, still cross about it.");
             QuestDefinition sly = Quest("the_sly_one", "The Sly One", 7, ash, paws, QuestObjective.TakeDown, fox, 2, 220,
                 "Take down 2 red foxes",
-                "A pair of foxes has been raiding my stores. They see you from far off and they're quicker than you on foot. Two of them, any way you can.",
-                "Foxes watch the open ground. Come at them through the trees, crouched.",
-                "That'll teach them. My stores thank you.");
+                "Two foxes raid my stores. They're quick and they see you coming.",
+                "Come at them through the trees, crouched.",
+                "That'll teach them.");
             QuestDefinition tusks = Quest("tusks_and_temper", "Tusks and Temper", 8, ash, sly, QuestObjective.Kill, boar, 3, 300,
                 "Kill 3 wild boars",
-                "Boars run from you until you hurt them. Then they turn and charge. Bring down three, and when one rears up, get out of the way.",
-                "A charging boar can't follow a hunter who jumps aside. Keep moving.",
-                "Three boars! You're ready for the worst of it, then.");
+                "Hurt a boar and it charges. Three of them; jump aside when one rears up.",
+                "Keep moving, jump aside.",
+                "Three boars! You're ready for the worst.");
             QuestDefinition king = Quest("the_old_bear", "The Old Bear", 9, ash, tusks, QuestObjective.TakeDown, bear, 1, 800,
                 "Bring down the Old Bear of the Pines",
-                "There's a bear in the south-east glade older than this trading post. It sleeps until it smells honey: buy a Honeycomb Bait at the stall behind me and it comes out of its den. It charges, it leaps at anyone who keeps their distance, and every third blow it slams the ground. Bring friends.",
-                "A deep roar means the slam: get out or jump. When it crouches low, it's about to leap. It heals if you all run off.",
-                "The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.");
+                "The Old Bear sleeps in the south-east glade. A Honeycomb Bait from the stall behind me wakes it. Bring friends.",
+                "Deep roar: jump. Low crouch: sidestep.",
+                "The Old Bear... the whole forest will be talking about you.");
             king.Unlocks = ForestBossFlag;
             EditorUtility.SetDirty(king);
         }

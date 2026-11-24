@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
   _key: npc.gunsmith
   _displayName: Gus
-  _description: Sells guns and attachments, fits them while you wait.
+  _description: Sells the Old Revolver and attachments, fits them while you wait.
   Role: Gunsmith
   Greetings:
   - Mind the bench. What are we shooting today?

@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 3
   RewardCoins: 300
   Unlocks: 
-  Offer: Boars run from you until you hurt them. Then they turn and charge. Bring down three, and when one rears up, get out of the way.
+  Offer: Hurt a boar and it charges. Three of them; jump aside when one rears up.
   Task: Kill 3 wild boars
-  Waiting: A charging boar can't follow a hunter who jumps aside. Keep moving.
-  Done: Three boars! You're ready for the worst of it, then.
+  Waiting: Keep moving, jump aside.
+  Done: Three boars! You're ready for the worst.
   Order: 8

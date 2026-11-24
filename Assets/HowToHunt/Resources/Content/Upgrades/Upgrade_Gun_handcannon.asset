@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.gun_handcannon
   _displayName: Hand Cannon
-  _description: Sold at the Gunsmith.
+  _description: Sold at the armory in the movement lab.
   Tool: {fileID: 11400000, guid: d313892cdac476b4b894442c4b455bf4, type: 2}
   Effect: 3
   Value: 0
@@ -24,4 +24,5 @@ MonoBehaviour:
   SortOrder: 130
   Unlisted: 0
   SoldByGunsmith: 1
+  CampGunsmith: 0
   Summons: {fileID: 0}

@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 1
   RewardCoins: 300
   Unlocks: 
-  Offer: 'Deer here are wary: they hear you long before you see them. Bring one down, caught or killed, and I''ll know you''re the real thing.'
+  Offer: Deer hear you long before you see them. Bring one down.
   Task: Take down a deer
-  Waiting: No deer yet? Move slowly, stay downwind... or don't, and chase it.
-  Done: A real deer. You'll do well out here. That's the best I've paid all season.
+  Waiting: Move slowly near the deer... or chase it.
+  Done: A real deer. You'll do well out here.
   Order: 5

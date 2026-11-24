@@ -11,6 +11,7 @@ namespace HowToHunt.Player
     /// A hunter's health (design: 100 HP). At 0 you are downed for 30 s: you can't move or use anything, and a
     /// teammate can revive you by holding Interact next to you for 3 s (back at 30 HP). If nobody does, you bleed out:
     /// back at camp at full health, and 10 % of your unsold catch is left where you fell (the economy does that part).
+    /// Nobody standing who could revive you (alone on the map, or the whole party down): only a few seconds' wait.
     /// The host decides everything; health and the downed state reach everyone through sync vars.
     /// </summary>
     [RequireComponent(typeof(PlayerMotor))]
@@ -21,6 +22,7 @@ namespace HowToHunt.Player
 
         public static readonly BoolCvar Pvp = new BoolCvar("sv_pvp", true, "Players can hurt each other (friendly fire follows it). The host's choice.", CvarFlags.Replicated);
         public static readonly FloatCvar DownedSeconds = new FloatCvar("sv_downed_time", 30f, "Seconds a downed player has before bleeding out.", Sv, 3f, 120f);
+        public static readonly FloatCvar DownedAloneSeconds = new FloatCvar("sv_downed_time_alone", 3f, "Seconds a downed player waits when nobody is left standing to revive them (playing alone): just long enough to see it.", Sv, 0.5f, 120f);
         public static readonly FloatCvar ReviveSeconds = new FloatCvar("sv_revive_time", 3f, "Seconds a teammate holds Interact to revive.", Sv, 0.5f, 15f);
         public static readonly FloatCvar ReviveHealth = new FloatCvar("sv_revive_health", 30f, "Health after a revive.", Sv, 1f, MaxHealth);
         public static readonly FloatCvar ReviveRange = new FloatCvar("sv_revive_range", 2.2f, "How close a reviver must stay, metres.", Sv, 1f, 6f);
@@ -29,6 +31,7 @@ namespace HowToHunt.Player
         {
             console.Register(Pvp);
             console.Register(DownedSeconds);
+            console.Register(DownedAloneSeconds);
             console.Register(ReviveSeconds);
             console.Register(ReviveHealth);
             console.Register(ReviveRange);
@@ -157,6 +160,12 @@ namespace HowToHunt.Player
                 return; // bleeding pauses while someone is reviving you
             }
             if (_revive.Value > 0f) _revive.Value = 0f;
+            // Alone (or everyone else is down too): nobody can come, so don't make you wait the full time.
+            if (!AnyoneStanding() && _bleedUntil - Time.time > DownedAloneSeconds.Value)
+            {
+                _bleedUntil = Time.time + DownedAloneSeconds.Value;
+                _bleedLeft.Value = DownedAloneSeconds.Value;
+            }
             if (Time.time >= _bleedUntil)
             {
                 Vector3 where = Motor.transform.position;
@@ -164,6 +173,14 @@ namespace HowToHunt.Player
                 if (RespawnPoint != null) Motor.ServerTeleport(RespawnPoint(this));
                 HostRestore();
             }
+        }
+
+        /// <summary>Another hunter on their feet, who could come and revive this one (host and clients).</summary>
+        public bool AnyoneStanding()
+        {
+            for (int i = 0; i < AllList.Count; i++)
+                if (AllList[i] != this && !AllList[i]._downed.Value) return true;
+            return false;
         }
 
         // --- owner ------------------------------------------------------------------------------------------------

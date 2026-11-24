@@ -41,6 +41,8 @@ namespace HowToHunt.Hunting
         public bool Unlisted;
         [Tooltip("Sold at the Gunsmith (guns) instead of the Outfitter.")]
         public bool SoldByGunsmith;
+        [Tooltip("Sold by Gunsmith: also at the camp gunsmiths (the Plains). Without it, only the full armory (the movement lab) sells it.")]
+        public bool CampGunsmith;
         [Tooltip("SummonBoss: the boss this bait wakes (it must have a summoned spawner in the level).")]
         public PreyDefinition Summons;
 
@@ -52,6 +54,7 @@ namespace HowToHunt.Hunting
             base.Validate(errors);
             if (Tool == null && Effect != UpgradeEffect.InventorySlots && Effect != UpgradeEffect.SummonBoss) errors.Add("Tool missing.");
             if (Effect == UpgradeEffect.SummonBoss && (Summons == null || !Summons.IsBoss)) errors.Add("A bait must summon a boss.");
+            if (CampGunsmith && !SoldByGunsmith) errors.Add("Camp Gunsmith needs Sold By Gunsmith.");
             if (Effect == UpgradeEffect.SummonBoss && SoldByGunsmith) errors.Add("Baits are sold at bait stalls, not the Gunsmith.");
             if (CostCoins < 0 || CostTrophies < 0) errors.Add("Costs must be >= 0.");
             if (Requires == this) errors.Add("An upgrade can't require itself.");

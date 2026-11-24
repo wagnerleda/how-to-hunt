@@ -40,6 +40,31 @@ namespace HowToHunt.Player
 
         public static PlayerCamera Instance { get; private set; }
 
+        // A framed shot (the Gunsmith's counter): the camera glides from the eyes to a set pose and back.
+        private static bool _shot;
+        private static Vector3 _shotPosition;
+        private static Quaternion _shotRotation = Quaternion.identity;
+        private static float _shotFov = 30f;
+        private float _shotWeight;
+        private const float ShotBlendRate = 7f;
+
+        /// <summary>A framed shot is on (or still blending out): the first-person gun hides.</summary>
+        public static bool Framed => Instance != null && Instance._shotWeight > 0.001f;
+
+        /// <summary>Glide the camera to this pose (vertical FOV, degrees) until <see cref="EndShot"/>.</summary>
+        public static void FrameShot(Vector3 position, Quaternion rotation, float verticalFov)
+        {
+            _shot = true;
+            _shotPosition = position;
+            _shotRotation = rotation;
+            _shotFov = verticalFov;
+        }
+
+        public static void EndShot() => _shot = false;
+
+        /// <summary>The camera itself (null before a player spawns).</summary>
+        public static Camera Camera => Instance != null ? Instance._camera : null;
+
         /// <summary>Optical zoom while aiming down sights (1 = none), set by the tools feature.</summary>
         public static float Zoom { get; set; } = 1f;
 
@@ -158,6 +183,15 @@ namespace HowToHunt.Player
             Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll);
             transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z) + view * _bob, view);
             _recoil = Mathf.MoveTowards(_recoil, 0f, dt * (6f + _recoil * 8f));
+
+            // A framed shot: blend from the eyes to its pose (smooth in and out, respects reduce motion).
+            _shotWeight = UiFeel.Calm ? (_shot ? 1f : 0f) : Mathf.MoveTowards(_shotWeight, _shot ? 1f : 0f, dt * ShotBlendRate * 0.5f);
+            if (_shotWeight > 0.001f)
+            {
+                float w = _shotWeight * _shotWeight * (3f - 2f * _shotWeight);
+                transform.SetPositionAndRotation(Vector3.Lerp(transform.position, _shotPosition, w), Quaternion.Slerp(transform.rotation, _shotRotation, w));
+                _camera.fieldOfView = Mathf.Lerp(vfov, _shotFov, w);
+            }
 
             // Click to recapture the mouse after alt-tab or closing the console.
             if (!Game.UiHasFocus && Cursor.lockState != CursorLockMode.Locked &&

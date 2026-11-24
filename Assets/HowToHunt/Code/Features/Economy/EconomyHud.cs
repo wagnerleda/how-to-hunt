@@ -213,7 +213,7 @@ namespace HowToHunt.Economy
             if (talk != null) return talk;
             string key = KeyBindings.DisplayName(GameAction.Interact);
             if (station.Kind == CampStationKind.Shop) return station.BaitStall ? $"[{key}] {station.Label}: baits that wake a boss" : $"[{key}] {station.Label}: browse upgrades";
-            if (station.Kind == CampStationKind.Workshop) return $"[{key}] {station.Label}: attachments for your guns";
+            if (station.Kind == CampStationKind.Workshop) return station.FullArmory ? $"[{key}] {station.Label}: every gun and attachment" : $"[{key}] {station.Label}: guns and attachments";
             EconomyProfile p = EconomyNet.Local;
             int n = p.Inventory.PreyCount;
             if (n == 0) return $"{station.Label}: nothing to sell yet";

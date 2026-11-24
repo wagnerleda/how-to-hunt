@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace HowToHunt.UI
 {
     /// <summary>
-    /// The living background behind the menus, in the sunny-diorama spirit. Main menu: a warm sky tint drifting
+    /// The living layer over the menus' background (the main menu's 3D sunset is MenuVista). Main menu: a warm sky tint drifting
     /// between two colours, a soft sun that breathes, pollen drifting up in three depths that follow the mouse a
     /// little (parallax), and a vignette. Pause menu: the game behind dimmed, with the vignette. "Reduce animations":
     /// still tint, no pollen. Built once; no allocations per frame.
@@ -99,7 +99,7 @@ namespace HowToHunt.UI
             _parallax = Vector2.Lerp(_parallax, target, 1f - Mathf.Exp(-3f * dt));
 
             float sunPulse = calm ? 1f : 1f + 0.04f * Mathf.Sin(time * 0.9f);
-            _sun.enabled = main;
+            _sun.enabled = false; // the main menu shows the real sunset now (MenuVista); the drawn sun is kept for later
             _sun.color = new Color(1f, 0.86f, 0.55f, 0.55f * _alpha);
             _sun.rectTransform.localScale = new Vector3(sunPulse, sunPulse, 1f);
             _sun.rectTransform.anchoredPosition = _parallax * theme.Parallax * 0.3f;

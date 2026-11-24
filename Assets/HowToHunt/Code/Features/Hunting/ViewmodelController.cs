@@ -243,7 +243,7 @@ namespace HowToHunt.Hunting
                 _fittedVersion = Loadouts.Local.FittedVersion;
                 AttachmentVisuals.Apply(_shown, _tool, Loadouts.Local.Fitted(_tool));
             }
-            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing;
+            bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing && !PlayerCamera.Framed;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
             if (!visible || (_tool == null && _heldPrey == null))
             {

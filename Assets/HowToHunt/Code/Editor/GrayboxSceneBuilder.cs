@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HowToHunt.Core;
+using HowToHunt.Economy;
 using HowToHunt.Player;
 using HowToHunt.Sim.Collision;
 using TMPro;
@@ -67,6 +68,9 @@ namespace HowToHunt.Editor
             Pad(level, zones, signs, "BHOP", new Vector3(5f, 0.1f, 5f), Marker(zones, "Bhop Start", BhopStart, 0f));
             Pad(level, zones, signs, "GAPS", new Vector3(-5f, 0.1f, 5f), Marker(zones, "Gaps Start", GapsStart, 270f));
             Pad(level, zones, signs, "SURF", new Vector3(5f, 0.1f, -5f), Marker(zones, "Surf Start", SurfStart, 90f));
+            // The full armory (owner, 2026-11-24): every gun and attachment, to try them all. No keeper: walk up to it.
+            Station(level, signs, CampStationKind.Workshop, "Armory", "ARMORY\n<size=55%>every gun, every attachment</size>",
+                new Vector3(-4.5f, 0.1f, -3.5f), 180f, fullArmory: true);
 
             BuildBhopCourse(level, zones, signs, plazaReturn);
             BuildGapsCourse(level, zones, signs, plazaReturn);

@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 300
   RewardCoins: 150
   Unlocks: east_clearing
-  Offer: 'Past the east clearing there''s a pine forest, better hunting than here. Fallen trees block the way. Earn me 300 coins in trade and I''ll get them cleared. Mind you, past the trees the land drops away in steep slopes: you''ll have to surf down.'
+  Offer: Fallen trees block the way to the pine forest. Earn me 300 coins in trade and I'll get them cleared.
   Task: Earn 300 coins selling your catch
-  Waiting: Keep it coming. The forest won't wait forever.
-  Done: 'Done. The way east is clear. Ride the slopes down to the pines, and don''t fall: it''s a long climb back. There''s a way home from the forest camp.'
+  Waiting: Keep it coming.
+  Done: The way east is clear. Surf the slopes down to the pines; a pad at the forest camp brings you home.
   Order: 4

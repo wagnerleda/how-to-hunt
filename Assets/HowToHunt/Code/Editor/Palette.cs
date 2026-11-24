@@ -30,6 +30,9 @@ namespace HowToHunt.Editor
             { "Pad", (Hex("6C63FF"), 0.4f) },
             { "Stripe", (Hex("CDB98A"), 0.05f) },
             { "Gunmetal", (Hex("33383D"), 0.45f) },
+            { "Felt", (Hex("2E5A46"), 0.02f) },         // the gunsmith's counter mat
+            { "Cliff", (Hex("8C8273"), 0.05f) },        // boundary ridges: warm grey stone
+            { "CliffDark", (Hex("6E665A"), 0.05f) },
         };
 
         public static Material Get(string name)

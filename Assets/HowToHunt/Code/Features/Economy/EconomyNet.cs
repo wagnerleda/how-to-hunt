@@ -502,8 +502,8 @@ namespace HowToHunt.Economy
         /// <summary>Near the station that sells this: the Gunsmith (guns), a bait stall (baits) or an outfitter.</summary>
         private static bool NearSeller(NetworkConnection conn, UpgradeDefinition u)
         {
-            if (u.SoldByGunsmith) return NearStation(conn, CampStationKind.Workshop);
             PlayerMotor motor = MotorOf(conn.ClientId);
+            if (u.SoldByGunsmith) return motor != null && CampStation.NearestSelling(motor.transform.position, u, StationReach.Value) != null;
             return motor != null && CampStation.NearestShop(motor.transform.position, u.IsBait, StationReach.Value) != null;
         }
 

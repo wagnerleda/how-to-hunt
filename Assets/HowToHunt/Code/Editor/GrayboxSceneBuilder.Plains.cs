@@ -42,6 +42,7 @@ namespace HowToHunt.Editor
             BuildWater(plains);
             BuildBoundary(plains, signs);
             BuildCamp(plains, props, signs);
+            BuildMenuVista(plains, props);
 
             // Butterfly meadows: flowers are instanced below; a few bushes frame each field.
             for (int f = 0; f < FlowerFields.Length; f++)
@@ -316,8 +317,9 @@ namespace HowToHunt.Editor
             // Phase 6: everything closing the east clearing sits in a gate that opens with the quest (world flag).
             Transform blocked = Group(plains, "East Gate (blocked)");
             blocked.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.EastClearingFlag, showWhenSet: false);
-            // Invisible wall a few metres into the trees all the way round, except the south corridor and the east
-            // clearing (which has its own barricade until the quest opens it).
+            // A rocky ridge a few metres into the trees all the way round (no invisible walls: owner, 2026-11-24),
+            // except the south corridor and the east clearing (which has its own barricade until the quest opens it).
+            var rocks = new System.Random(160);
             const int segments = 160;
             var ring = new List<Vector3>();
             for (int i = 0; i < segments; i++) ring.Add(RingPoint(i / (float)segments, 4f));
@@ -328,21 +330,18 @@ namespace HowToHunt.Editor
                 if (Mathf.Abs(mid.x - GateX) < 7f && mid.z < PlayMinZ + 10f) continue; // corridor opening
                 if (mid.x < PlayMaxX - 6f)
                 {
-                    RingWall(walls, $"Wall {i}", a, b, 15f, 40f);
+                    RockWall(walls, $"Wall {i}", a, b, GroundY, 35f, rocks);
                     continue;
                 }
                 // East side: cut the ring exactly at the trail's edges. Segments used to go whole into the gate or stay
                 // whole, so the ones straddling an edge left invisible walls across the trail once it opened.
                 SplitAtOpening(a, b, ClearingZ, TrailHalfWidth, out Vector3 inA, out Vector3 inB, Pieces);
-                for (int k = 0; k < Pieces.Count; k += 2) RingWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], 15f, 40f);
-                if ((inB - inA).sqrMagnitude > 0.01f) RingWall(blocked, $"Wall {i} (gate)", inA, inB, 15f, 40f);
+                for (int k = 0; k < Pieces.Count; k += 2) RockWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], GroundY, 35f, rocks);
+                if ((inB - inA).sqrMagnitude > 0.01f) RockWall(blocked, $"Wall {i} (gate)", inA, inB, GroundY, 35f, rocks);
             }
-            // Corridor sides from the lab gate to the meadow.
+            // Corridor sides from the lab gate to the meadow: rock walls you can see, a little canyon.
             for (int s = -1; s <= 1; s += 2)
-            {
-                GameObject w = Box(walls, $"Corridor {(s < 0 ? "W" : "E")}", new Vector3(GateX + s * 6.5f, 15f, (81f + PlayMinZ + 6f) * 0.5f), new Vector3(1f, 40f, PlayMinZ + 6f - 81f), "Wall");
-                w.GetComponent<MeshRenderer>().enabled = false;
-            }
+                RockWall(walls, $"Corridor {(s < 0 ? "W" : "E")}", new Vector3(GateX + s * 7.6f, 0f, 81.5f), new Vector3(GateX + s * 7.6f, 0f, PlayMinZ + 6f), GroundY, 35f, rocks);
             // Gate from the lab: a lintel and a sign on each face.
             Box(plains, "Gate Lintel", new Vector3(GateX, 6.5f, 80.5f), new Vector3(16f, 1f, 1.2f), "Wood");
             Sign(signs, "PLAINS\n<size=55%>hunt, sell at the trader, upgrade at the outfitter</size>", new Vector3(GateX, 4.9f, 79.8f), 0f, 1.4f);
@@ -401,15 +400,40 @@ namespace HowToHunt.Editor
             inB = Vector3.Lerp(a, b, t1);
         }
 
-        /// <summary>An invisible boundary wall from a to b (slightly longer, so neighbours overlap at the corners).</summary>
-        private static void RingWall(Transform parent, string name, Vector3 a, Vector3 b, float centerY, float height)
+        /// <summary>
+        /// A boundary you can see, from a to b: jagged rock blocks standing on the ground (the collision you bump into is
+        /// the rock itself), each with a collision-only cap from just under its top up to <paramref name="capTop"/> so
+        /// nobody launches over it. The cap is only met high in the air, over the rocks.
+        /// </summary>
+        private static void RockWall(Transform parent, string name, Vector3 a, Vector3 b, System.Func<float, float, float> ground, float capTop, System.Random rng)
         {
-            Vector3 mid = (a + b) * 0.5f;
-            float len = new Vector2(b.x - a.x, b.z - a.z).magnitude + 0.6f;
-            float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg;
-            GameObject w = Box(parent, name, new Vector3(mid.x, centerY, mid.z), new Vector3(1f, height, len), "Wall", yaw);
-            w.GetComponent<MeshRenderer>().enabled = false;
+            Vector3 d = b - a;
+            d.y = 0f;
+            float len = d.magnitude;
+            if (len < 0.05f) return;
+            int n = Mathf.Max(1, Mathf.CeilToInt(len / RockPiece));
+            float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, step = len / n;
+            Vector3 side = Vector3.Cross(Vector3.up, d / len);
+            for (int i = 0; i < n; i++)
+            {
+                Vector3 p = Vector3.Lerp(a, b, (i + 0.5f) / n);
+                float g = ground(p.x, p.z);
+                float h = Range(rng, RockMinHeight, RockMaxHeight), w = Range(rng, 2.4f, 3.6f);
+                string stone = rng.Next(3) == 0 ? "CliffDark" : "Cliff";
+                // Sunk 2.5 m so a slope along the piece never opens a gap underneath; jagged in and out, in two tones.
+                Vector3 at = p + side * Range(rng, -0.5f, 0.5f);
+                Box(parent, $"{name} Rock {i}", new Vector3(at.x, g - 2.5f + h * 0.5f, at.z), new Vector3(w, h, step * 1.35f + 0.5f), stone, yaw + Range(rng, -14f, 14f));
+                // Fallen blocks at its feet (both sides) break the line; solid like everything you can see.
+                float s = rng.Next(2) == 0 ? -1f : 1f, bh = Range(rng, 1.2f, 2.4f);
+                Vector3 block = p + side * s * (w * 0.5f + Range(rng, 0.2f, 0.9f)) + (d / len) * Range(rng, -1f, 1f);
+                Box(parent, $"{name} Block {i}", new Vector3(block.x, ground(block.x, block.z) - 0.6f + bh * 0.5f, block.z), new Vector3(Range(rng, 1f, 1.9f), bh, Range(rng, 1f, 2f)), stone == "Cliff" ? "CliffDark" : "Cliff", Range(rng, 0f, 90f));
+                float capBottom = g + RockMinHeight - 2.5f - 0.4f;
+                GameObject cap = Box(parent, $"{name} Cap {i}", new Vector3(p.x, (capBottom + capTop) * 0.5f, p.z), new Vector3(1f, capTop - capBottom, step + 0.6f), "Wall", yaw);
+                cap.GetComponent<MeshRenderer>().enabled = false;
+            }
         }
+
+        private const float RockPiece = 3.2f, RockMinHeight = 5.9f, RockMaxHeight = 8.6f; // heights include the 2.5 m sunk
 
         private static Vector3 RingPoint(float t, float outward)
         {
@@ -451,8 +475,8 @@ namespace HowToHunt.Editor
             // Trader: sells the bag. Outfitter: the upgrade shop.
             Station(camp, signs, CampStationKind.Sell, "Trader", "TRADER\n<size=55%>sell your catch</size>", c + new Vector3(8f, 0f, -1f), 90f, "npc.trader");
             Station(camp, signs, CampStationKind.Shop, "Outfitter", "OUTFITTER\n<size=55%>tools and upgrades</size>", c + new Vector3(-8f, 0f, -1f), 270f, "npc.outfitter");
-            // Gunsmith (Phase 5): attachments for your guns.
-            Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f, "npc.gunsmith");
+            // Gunsmith (Phase 5): the Old Revolver and attachments (every gun is at the armory in the movement lab).
+            Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>the Old Revolver, attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f, "npc.gunsmith");
             Prop(camp, "log_stack", c + new Vector3(-10.5f, 0f, -2.5f), 3f, rng, collide: true, yaw: 90f);
             Prop(camp, "pot_large", c + new Vector3(10.3f, 0f, -2.8f), 3f, rng, collide: false, yaw: 0f);
             Prop(camp, "crop_pumpkin", c + new Vector3(9.4f, 0f, 1.3f), 3f, rng, collide: false, yaw: 20f);
@@ -509,7 +533,7 @@ namespace HowToHunt.Editor
             light.shadows = LightShadows.None;
         }
 
-        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw, string npcKey = null, double expectedSale = PlainsExpectedSale, float priceMultiplier = 1f, bool baitStall = false)
+        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw, string npcKey = null, double expectedSale = PlainsExpectedSale, float priceMultiplier = 1f, bool baitStall = false, bool fullArmory = false)
         {
             Transform t = Group(camp, label);
             t.SetPositionAndRotation(feet, Quaternion.Euler(0f, yaw, 0f));
@@ -522,14 +546,46 @@ namespace HowToHunt.Editor
             Box(t, "Post R", feet + fwd * 1.8f + right * 1.6f + new Vector3(0f, 1.3f, 0f), new Vector3(0.18f, 2.6f, 0.18f), "Wood", yaw);
             Visual(t, "Awning", feet + fwd * 1.3f + new Vector3(0f, 2.65f, 0f), new Vector3(3.8f, 0.12f, 1.8f), kind == CampStationKind.Sell ? "Bhop" : kind == CampStationKind.Shop ? "Surf" : "Ramp", yaw);
             Sign(signs, signText, feet + fwd * 1.85f + new Vector3(0f, 3.35f, 0f), yaw, 1.1f);
+            if (kind == CampStationKind.Workshop) GunDisplay(t, feet, fwd, right, yaw);
 
             var station = new GameObject($"Station {label}");
             station.transform.SetParent(t, false);
             station.transform.position = feet;
             // Plains: a full bag sells for roughly 50 coins (Phase 3 economy); that sets the size of the cash burst.
-            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, expectedSale, priceMultiplier, baitStall);
+            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, expectedSale, priceMultiplier, baitStall, fullArmory);
             // Phase 6: the stall's keeper stands behind the counter, facing you.
             if (npcKey != null) NpcAt(t, npcKey, feet + fwd * 2.05f, yaw + 180f);
+        }
+
+        /// <summary>
+        /// The Gunsmith's counter (WorkshopPanel lays the gun out here in 3D): a green felt mat (the gun lies on it), a tool
+        /// box, a board of long guns behind the keeper and a warm lamp. Purely visual.
+        /// </summary>
+        private static void GunDisplay(Transform t, Vector3 feet, Vector3 fwd, Vector3 right, float yaw)
+        {
+            Vector3 top = feet + fwd * CampStation.CounterReach + new Vector3(0f, CampStation.CounterTop, 0f);
+            Visual(t, "Gun Mat", top + new Vector3(0f, 0.01f, 0f), new Vector3(1.9f, 0.02f, 0.8f), "Felt", yaw);
+            Visual(t, "Tool Box", top + right * 1.25f + fwd * 0.1f + new Vector3(0f, 0.11f, 0f), new Vector3(0.45f, 0.22f, 0.3f), "Hazard", yaw);
+            Visual(t, "Tool Box Lid", top + right * 1.25f + fwd * 0.1f + new Vector3(0f, 0.23f, 0f), new Vector3(0.47f, 0.03f, 0.32f), "Gunmetal", yaw);
+            // Back wall: a board behind the keeper with three long guns hung across it.
+            Vector3 wall = feet + fwd * 2.9f;
+            Visual(t, "Gun Wall", wall + new Vector3(0f, 1.45f, 0f), new Vector3(3.2f, 1.9f, 0.08f), "Wood", yaw);
+            for (int i = 0; i < 3; i++)
+            {
+                float y = 1.0f + i * 0.5f;
+                Vector3 at = wall - fwd * 0.08f + new Vector3(0f, y, 0f) + right * ((i - 1) * 0.15f);
+                Visual(t, $"Rack Gun {i + 1}", at, new Vector3(1.6f - i * 0.25f, 0.07f, 0.05f), "Gunmetal", yaw);
+                Visual(t, $"Rack Stock {i + 1}", at - right * (0.8f - i * 0.125f) + new Vector3(0f, -0.03f, 0f), new Vector3(0.38f, 0.13f, 0.06f), "Wood", yaw);
+            }
+            var lamp = new GameObject("Counter Lamp", typeof(Light));
+            lamp.transform.SetParent(t, false);
+            lamp.transform.position = top + fwd * 0.2f + new Vector3(0f, 1.3f, 0f);
+            Light l = lamp.GetComponent<Light>();
+            l.type = LightType.Point;
+            l.color = new Color(1f, 0.82f, 0.6f);
+            l.range = 3.2f;
+            l.intensity = 1.2f;
+            l.shadows = LightShadows.None;
         }
 
         /// <summary>A camp character (Phase 6): the hunters' stick figure with their own mask, posed by NpcBody.</summary>

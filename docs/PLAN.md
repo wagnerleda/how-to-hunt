@@ -94,6 +94,17 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 3 | Menus in uGUI: cascade, transitions, focus/hover/press, selector, animated title, living background, sounds, "Reduce animations" | "a menu that feels polished and responsive" |
 | 4 | Gamepad for the whole game (move, look, every action, hotbar, shop, workshop, menus) | "whole game" (owner's choice) |
 
+## Phase 6.4: gunsmith, inventory and comfort (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | Settings > Progress > Reset progress (main menu, asked twice) | "an option to reset progress" |
+| 2 | The gunsmith counter in 3D: the camera glides onto the counter, the gun lies on a felt mat with its attachments, glass panels around it (same slots, bars and buying) | "see the gun on the counter in 3D rather than on a black background" |
+| 3 | The Plains gunsmith sells only the Old Revolver (moved from the Outfitter); the full Armory (every gun) is in the movement lab | "a gunsmith in the Plains camp with only the old revolver; the full one in the test zone" |
+| 4 | No invisible walls: rocky ridges you can see all round both maps, along the lab corridor, the trail and the forest landing; the ledge is open | "remove the invisible walls, especially at the junctions" |
+| 5 | Talking settles the quest in one short line; replies are only the stall and goodbye | "shorter NPC interactions, no scrolling or choices for a set quest" |
+| 6 | Alone (nobody standing to revive you): back at camp 3 s after going down | "no 30 s wait when alone" |
+| 7 | Main menu: the Plains at sunset behind a hunter sitting on a rock with a rifle, slowly animated | "the Plains at sunset, the character on a rock with a rifle" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

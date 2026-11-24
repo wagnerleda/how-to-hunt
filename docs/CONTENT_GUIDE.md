@@ -18,6 +18,7 @@ Status: M3. Adding prey, tools and upgrades needs no code; new behaviours (a new
 - Aggression (ADR 0014): `Aggression` (None, WhenHurt: charges whoever hurts it for `ProvokeSeconds`; Always: charges hunters within `AggroRange`), `LeashRadius` (gives up and walks home past it), `AttackRange`, `AttackWindup` (the dodgeable tell, at least 0.25 s), `AttackCooldown`, `AttackDamage`, `AttackPush`, `ChargeSpeed`, `RegenPerSecond` (heals once left alone). Ground prey only.
 - Boss: `IsBoss` (must be Always aggressive and kill-only), `BossTitle` (the boss bar), `BossRewardCoins` / `BossRewardTrophies` (for every hunter who hurt it). Place it with a `PreySpawner` of count 1 in its den, `summoned: true` (it only comes out for its bait); `Voice = Roar` suits big animals.
 - Boss moves (0 = never): `SlamEvery` / `SlamRadius` / `SlamWindup` / `SlamDamage` / `SlamPush` / `SlamDodgeHeight` (a ground slam all around), `PounceRange` / `PounceSpeed` / `PounceWindup` / `PounceCooldown` (a leap at hunters kiting it), `EnrageBelow` / `EnrageTempo` / `EnrageSpeed` (quicker and faster when low). ADR 0014.
+- Guns: an `UpgradeDefinition` with `Effect = UnlockTool`, `SoldByGunsmith`; `CampGunsmith` also puts it on the camp gunsmiths' counters (the Plains: only the Old Revolver), otherwise only the full armory sells it (`Station(..., CampStationKind.Workshop, ..., fullArmory: true)`, the movement lab).
 - Bait: an `UpgradeDefinition` with `Effect = SummonBoss` and `Summons` (the boss), no tool; it is sold only at a bait stall (`Station(..., CampStationKind.Shop, ..., baitStall: true)` in the scene builder) and used up when bought.
 
 ### Tools (`ToolDefinition`, key `tool.*`)
@@ -37,7 +38,7 @@ Target `Tool`, `Effect` (CaptureStrength +, DamageMultiplier x, Range +, UnlockT
 - Models: follow docs/ASSETS.md (Blender sources in `Art/Source`, exports in `Assets/HowToHunt/Art/Models/<Name>/`).
 
 ## Level geometry
-- Add `SimBrush` to a cube (Box) or a convex mesh (ConvexMesh). Only `SimBrush` objects collide with players; plain meshes are decoration. Props that should block (trees, big rocks) get an invisible box brush (see `GrayboxSceneBuilder.Plains.cs`).
+- Add `SimBrush` to a cube (Box) or a convex mesh (ConvexMesh). Only `SimBrush` objects collide with players; plain meshes are decoration. Props that should block (trees, big rocks) get a box brush the size of the prop (see `GrayboxSceneBuilder.Plains.cs`). Boundaries are never invisible walls: use `RockWall(parent, name, a, b, ground, capTop, rng)` (a rocky ridge whose rock is the collision; only a cap high above it is collision-only).
 - Walkable up to ~45.6° (`sv_standable_normal 0.7`); steeper faces are surfable automatically.
 - Steps up to 0.457 m (`sv_stepsize`) are climbed without jumping. Crouched players fit 1.37 m gaps; standing needs 1.83 m.
 - Surf ramps: use the SurfPrism mesh, sides 50-60°, and tilt the ramp ~5° down along the course so gravity becomes forward speed. Put the start platform *beside* the ramp so players step off onto the slope, not into the ramp's end face.

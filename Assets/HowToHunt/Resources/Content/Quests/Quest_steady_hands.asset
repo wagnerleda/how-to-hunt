@@ -22,8 +22,8 @@ MonoBehaviour:
   Count: 5
   RewardCoins: 120
   Unlocks: 
-  Offer: A net's fine for rabbits. A hunter brings things down. Five of them, any way you like, but no catching alive.
+  Offer: A hunter brings things down. Five of them, no catching alive.
   Task: Take down 5 prey (killed, not caught)
-  Waiting: Five. Down. Off you go.
-  Done: Not bad at all. Tomas has been going on about the fallen trees to the east. Go and see him.
+  Waiting: Five. Down.
+  Done: Not bad. Tomas wants a word about the trees to the east.
   Order: 3

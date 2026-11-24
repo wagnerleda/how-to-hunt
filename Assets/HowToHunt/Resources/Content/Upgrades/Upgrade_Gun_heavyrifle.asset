@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.gun_heavyrifle
   _displayName: Heavy Assault Rifle
-  _description: Sold at the Gunsmith.
+  _description: Sold at the armory in the movement lab.
   Tool: {fileID: 11400000, guid: 25be77ac6b8d15149a488fb2061b9c3b, type: 2}
   Effect: 3
   Value: 0
@@ -24,4 +24,5 @@ MonoBehaviour:
   SortOrder: 150
   Unlisted: 0
   SoldByGunsmith: 1
+  CampGunsmith: 0
   Summons: {fileID: 0}
