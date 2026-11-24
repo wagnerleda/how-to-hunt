@@ -23,4 +23,10 @@ MonoBehaviour:
   Idle: Brakes, cans, stocks... everything's for sale.
   Station: 2
   HasStation: 1
+  VoicePitch: 0.75
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[think] Where did I put that spring...'
+  - Mind your aim out there.
+  - '[shout] Who left a <shake>loaded</shake> gun on my bench?!'
   Mask: 

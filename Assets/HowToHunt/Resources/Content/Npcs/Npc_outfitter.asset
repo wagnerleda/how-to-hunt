@@ -23,4 +23,10 @@ MonoBehaviour:
   Idle: If it tears, bring it back. It won't tear.
   Station: 1
   HasStation: 1
+  VoicePitch: 1.25
+  VoiceClip: {fileID: 0}
+  Barks:
+  - Nets! <wave>Sturdy nets!</wave>
+  - '[whisper] Psst... the bigger bags are in the back.'
+  - Mind the butterflies, they bruise.
   Mask: 

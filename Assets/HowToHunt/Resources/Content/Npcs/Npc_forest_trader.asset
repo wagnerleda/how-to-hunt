@@ -23,4 +23,10 @@ MonoBehaviour:
   Idle: Forest catch sells for more here. Nobody wants to carry it back up.
   Station: 0
   HasStation: 1
+  VoicePitch: 1.05
+  VoiceClip: {fileID: 0}
+  Barks:
+  - The pines are watching.
+  - '[whisper] Walk softly near the deer.'
+  - Stay clear of the south-east glade... <shake>it</shake> sleeps there.
   Mask: 

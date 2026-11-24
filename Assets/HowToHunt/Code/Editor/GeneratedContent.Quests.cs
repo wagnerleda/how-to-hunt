@@ -22,21 +22,25 @@ namespace HowToHunt.Editor
                 "Back again? Show me what you've caught.",
                 "Rabbits keep the lights on, friend.");
             tomas.Idle = "Quiet day. The rabbits by the river logs have been fat this year.";
+            Voice(tomas, 0.9f, "[shout] Fresh catches wanted! Best prices in the Plains!", "Selling? Bring it over here.", "[think] Rabbit stew again tonight...");
             NpcDefinition wren = Npc("outfitter", "Wren", "Outfitter", "Sells nets, knives and the gear to carry more.", CampStationKind.Shop,
                 "You look under-equipped. Let's fix that.",
                 "Need a sturdier net? A bigger bag?",
                 "Everything on the rack is tested on actual rabbits.");
             wren.Idle = "If it tears, bring it back. It won't tear.";
+            Voice(wren, 1.25f, "Nets! <wave>Sturdy nets!</wave>", "[whisper] Psst... the bigger bags are in the back.", "Mind the butterflies, they bruise.");
             NpcDefinition gus = Npc("gunsmith", "Gus", "Gunsmith", "Sells guns and attachments, fits them while you wait.", CampStationKind.Workshop,
                 "Mind the bench. What are we shooting today?",
                 "A good gun's a quiet gun. Mostly.",
                 "Bring it here, I'll make it kick less. Or more, if that's your thing.");
             gus.Idle = "Brakes, cans, stocks... everything's for sale.";
+            Voice(gus, 0.75f, "[think] Where did I put that spring...", "Mind your aim out there.", "[shout] Who left a <shake>loaded</shake> gun on my bench?!");
             NpcDefinition ash = Npc("forest_trader", "Ash", "Forest Trader", "Runs the trading post in the pine forest. Pays well for deer.", CampStationKind.Sell,
                 "You came down the slopes? Then you can hunt here.",
                 "The pines are generous to the patient.",
                 "Deer hear everything. Walk softly.");
             ash.Idle = "Forest catch sells for more here. Nobody wants to carry it back up.";
+            Voice(ash, 1.05f, "The pines are watching.", "[whisper] Walk softly near the deer.", "Stay clear of the south-east glade... <shake>it</shake> sleeps there.");
 
             PreyDefinition deer = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Deer.asset");
 
@@ -95,6 +99,14 @@ namespace HowToHunt.Editor
                 "The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.");
             king.Unlocks = ForestBossFlag;
             EditorUtility.SetDirty(king);
+        }
+
+        /// <summary>How a character sounds (blip pitch) and what they call out as you walk past (bubble markup works).</summary>
+        private static void Voice(NpcDefinition npc, float pitch, params string[] barks)
+        {
+            npc.VoicePitch = pitch;
+            npc.Barks = new List<string>(barks);
+            EditorUtility.SetDirty(npc);
         }
 
         private static NpcDefinition Npc(string id, string name, string role, string description, CampStationKind station, params string[] greetings) =>

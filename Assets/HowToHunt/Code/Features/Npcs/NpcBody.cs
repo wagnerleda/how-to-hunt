@@ -25,7 +25,8 @@ namespace HowToHunt.Npcs
         private static readonly string[] LowerNames = { "Forearm.L", "Forearm.R", "Shin.L", "Shin.R" };
         private static readonly string[] EndNames = { "Hand.L", "Hand.R", "Foot.L", "Foot.R" };
         private Vector3 _headRest;
-        private float _headYaw, _seed;
+        private float _headYaw, _seed, _bodyYaw;
+        private const float BodyTurnLimit = 40f; // while talking the whole body turns toward you, this far at most
         private bool _ready;
 
         private void Awake()
@@ -70,9 +71,19 @@ namespace HowToHunt.Npcs
             bool talking = DialogueBox.TalkingTo == _npc;
             float breath = Mathf.Sin(t * BreathHz * Mathf.PI * 2f) * 0.008f;
 
-            // Look at the local player when close (the head turns, the body stays at the stall).
-            float targetYaw = 0f, targetPitch = 0f;
+            // While talking, the whole body turns toward you (up to BodyTurnLimit); the head does the rest.
             PlayerMotor me = PlayerMotor.Local;
+            float bodyTarget = 0f;
+            if (talking && me != null)
+            {
+                Vector3 local = transform.InverseTransformPoint(me.transform.position);
+                bodyTarget = Mathf.Clamp(Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg, -BodyTurnLimit, BodyTurnLimit);
+            }
+            _bodyYaw = Mathf.Lerp(_bodyYaw, bodyTarget, 1f - Mathf.Exp(-5f * dt));
+            _figure.localRotation = Quaternion.Euler(0f, _bodyYaw, 0f);
+
+            // Look at the local player when close (the head turns, the body stays at the stall unless talking).
+            float targetYaw = 0f, targetPitch = 0f;
             if (me != null)
             {
                 Vector3 to = _figure.InverseTransformPoint(me.transform.position + Vector3.up * 0.7f) - _headRest;
