@@ -81,3 +81,16 @@ numbers: ADR 0014.
 
 Surf ramps are orange with cream bands across the slope and a dark ridge line (they shared the water's blue and
 were hard to see). A frame rate limit (Settings, or `fps_max`) now replaces vertical sync while it is set.
+
+## Menus, dialogue and gamepad (2026-11-24, ADR 0015)
+Menus come in as a cascade over a warm, living background (pollen, sun, sky tint; the game dims behind the pause
+menu); the focused item glows and grows, presses squash, every action has a soft sound. Characters speak in
+speech bubbles over their heads (normal, shout, whisper, thought, narration), typed out with their own voice;
+replies are pills at the bottom. A floating "!" marks a character with a quest for you, "?" one waiting for a
+quest you finished, "..." one close enough to talk to; characters call out as you pass and turn to face you when
+you talk. Settings: menu and dialogue sound volume, "Reduce animations" (fades only).
+
+Gamepad (Xbox layout, works with keyboard and mouse at the same time): left stick move, right stick look, A jump,
+B crouch, left stick click sprint, RT fire, LT aim, X interact, Y reload, RB throw (hold), right stick click
+inspect, D-pad left/right hotbar, View scoreboard, Start menu. Menus and dialogue: D-pad or stick to choose, A to
+confirm, B to go back. Look speed, dead zone and invert in Settings.

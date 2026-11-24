@@ -50,3 +50,16 @@ Keep hazard boxes below the tops of platforms so standing players never overlap 
 
 ## After changing the map
 Run How to Hunt > Rebuild Graybox Scene (exports collision), then How to Hunt > Movement > Regenerate Scripted Demos if the change is intended, and run the tests.
+
+## Writing dialogue (ADR 0015)
+Camp characters are `NpcDefinition` assets (`npc.*`, written by `GeneratedContent.Quests.cs`): `Greetings` (one at
+random when you walk up), `Idle`, `Barks` (short lines called out as you pass), `VoicePitch` (0.5-2: the pitch of
+their voice blips) and an optional `VoiceClip` (one syllable of their own voice). Quest lines are in
+`QuestDefinition` (`Offer`, `Waiting`, `Done`).
+- A blank line in a line starts a new page (the player presses Interact to go on).
+- Start a line (or page) with a style: `[shout]`, `[whisper]`, `[think]`, `[narrate]` (default: normal speech).
+- Inside: `<shake>scared</shake>`, `<wave>hello</wave>`, and TextMeshPro tags (`<b>`, `<i>`, `<color=#c33>`).
+- New character: add an `Npc(...)` and `Voice(...)` in `GeneratedContent.Quests.cs`, place it with `NpcAt` in the
+  scene builder (behind a stall), rebuild content and scene. Quests name their giver.
+- Look and timing (typing speed, pauses, bubble size, colours per style, barks, markers): the `DialogueTheme` asset
+  in Resources/UI, in the Inspector. Menus: the `MenuTheme` asset next to it.

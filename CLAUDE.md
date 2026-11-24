@@ -15,7 +15,7 @@
 - Branch `dev`; small commits; never push; tag checkpoints (`m0-setup`, `m1-movement-lab`, ...).
 - Foundation and Sim must not reference UnityEngine. Use `System.Numerics`, convert with `VectorConvert`.
 - No allocations in per-tick/per-frame gameplay code (no LINQ/closures in loops, pool everything). Add an allocation test for new hot paths with `AllocationAssert.None` (`GC.GetAllocatedBytesForCurrentThread` is always 0 on Unity's Mono: never measure with it).
-- IMGUI only through `ImGuiHost`, switched on while the panel is on screen (an enabled `OnGUI` allocates every frame even when it returns at once).
+- UI is uGUI + TextMeshPro. Look-and-feel numbers live in `MenuTheme` / `DialogueTheme` (Resources/UI), motion uses `Ease` and respects `UiFeel.Calm` (ui_reduce_motion); menus and dialogue navigate through `UiInput` (keyboard + gamepad); every gameplay action also has a gamepad button in `KeyBindings`. IMGUI is left only in the console and the mask editor, always through `ImGuiHost` (an enabled `OnGUI` allocates every frame).
 - One MonoBehaviour per file, file named after the class (player builds break otherwise).
 - Every tunable is a cvar (Archive for settings, `Replicated|Cheat` for sv_*). No magic numbers in gameplay code.
 - Content is ScriptableObjects deriving `ContentDefinition`; keys are permanent; `ContentValidationTests` must pass.

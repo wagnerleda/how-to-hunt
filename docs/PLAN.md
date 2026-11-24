@@ -79,6 +79,14 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 5 | **Forest animals and quests**: red squirrel, red fox, wild boar (charges when hurt); four new Ash quests | "more missions with other animals in the second biome" |
 | 6 | **Boss system** (ADR 0014) and the forest boss, the Old Bear of the Pines: den, boss bar, telegraphed strikes, shared reward, Ash's last quest | "a boss for each biome from the forest on" |
 
+## Phase 6.3: juicier menus, speech bubbles, gamepad (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | Speech bubbles over the speaker (five styles, always on screen, pop-in), typed with voices and inline effects, paged lines | "replace the basic dialogue box with speech bubbles" |
+| 2 | Reply pills (keyboard, mouse, gamepad), approach markers, characters turn to you, barks | "choices as bubbles or styled buttons", "approach indicator", "barks" |
+| 3 | Menus in uGUI: cascade, transitions, focus/hover/press, selector, animated title, living background, sounds, "Reduce animations" | "a menu that feels polished and responsive" |
+| 4 | Gamepad for the whole game (move, look, every action, hotbar, shop, workshop, menus) | "whole game" (owner's choice) |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

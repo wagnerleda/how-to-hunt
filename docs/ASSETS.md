@@ -35,6 +35,9 @@ Every asset and third-party package is listed here with its source and license. 
 | Pine Deer | Modelled in Blender for this game (`Art/Source/Deer.blend`) | Ours | `Art/Models/Deer/Deer.fbx`, 332 faces |
 | Red squirrel, red fox, wild boar, the Old Bear | Procedural (`CreatureModels.cs`): flat-shaded tapered blocks in vertex colours | Ours | `Prefabs/Prey/*.prefab`, M_Terrain; placeholders a Blender model can replace via `Visual` |
 | Surf ramp bands (`T_SurfRamp.png`, `M_SurfRamp`) | Generated (`Palette.cs`) | Ours | 64 px; orange, cream bands, dark ridge and base lines |
+| UI shapes (rounded panels, bubble tail, circle, glow), menu sky and vignette | Procedural at runtime (`UiSprites.cs`, `MenuBackdrop.cs`) | Ours | no files |
+| Voice blips | Procedural (`ProceduralSounds.Blip`) | Ours | pitched per character; `NpcDefinition.VoiceClip` can replace it |
+| Menu sounds (tick, confirmation, drop, maximize, error, toggle) | Kenney Interface Sounds, already listed above | CC0 1.0 | `UiFeel` |
 | Palette materials `M_*` | Generated (`Palette.cs`) | Ours | Art direction A |
 | Scout rifle, attachment models | Generated from primitives (`GeneratedAssets.cs`) | Ours | Stand-ins until the owner's gun assets land |
 
