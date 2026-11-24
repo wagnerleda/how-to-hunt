@@ -282,8 +282,8 @@ namespace HowToHunt.Editor
                 Vector3 at = OnGround(den + new Vector3(Range(rng, -6f, 6f), 0f, Range(rng, -6f, 6f)));
                 Visual(props, "Bone", at + new Vector3(0f, 0.06f, 0f), new Vector3(0.09f, 0.09f, Range(rng, 0.5f, 0.9f)), "Wall", Range(rng, 0f, 360f));
             }
-            Sign(signs, "BEAR DEN\n<size=55%>the Old Bear of the Pines sleeps here - come in numbers</size>", den + new Vector3(-14f, 3.4f, 0f), 90f, 1.2f);
-            Spawner(forest, "Boss Old Bear", "prey.old_bear", den + new Vector3(0f, 0.3f, 0f), 1, 2f, 420f);
+            Sign(signs, "BEAR DEN\n<size=55%>the Old Bear of the Pines sleeps here - a bait from Ash's camp wakes it</size>", den + new Vector3(-14f, 3.4f, 0f), 90f, 1.2f);
+            Spawner(forest, "Boss Old Bear", "prey.old_bear", den + new Vector3(0f, 0.3f, 0f), 1, 2f, 0f, summoned: true);
         }
 
         private static void BuildForestBoundary(Transform forest)
@@ -347,6 +347,10 @@ namespace HowToHunt.Editor
             // Ash's trading post: forest prices (x1.5), so a full forest bag is worth carrying here.
             Station(camp, signs, CampStationKind.Sell, "Trading Post", "TRADING POST\n<size=55%>forest prices x1.5</size>",
                 c + new Vector3(7f, 0f, 0f), 90f, "npc.forest_trader", ForestExpectedSale, ForestPriceMultiplier);
+
+            // The bait stall: the Honeycomb Bait wakes the Old Bear in its den (the boss only comes out for a bait).
+            Station(camp, signs, CampStationKind.Shop, "Bait Stall", "BAIT STALL\n<size=55%>wake the Old Bear</size>",
+                c + new Vector3(1f, 0f, 7f), 0f, baitStall: true);
 
             // The quick way back: a pad to the Plains camp.
             Transform home = Marker(zones, "Plains Camp Arrival", CampCenter + new Vector3(0f, 0f, -4.5f), 0f);

@@ -209,7 +209,36 @@ namespace HowToHunt.Hunting
         private static void HostSpawnAll()
         {
             if (Instances.Count == 0) Build();
-            foreach (PreyInstance p in Instances) HostSpawn(p);
+            foreach (PreyInstance p in Instances)
+            {
+                if (p.Spawner.Summoned) { p.Alive = false; p.RespawnAt = 0f; continue; } // waits for its bait
+                HostSpawn(p);
+            }
+        }
+
+        /// <summary>Is one of these (a summoned boss) out of its den right now? Host and clients.</summary>
+        public static bool IsOut(PreyDefinition def)
+        {
+            for (int i = 0; i < Instances.Count; i++)
+                if (Instances[i].Def == def && Instances[i].Alive) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Host: a bait was bought: wake a summoned prey (a boss) in its den. False when there is none in this level or
+        /// it is already out.
+        /// </summary>
+        public static bool HostSummon(PreyDefinition def)
+        {
+            if (!IsHost || def == null || IsOut(def)) return false;
+            for (int i = 0; i < Instances.Count; i++)
+            {
+                PreyInstance p = Instances[i];
+                if (p.Def != def || !p.Spawner.Summoned) continue;
+                HostSpawn(p);
+                return true;
+            }
+            return false;
         }
 
         private static void HostSpawn(PreyInstance p)
@@ -245,7 +274,7 @@ namespace HowToHunt.Hunting
         public static void HostRemove(PreyInstance p)
         {
             p.Alive = false;
-            p.RespawnAt = Time.time + p.Spawner.RespawnSeconds;
+            p.RespawnAt = p.Spawner.Summoned ? 0f : Time.time + p.Spawner.RespawnSeconds; // a summoned boss waits for the next bait
             Broadcast(p);
         }
 
@@ -290,9 +319,15 @@ namespace HowToHunt.Hunting
             if (attacker >= 0 && !p.Damagers.Contains(attacker)) p.Damagers.Add(attacker);
         }
 
-        /// <summary>Host: an aggressive animal's strike lands on every standing hunter in front of it and in reach.</summary>
-        private static void HostStrike(PreyInstance p, in PreyBehavior b)
+        /// <summary>
+        /// Host: an aggressive animal's strike lands: a swipe on every standing hunter in front of it and in reach, a
+        /// slam on every standing hunter on the ground around it (thrown outward).
+        /// </summary>
+        private static void HostStrike(PreyInstance p, in PreyBehavior b, PreyStrike strike)
         {
+            bool slam = strike == PreyStrike.Slam;
+            float damage = slam ? p.Def.SlamDamage : p.Def.AttackDamage;
+            float pushSpeed = slam ? p.Def.SlamPush : p.Def.AttackPush;
             var players = PlayerMotor.All;
             float hullY = MovementCvars.Config.HullHalfExtents.Y;
             for (int k = 0; k < players.Count; k++)
@@ -301,12 +336,15 @@ namespace HowToHunt.Hunting
                 PlayerHealth health = m.GetComponent<PlayerHealth>();
                 if (health == null || health.Downed) continue;
                 Vec3 feet = m.State.Position - new Vec3(0f, hullY, 0f);
-                if (!PreyBrain.StrikeReaches(in p.State, in b, feet, HuntingCvars.StrikeReachSlack.Value, HuntingCvars.StrikeHeightSlack.Value)) continue;
-                health.HostDamage(p.Def.AttackDamage, -1);
+                bool reaches = slam
+                    ? PreyBrain.SlamReaches(in p.State, in b, feet, HuntingCvars.StrikeReachSlack.Value, HuntingCvars.StrikeHeightSlack.Value)
+                    : PreyBrain.StrikeReaches(in p.State, in b, feet, HuntingCvars.StrikeReachSlack.Value, HuntingCvars.StrikeHeightSlack.Value);
+                if (!reaches) continue;
+                health.HostDamage(damage, -1);
                 Vector3 away = (feet - p.State.Position).ToUnity();
                 away.y = 0f;
                 away = away.sqrMagnitude > 1e-4f ? away.normalized : Quaternion.Euler(0f, p.State.Yaw, 0f) * Vector3.forward;
-                m.HostPush(away * p.Def.AttackPush + Vector3.up * (p.Def.AttackPush * HuntingCvars.StrikeLift.Value));
+                m.HostPush(away * pushSpeed + Vector3.up * (pushSpeed * HuntingCvars.StrikeLift.Value));
             }
         }
 
@@ -378,7 +416,8 @@ namespace HowToHunt.Hunting
                 }
                 if (aggressive)
                 {
-                    if (PreyBrain.StepAggressive(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt)) HostStrike(p, in b);
+                    PreyStrike strike = PreyBrain.StepAggressive(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt);
+                    if (strike != PreyStrike.None) HostStrike(p, in b, strike);
                     // Left alone for a while (everyone ran or went down), a fighter licks its wounds back to full; a
                     // boss that heals completely forgets who fought it.
                     if (p.Def.RegenPerSecond > 0f && p.Health < p.Def.MaxHealth && time - p.LastHurtAt > HuntingCvars.RegenDelay.Value)

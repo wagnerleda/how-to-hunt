@@ -24,3 +24,4 @@ MonoBehaviour:
   SortOrder: 60
   Unlisted: 1
   SoldByGunsmith: 0
+  Summons: {fileID: 0}

@@ -20,10 +20,18 @@ namespace HowToHunt.Hunting
         }
 
         /// <summary>An aggressive animal winds up a strike: its cry, louder and lower than a hit, heard from further.</summary>
-        public static void PlayWindup(PreyDefinition prey, Vector3 at)
+        public static void PlayWindup(PreyDefinition prey, Vector3 at, bool heavy = false)
         {
             if (prey == null) return;
-            Sfx.PlayAt(For(prey.Voice), at, prey.IsBoss ? 1f : 0.8f, Random.Range(0.8f, 0.9f) * (prey.IsBoss ? 0.8f : 1f));
+            // A slam's roar is deeper: the cue that this one hits all around.
+            Sfx.PlayAt(For(prey.Voice), at, prey.IsBoss ? 1f : 0.8f, Random.Range(0.8f, 0.9f) * (prey.IsBoss ? 0.8f : 1f) * (heavy ? 0.75f : 1f));
+        }
+
+        /// <summary>A ground slam lands: a heavy thud.</summary>
+        public static void PlaySlam(Vector3 at)
+        {
+            Sfx.PlayAt("Kenney/impactPunch_heavy", at, 1f, Random.Range(0.5f, 0.6f));
+            Sfx.PlayAt("Kenney/impactSoft_heavy", at, 1f, Random.Range(0.6f, 0.7f));
         }
 
         /// <summary>A hit (killed = lower and louder, the last cry).</summary>

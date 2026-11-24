@@ -70,14 +70,15 @@ New forest prey, each with an Ash quest after "Ghost of the Pines":
 | Red Squirrel | 6 | either (Sturdy Net holds it) | 9, stacks 4 | darts off, tires after 3 s | Quick Paws: catch 3 alive (150) |
 | Red Fox | 25 | either (no net strong enough yet) | 28 | wary (sees 40 m), outruns a sprint for 5 s | The Sly One: take down 2 (220) |
 | Wild Boar | 90 | kill only | 60 | flees, but **charges whoever hurts it** for 9 s: 15 damage a hit, after a short rear-up | Tusks and Temper: kill 3 (300) |
-| **The Old Bear of the Pines** (boss) | 1,500 | kill only | 250 carcass | guards its den (south-east glade), charges any hunter within 24 m: 35 damage a swipe after a 0.75 s roar; gives up 42 m from its den and heals if everyone runs | The Old Bear: bring it down (800) |
+| **The Old Bear of the Pines** (boss) | 3,000 | kill only | 250 carcass | sleeps until a Honeycomb Bait is bought at the Bait Stall in Ash's camp (150 coins); charges any hunter within 30 m: 40-damage swipes after a 0.65 s roar, a ground slam every third strike (50 damage all around, deeper roar: get out or jump), a pounce at hunters 4.5-13 m away (crouches first: sidestep); enraged below 40 % (quicker, faster); gives up 55 m from its den and heals if everyone runs | The Old Bear: bring it down (800) |
 
 **Bosses** (one per biome from the forest on; the others come later): a boss bar shows its health to everyone
-nearby; the party hears when it wakes and when it falls; every hunter who hurt it gets its reward (the bear: 400
-coins and 25 trophies each, plus the quest credit), the killer also gets the carcass. A boss respawns a few minutes
-after it falls (the bear: 7). Fair to fight: every strike is telegraphed (the animal rears back and cries), a charge is
-slower than a sprint or a bunny hop, jumping over a swipe dodges it, and downed hunters are left alone. Rules and
-numbers: ADR 0014.
+nearby; the party hears when it wakes and when it falls; every hunter who hurt it gets its reward (the bear: 650
+coins and 35 trophies each, plus the quest credit), the killer also gets the carcass. A boss only comes out when a
+hunter buys its bait (used up; not again while it is out). Fair to fight: every strike is telegraphed (a rear-up and
+a cry for a swipe, a higher rear-up and a deeper roar for a slam, a low crouch before a pounce), a charge is about a
+sprint (a bunny hop outruns it), jumping over a swipe or a slam dodges it, and downed hunters are left alone. Rules
+and numbers: ADR 0014.
 
 Surf ramps are orange with cream bands across the slope and a dark ridge line (they shared the water's blue and
 were hard to see). A frame rate limit (Settings, or `fps_max`) now replaces vertical sync while it is set.

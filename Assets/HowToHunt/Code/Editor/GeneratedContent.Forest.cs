@@ -138,11 +138,11 @@ namespace HowToHunt.Editor
                 p.Voice = PreyVoice.Grunt;
             });
 
-            Asset<PreyDefinition>("Prey/Prey_OldBear", "prey.old_bear", "Old Bear of the Pines",
-                "The forest's boss. Guards its den in the south-east glade and charges any hunter within 24 m: 35 damage a swipe, after a roar you can dodge. 1,500 health, regains it if everyone runs. Every hunter who hurts it shares the reward.", p =>
+            PreyDefinition bear = Asset<PreyDefinition>("Prey/Prey_OldBear", "prey.old_bear", "Old Bear of the Pines",
+                "The forest's boss, woken by the Honeycomb Bait sold at Ash's camp. Charges any hunter within 30 m: 40-damage swipes after a roar, a ground slam every third strike (50 damage all around: jump or get away), a pounce at hunters who keep their distance. 3,000 health; enraged below 40 %. Regains health if everyone runs. Every hunter who hurts it shares the reward.", p =>
             {
                 p.Allowed = TakedownMethods.Kill;
-                p.MaxHealth = 1500f;
+                p.MaxHealth = 3000f;
                 p.CaptureDifficulty = 999f;
                 p.MinKillTier = 2;
                 p.OverkillRatio = 100f;  // nothing ruins it
@@ -164,21 +164,34 @@ namespace HowToHunt.Editor
                 p.StunSeconds = 0.08f;   // a flinch, never a stun-lock
                 p.HalfExtents = new Vector3(0.55f, 0.8f, 0.95f);
                 p.Aggression = PreyAggression.Always;
-                p.AggroRange = 24f;
-                p.LeashRadius = 42f;     // lead it further from its den and it walks home
-                p.AttackRange = 2.6f;
-                p.AttackWindup = 0.75f;  // the roar: time to jump aside or back off
-                p.AttackCooldown = 1.3f;
-                p.AttackDamage = 35f;    // three swipes put a hunter down
-                p.AttackPush = 11f;
-                p.ChargeSpeed = 7f;      // faster than a run, slower than a sprint or a bunny hop: kite it
-                p.ProvokeSeconds = 10f;
-                p.RegenPerSecond = 60f;
+                p.AggroRange = 30f;
+                p.LeashRadius = 55f;     // lead it further from its den and it walks home
+                p.AttackRange = 2.8f;
+                p.AttackWindup = 0.65f;  // the roar: time to jump aside or back off
+                p.AttackCooldown = 1.05f;
+                p.AttackDamage = 40f;    // three swipes put a hunter down
+                p.AttackPush = 12f;
+                p.ChargeSpeed = 7.2f;    // faster than a run, about a sprint: bunny hop to kite it
+                p.ProvokeSeconds = 12f;
+                p.RegenPerSecond = 80f;
+                p.SlamEvery = 3;         // every third strike: rears up high and crashes down
+                p.SlamRadius = 5.5f;
+                p.SlamWindup = 1f;       // a deeper roar: get out of the circle or jump as it lands
+                p.SlamDamage = 50f;
+                p.SlamPush = 15f;
+                p.SlamDodgeHeight = 0.5f;
+                p.PounceRange = 13f;     // kiting at the edge of its reach no longer works
+                p.PounceSpeed = 16f;
+                p.PounceWindup = 0.55f;  // crouches low: sidestep
+                p.PounceCooldown = 5f;
+                p.EnrageBelow = 0.4f;
+                p.EnrageTempo = 0.72f;
+                p.EnrageSpeed = 1.1f;
                 p.WanderRadius = 5f;     // stays in its den until someone comes near
                 p.IsBoss = true;
                 p.BossTitle = "The Old Bear of the Pines";
-                p.BossRewardCoins = 400;
-                p.BossRewardTrophies = 25;
+                p.BossRewardCoins = 650;
+                p.BossRewardTrophies = 35;
                 p.Visual = AssetDatabase.LoadAssetAtPath<GameObject>(CreatureModels.PrefabPath("OldBear"));
                 p.VisualScale = 1f;
                 p.Noun = "the Old Bear";
@@ -187,6 +200,21 @@ namespace HowToHunt.Editor
                 p.GibCount = 16;
                 p.StackSize = 1;
                 p.Voice = PreyVoice.Roar;
+            });
+
+            // The bear sleeps until a hunter buys its bait at the bait stall in Ash's camp (owner request, 2026-11-24).
+            Asset<UpgradeDefinition>("Upgrades/Upgrade_BearBait", "upgrade.bait_old_bear", "Honeycomb Bait",
+                "Its smell carries to the den. Come in numbers.", u =>
+            {
+                u.Tool = null;
+                u.Effect = UpgradeEffect.SummonBoss;
+                u.Summons = bear;
+                u.Value = 0f;
+                u.CostCoins = 150;
+                u.SortOrder = 100;
+                u.Requires = null;
+                u.Unlisted = false;
+                u.SoldByGunsmith = false;
             });
         }
     }

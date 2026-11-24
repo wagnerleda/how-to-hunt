@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
   _key: prey.old_bear
   _displayName: Old Bear of the Pines
-  _description: 'The forest''s boss. Guards its den in the south-east glade and charges any hunter within 24 m: 35 damage a swipe, after a roar you can dodge. 1,500 health, regains it if everyone runs. Every hunter who hurts it shares the reward.'
+  _description: 'The forest''s boss, woken by the Honeycomb Bait sold at Ash''s camp. Charges any hunter within 30 m: 40-damage swipes after a roar, a ground slam every third strike (50 damage all around: jump or get away), a pounce at hunters who keep their distance. 3,000 health; enraged below 40 %. Regains health if everyone runs. Every hunter who hurts it shares the reward.'
   Allowed: 2
-  MaxHealth: 1500
+  MaxHealth: 3000
   CaptureDifficulty: 999
   MinKillTier: 2
   OverkillRatio: 100
@@ -49,20 +49,33 @@ MonoBehaviour:
   TiredSpeed: 4
   HalfExtents: {x: 0.55, y: 0.8, z: 0.95}
   Aggression: 2
-  AggroRange: 24
-  LeashRadius: 42
-  AttackRange: 2.6
-  AttackWindup: 0.75
-  AttackCooldown: 1.3
-  AttackDamage: 35
-  AttackPush: 11
-  ChargeSpeed: 7
-  ProvokeSeconds: 10
-  RegenPerSecond: 60
+  AggroRange: 30
+  LeashRadius: 55
+  AttackRange: 2.8
+  AttackWindup: 0.65
+  AttackCooldown: 1.05
+  AttackDamage: 40
+  AttackPush: 12
+  ChargeSpeed: 7.2
+  ProvokeSeconds: 12
+  RegenPerSecond: 80
+  SlamEvery: 3
+  SlamRadius: 5.5
+  SlamWindup: 1
+  SlamDamage: 50
+  SlamPush: 15
+  SlamDodgeHeight: 0.5
+  PounceRange: 13
+  PounceSpeed: 16
+  PounceWindup: 0.55
+  PounceCooldown: 5
+  EnrageBelow: 0.4
+  EnrageTempo: 0.72
+  EnrageSpeed: 1.1
   IsBoss: 1
   BossTitle: The Old Bear of the Pines
-  BossRewardCoins: 400
-  BossRewardTrophies: 25
+  BossRewardCoins: 650
+  BossRewardTrophies: 35
   Visual: {fileID: 2243749318645970807, guid: 00c46503249a0d44b94a33415eeeb4eb, type: 3}
   VisualScale: 1
   Noun: the Old Bear

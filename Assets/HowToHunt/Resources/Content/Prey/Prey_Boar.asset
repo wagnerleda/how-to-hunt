@@ -59,6 +59,19 @@ MonoBehaviour:
   ChargeSpeed: 7.4
   ProvokeSeconds: 9
   RegenPerSecond: 0
+  SlamEvery: 0
+  SlamRadius: 5
+  SlamWindup: 1
+  SlamDamage: 40
+  SlamPush: 12
+  SlamDodgeHeight: 0.5
+  PounceRange: 0
+  PounceSpeed: 15
+  PounceWindup: 0.55
+  PounceCooldown: 6
+  EnrageBelow: 0
+  EnrageTempo: 0.75
+  EnrageSpeed: 1.1
   IsBoss: 0
   BossTitle: 
   BossRewardCoins: 0

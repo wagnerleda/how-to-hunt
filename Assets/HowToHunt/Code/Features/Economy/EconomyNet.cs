@@ -43,7 +43,7 @@ namespace HowToHunt.Economy
         BossReward,
     }
 
-    public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull }
+    public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull, BossAwake, NoBossHere }
 
     /// <summary>A whole economy profile on the wire, plus what just happened. Small (tens of bytes plus the slots).</summary>
     public struct EconomyStateBroadcast : IBroadcast
@@ -326,8 +326,17 @@ namespace HowToHunt.Economy
         {
             UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(new ContentId(upgradeId));
             EconomyRefusal why = CanBuy(p, u);
-            if (why == EconomyRefusal.None && !NearStation(conn, u.SoldByGunsmith ? CampStationKind.Workshop : CampStationKind.Shop)) why = EconomyRefusal.NotAtStation;
+            if (why == EconomyRefusal.None && !NearSeller(conn, u)) why = EconomyRefusal.NotAtStation;
             if (why != EconomyRefusal.None) { Refuse(conn, p, why, upgradeId); return; }
+            if (u.IsBait)
+            {
+                // A bait is used up at once: the boss wakes in its den (for the whole party). Never owned.
+                if (!PreyWorld.HostSummon(u.Summons)) { Refuse(conn, p, EconomyRefusal.NoBossHere, upgradeId); return; }
+                p.Coins -= u.CostCoins;
+                p.Trophies -= u.CostTrophies;
+                Send(conn, p, EconomyEvent.Bought, content: upgradeId, coins: u.CostCoins);
+                return;
+            }
             p.Coins -= u.CostCoins;
             p.Trophies -= u.CostTrophies;
             p.Upgrades.Add(upgradeId);
@@ -480,7 +489,8 @@ namespace HowToHunt.Economy
         {
             if (u == null) return EconomyRefusal.Unknown;
             if (u.Unlisted) return EconomyRefusal.Locked;
-            if (p.Owns(u.Id.Value)) return EconomyRefusal.AlreadyOwned;
+            if (u.IsBait && PreyWorld.IsOut(u.Summons)) return EconomyRefusal.BossAwake;
+            if (!u.IsBait && p.Owns(u.Id.Value)) return EconomyRefusal.AlreadyOwned;
             if (u.Requires != null && !p.Owns(u.Requires.Id.Value)) return EconomyRefusal.Locked;
             if (p.Coins < u.CostCoins || p.Trophies < u.CostTrophies) return EconomyRefusal.TooPoor;
             return EconomyRefusal.None;
@@ -488,6 +498,14 @@ namespace HowToHunt.Economy
 
         private static void Refuse(NetworkConnection conn, EconomyProfile p, EconomyRefusal why, uint content = 0)
             => Send(conn, p, EconomyEvent.Refused, content: content, refusal: why);
+
+        /// <summary>Near the station that sells this: the Gunsmith (guns), a bait stall (baits) or an outfitter.</summary>
+        private static bool NearSeller(NetworkConnection conn, UpgradeDefinition u)
+        {
+            if (u.SoldByGunsmith) return NearStation(conn, CampStationKind.Workshop);
+            PlayerMotor motor = MotorOf(conn.ClientId);
+            return motor != null && CampStation.NearestShop(motor.transform.position, u.IsBait, StationReach.Value) != null;
+        }
 
         private static bool NearStation(NetworkConnection conn, CampStationKind kind)
         {

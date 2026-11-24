@@ -31,6 +31,7 @@ namespace HowToHunt.Economy
         private bool _closeRequested;
         private int _openedFrame;
         private readonly List<Row> _rowList = new List<Row>();
+        private bool _rowsForBaits;
 
         private sealed class Row
         {
@@ -112,7 +113,7 @@ namespace HowToHunt.Economy
             s._open = true;
             s._openedFrame = Time.frameCount;
             s._title.SetText(station != null ? station.Label : "Shop");
-            s.BuildRows();
+            s.BuildRows(station != null && station.BaitStall);
             s.Refresh();
             s._panel.gameObject.SetActive(true);
             Game.PushUiFocus(s);
@@ -130,15 +131,19 @@ namespace HowToHunt.Economy
             Sfx.Play2D("Kenney/close_001", 0.35f);
         }
 
-        private void BuildRows()
+        private void BuildRows(bool baits)
         {
-            if (_rowList.Count > 0) return;
+            if (_rowList.Count > 0 && _rowsForBaits == baits) return;
+            // An outfitter and a bait stall sell different things: rebuild when switching between them.
+            for (int i = 0; i < _rowList.Count; i++) Destroy(_rowList[i].ButtonImage.transform.parent.gameObject);
+            _rowList.Clear();
+            _rowsForBaits = baits;
             IReadOnlyList<UpgradeDefinition> all = Loadouts.AllUpgrades;
             int shown = 0;
             for (int i = 0; i < all.Count; i++)
             {
                 UpgradeDefinition u = all[i];
-                if (u.Unlisted || u.SoldByGunsmith) continue; // not sold here (later areas, quests; guns at the Gunsmith)
+                if (u.Unlisted || u.SoldByGunsmith || u.IsBait != baits) continue; // not sold here (later areas, quests; guns at the Gunsmith; baits at bait stalls)
                 float y = -(shown++) * (RowHeight + 8f);
                 Image bg = Hud.Rect($"Row {u.Key}", new Vector2(0.5f, 1f), Vector2.zero, new Vector2(860f, RowHeight), RowColor);
                 RectTransform rt = bg.rectTransform;
@@ -206,7 +211,7 @@ namespace HowToHunt.Economy
         {
             EconomyProfile p = EconomyNet.Local;
             _wallet.SetText($"You have {p.Coins.ToShortString()} coins");
-            _reclaim.gameObject.SetActive(p.MissingTools().Count > 0);
+            _reclaim.gameObject.SetActive(!_rowsForBaits && p.MissingTools().Count > 0);
             foreach (Row row in _rowList)
             {
                 UpgradeDefinition u = row.Upgrade;
@@ -226,6 +231,10 @@ namespace HowToHunt.Economy
                         break;
                     case EconomyRefusal.Locked:
                         row.ButtonLabel.SetText("Locked");
+                        row.ButtonImage.color = DisabledColor;
+                        break;
+                    case EconomyRefusal.BossAwake:
+                        row.ButtonLabel.SetText("Awake");
                         row.ButtonImage.color = DisabledColor;
                         break;
                     default:
@@ -248,6 +257,7 @@ namespace HowToHunt.Economy
                 case UpgradeEffect.Range: effect = $"{tool}: +{u.Value:0.#} m reach"; break;
                 case UpgradeEffect.UnlockTool: effect = $"Unlocks the {tool}"; break;
                 case UpgradeEffect.InventorySlots: effect = $"+{u.Value:0} inventory slots"; break;
+                case UpgradeEffect.SummonBoss: effect = u.Summons != null ? $"Wakes {u.Summons.Noun} (used up)" : "A bait"; break;
                 default: effect = string.Empty; break;
             }
             if (u.Requires != null) effect += $"   · needs {u.Requires.DisplayName}";
@@ -260,7 +270,7 @@ namespace HowToHunt.Economy
             UiInput.KeepGamepadSelection(_panel); // gamepad: D-pad/stick and A drive the buttons
             bool close = KeyBindings.WasPressedThisFrame(GameAction.Interact) || UiInput.Back; // Esc or gamepad B
             if (PlayerMotor.Local == null || _station == null) close = true;
-            else if (CampStation.Nearest(PlayerMotor.Local.transform.position, CampStationKind.Shop, 1.5f) == null) close = true;
+            else if (CampStation.NearestShop(PlayerMotor.Local.transform.position, _rowsForBaits, 1.5f) == null) close = true;
             // Close at the end of the frame so the pause menu doesn't also see this Escape press.
             if (close) _closeRequested = true;
         }

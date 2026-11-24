@@ -19,6 +19,8 @@ namespace HowToHunt.Hunting
         UnlockTool,
         /// <summary>+Value inventory slots (no tool).</summary>
         InventorySlots,
+        /// <summary>A bait, used up when bought: wakes <see cref="UpgradeDefinition.Summons"/> (a boss) in its den. Sold at bait stalls.</summary>
+        SummonBoss,
     }
 
     /// <summary>Something to buy at camp. Effects stack in the order bought; the shop explains them.</summary>
@@ -39,11 +41,18 @@ namespace HowToHunt.Hunting
         public bool Unlisted;
         [Tooltip("Sold at the Gunsmith (guns) instead of the Outfitter.")]
         public bool SoldByGunsmith;
+        [Tooltip("SummonBoss: the boss this bait wakes (it must have a summoned spawner in the level).")]
+        public PreyDefinition Summons;
+
+        /// <summary>A bait: bought again and again, never owned, sold at bait stalls only.</summary>
+        public bool IsBait => Effect == UpgradeEffect.SummonBoss;
 
         public override void Validate(List<string> errors)
         {
             base.Validate(errors);
-            if (Tool == null && Effect != UpgradeEffect.InventorySlots) errors.Add("Tool missing.");
+            if (Tool == null && Effect != UpgradeEffect.InventorySlots && Effect != UpgradeEffect.SummonBoss) errors.Add("Tool missing.");
+            if (Effect == UpgradeEffect.SummonBoss && (Summons == null || !Summons.IsBoss)) errors.Add("A bait must summon a boss.");
+            if (Effect == UpgradeEffect.SummonBoss && SoldByGunsmith) errors.Add("Baits are sold at bait stalls, not the Gunsmith.");
             if (CostCoins < 0 || CostTrophies < 0) errors.Add("Costs must be >= 0.");
             if (Requires == this) errors.Add("An upgrade can't require itself.");
         }

@@ -14,6 +14,8 @@ namespace HowToHunt.Hunting
         [SerializeField] private int _count = 6;
         [SerializeField] private float _radius = 12f;
         [SerializeField] private float _respawnSeconds = 20f;
+        [Tooltip("Appears only when summoned (a boss woken by a bait bought at camp), never on its own.")]
+        [SerializeField] private bool _summoned;
 
         private static readonly List<PreySpawner> Registered = new List<PreySpawner>();
 
@@ -30,9 +32,11 @@ namespace HowToHunt.Hunting
         public int Count => _count;
         public float Radius => _radius;
         public float RespawnSeconds => _respawnSeconds;
+        public bool Summoned => _summoned;
 
-        public void Configure(PreyDefinition prey, int count, float radius, float respawnSeconds)
+        public void Configure(PreyDefinition prey, int count, float radius, float respawnSeconds, bool summoned = false)
         {
+            _summoned = summoned;
             _prey = prey;
             _count = count;
             _radius = radius;

@@ -126,6 +126,7 @@ namespace HowToHunt.Economy
                     if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null)
                         HuntFeedback.Message($"{u.Tool.DisplayName} unlocked: it's in your inventory bar.");
                     if (u.Effect == UpgradeEffect.InventorySlots) HuntFeedback.Message($"+{u.Value:0} inventory slots.");
+                    if (u.IsBait && u.Summons != null) HuntFeedback.Message($"You set out the {u.DisplayName}. {u.Summons.BossTitle} is coming out of its den!", warning: true);
                     break;
                 }
                 case EconomyEvent.ToolsReturned:
@@ -148,6 +149,8 @@ namespace HowToHunt.Economy
                 case EconomyRefusal.InventoryFull: return "Your inventory is full. Sell at the trader, or drop something (Q).";
                 case EconomyRefusal.TooPoor: return "Not enough coins.";
                 case EconomyRefusal.AlreadyOwned: return "You already own that.";
+                case EconomyRefusal.BossAwake: return "It's already awake. Go and fight it!";
+                case EconomyRefusal.NoBossHere: return "Nothing would come for that bait here.";
                 case EconomyRefusal.Locked: return "Buy the previous upgrade first.";
                 default: return "That can't be done.";
             }
@@ -209,7 +212,7 @@ namespace HowToHunt.Economy
             string talk = TalkPrompt?.Invoke(station);
             if (talk != null) return talk;
             string key = KeyBindings.DisplayName(GameAction.Interact);
-            if (station.Kind == CampStationKind.Shop) return $"[{key}] {station.Label}: browse upgrades";
+            if (station.Kind == CampStationKind.Shop) return station.BaitStall ? $"[{key}] {station.Label}: baits that wake a boss" : $"[{key}] {station.Label}: browse upgrades";
             if (station.Kind == CampStationKind.Workshop) return $"[{key}] {station.Label}: attachments for your guns";
             EconomyProfile p = EconomyNet.Local;
             int n = p.Inventory.PreyCount;

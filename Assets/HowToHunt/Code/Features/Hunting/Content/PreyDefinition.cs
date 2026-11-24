@@ -70,6 +70,29 @@ namespace HowToHunt.Hunting
         [Tooltip("Health regained per second once nobody has hurt it for a while (bosses reset when you run).")]
         public float RegenPerSecond;
 
+        [Header("Boss moves (0 = never)")]
+        [Tooltip("Every Nth strike is a ground slam: hits every hunter on the ground around it.")]
+        public int SlamEvery;
+        public float SlamRadius = 5f;
+        [Tooltip("The slam's wind-up (s): longer than a swipe's, time to back off or jump.")]
+        public float SlamWindup = 1f;
+        public float SlamDamage = 40f;
+        public float SlamPush = 12f;
+        [Tooltip("Hunters whose feet are this far above its own when the slam lands (jumping) are not hit (m).")]
+        public float SlamDodgeHeight = 0.5f;
+        [Tooltip("Pounces at hunters kiting it up to this far away (m). 0 = never.")]
+        public float PounceRange;
+        public float PounceSpeed = 15f;
+        [Tooltip("The crouch before a pounce (s): the cue to sidestep.")]
+        public float PounceWindup = 0.55f;
+        public float PounceCooldown = 6f;
+        [Tooltip("Enraged below this share of its health (0 = never): quicker strikes, faster charge.")]
+        public float EnrageBelow;
+        [Tooltip("Enraged: wind-ups and pauses x this.")]
+        public float EnrageTempo = 0.75f;
+        [Tooltip("Enraged: charge and pounce speed x this.")]
+        public float EnrageSpeed = 1.1f;
+
         [Header("Boss")]
         [Tooltip("A boss: health bar for everyone nearby, announced when it wakes and falls, and every hunter who hurt it shares the reward.")]
         public bool IsBoss;
@@ -126,6 +149,18 @@ namespace HowToHunt.Hunting
             AttackCooldown = AttackCooldown,
             ChargeSpeed = ChargeSpeed,
             ProvokeSeconds = ProvokeSeconds,
+            MaxHealth = MaxHealth,
+            SlamEvery = SlamEvery,
+            SlamRadius = SlamRadius,
+            SlamWindup = SlamWindup,
+            SlamDodgeHeight = SlamDodgeHeight,
+            PounceRange = PounceRange,
+            PounceSpeed = PounceSpeed,
+            PounceWindup = PounceWindup,
+            PounceCooldown = PounceCooldown,
+            EnrageBelow = EnrageBelow,
+            EnrageTempo = EnrageTempo,
+            EnrageSpeed = EnrageSpeed,
         };
 
         private HitCapsule[] _capsules;
@@ -164,6 +199,10 @@ namespace HowToHunt.Hunting
                 if (Aggression != PreyAggression.Always) errors.Add("A boss must be Always aggressive.");
                 if (string.IsNullOrEmpty(BossTitle)) errors.Add("A boss needs a BossTitle.");
                 if ((Allowed & TakedownMethods.Capture) != 0) errors.Add("A boss can't be caught in a net.");
+                if (SlamEvery < 0 || EnrageBelow < 0f || EnrageBelow >= 1f) errors.Add("SlamEvery must be >= 0 and EnrageBelow in [0, 1).");
+                if (SlamEvery > 0 && (SlamRadius <= 0f || SlamWindup <= 0f)) errors.Add("A slam needs a radius and a wind-up.");
+                if (PounceRange > 0f && (PounceSpeed <= ChargeSpeed || PounceWindup <= 0f)) errors.Add("A pounce must be faster than the charge and have a wind-up.");
+                if (EnrageBelow > 0f && (EnrageTempo <= 0f || EnrageSpeed <= 0f)) errors.Add("Enrage needs a tempo and a speed above 0.");
             }
         }
     }

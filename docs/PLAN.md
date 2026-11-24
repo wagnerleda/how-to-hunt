@@ -79,6 +79,13 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 5 | **Forest animals and quests**: red squirrel, red fox, wild boar (charges when hurt); four new Ash quests | "more missions with other animals in the second biome" |
 | 6 | **Boss system** (ADR 0014) and the forest boss, the Old Bear of the Pines: den, boss bar, telegraphed strikes, shared reward, Ash's last quest | "a boss for each biome from the forest on" |
 
+### Phase 6.2b: the bear comes for its bait (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | The Old Bear only comes out when someone buys a Honeycomb Bait (150 coins) at the new Bait Stall in Ash's camp; no more timed respawn | "the final boss must appear when you buy a bait" |
+| 2 | Stronger: 3,000 health, harder swipes, quicker roar, wider aggro and leash; reward 650 coins and 35 trophies | "stronger" |
+| 3 | Better attacks: a ground slam every third strike (jump or get out), a pounce at hunters kiting it, enraged below 40 % (red bar) | "attacks better" |
+
 ## Phase 6.3: juicier menus, speech bubbles, gamepad (done 2026-11-24, awaiting the owner's play test)
 | # | Change | Owner request |
 |---|---|---|

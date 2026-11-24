@@ -19,11 +19,15 @@ namespace HowToHunt.Hunting
         private static readonly Color HitColor = new Color(1f, 0.12f, 0.08f);
 
         private const float RearDegrees = 22f, RearLift = 0.12f, LungeSeconds = 0.3f, LungeDegrees = 16f, LungeReach = 0.35f;
+        // Boss moves: a slam rears up high and crashes down; a pounce crouches low, then flies nose up.
+        private const float SlamRearDegrees = 38f, SlamRearLift = 0.35f, SlamSeconds = 0.45f, SlamDrop = 0.18f, SlamDegrees = 26f;
+        private const float CrouchDrop = 0.16f, CrouchDegrees = 12f, LeapLift = 0.35f, LeapDegrees = -14f, LeapSpeed = 3f;
 
         private Transform _model;
         private float _hopPhase;
         private PreyAiState _lastAi;
         private float _lungeAt = -10f;
+        private float _slamAt = -10f;
         private float _hitAt = -10f;
         private bool _tinted;
         private Renderer[] _renderers;
@@ -105,8 +109,13 @@ namespace HowToHunt.Hunting
             PreyAiState ai = p.RenderAi;
             if (ai != _lastAi)
             {
-                if (ai == PreyAiState.Attack) PreySounds.PlayWindup(p.Def, position);
-                else if (_lastAi == PreyAiState.Attack) _lungeAt = Time.time;
+                if (ai == PreyAiState.Attack || ai == PreyAiState.Slam || ai == PreyAiState.Pounce) PreySounds.PlayWindup(p.Def, position, ai == PreyAiState.Slam);
+                if (_lastAi == PreyAiState.Attack || _lastAi == PreyAiState.Pounce) _lungeAt = Time.time;
+                else if (_lastAi == PreyAiState.Slam)
+                {
+                    _slamAt = Time.time;
+                    PreySounds.PlaySlam(position);
+                }
                 _lastAi = ai;
             }
             if (_model != null)
@@ -115,17 +124,35 @@ namespace HowToHunt.Hunting
                 Quaternion tilt = Quaternion.identity;
                 float scale = p.Def.VisualScale;
                 float lunge = Mathf.Clamp01(1f - (Time.time - _lungeAt) / LungeSeconds);
+                float slam = Mathf.Clamp01(1f - (Time.time - _slamAt) / SlamSeconds);
+                bool posing = ai == PreyAiState.Attack || ai == PreyAiState.Slam || ai == PreyAiState.Pounce;
                 if (ai == PreyAiState.Attack)
                 {
                     offset.y += RearLift * scale;
                     tilt = Quaternion.Euler(-RearDegrees, 0f, 0f);
+                }
+                else if (ai == PreyAiState.Slam)
+                {
+                    offset.y += SlamRearLift * scale;
+                    tilt = Quaternion.Euler(-SlamRearDegrees, 0f, 0f);
+                }
+                else if (ai == PreyAiState.Pounce)
+                {
+                    bool leaping = p.RenderSpeed > LeapSpeed;
+                    offset.y += (leaping ? LeapLift : -CrouchDrop) * scale;
+                    tilt = Quaternion.Euler(leaping ? LeapDegrees : CrouchDegrees, 0f, 0f);
+                }
+                else if (slam > 0f)
+                {
+                    offset.y -= SlamDrop * scale * slam;
+                    tilt = Quaternion.Euler(SlamDegrees * slam, 0f, 0f);
                 }
                 else if (lunge > 0f)
                 {
                     offset += new Vector3(0f, 0f, LungeReach * scale * lunge);
                     tilt = Quaternion.Euler(LungeDegrees * lunge, 0f, 0f);
                 }
-                if (!p.IsFlyer && ai != PreyAiState.Attack && lunge <= 0f)
+                if (!p.IsFlyer && !posing && lunge <= 0f && slam <= 0f)
                 {
                     float speed = p.RenderSpeed;
                     if (speed > 0.3f)

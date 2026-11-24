@@ -509,7 +509,7 @@ namespace HowToHunt.Editor
             light.shadows = LightShadows.None;
         }
 
-        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw, string npcKey = null, double expectedSale = PlainsExpectedSale, float priceMultiplier = 1f)
+        private static void Station(Transform camp, Transform signs, CampStationKind kind, string label, string signText, Vector3 feet, float yaw, string npcKey = null, double expectedSale = PlainsExpectedSale, float priceMultiplier = 1f, bool baitStall = false)
         {
             Transform t = Group(camp, label);
             t.SetPositionAndRotation(feet, Quaternion.Euler(0f, yaw, 0f));
@@ -527,7 +527,7 @@ namespace HowToHunt.Editor
             station.transform.SetParent(t, false);
             station.transform.position = feet;
             // Plains: a full bag sells for roughly 50 coins (Phase 3 economy); that sets the size of the cash burst.
-            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, expectedSale, priceMultiplier);
+            station.AddComponent<CampStation>().Configure(kind, 2.8f, label, expectedSale, priceMultiplier, baitStall);
             // Phase 6: the stall's keeper stands behind the counter, facing you.
             if (npcKey != null) NpcAt(t, npcKey, feet + fwd * 2.05f, yaw + 180f);
         }
@@ -547,13 +547,13 @@ namespace HowToHunt.Editor
 
         private const float MovementConfigHalfHeight = 0.9144f; // the hunters' hull: the figure is built about its centre
 
-        private static void Spawner(Transform parent, string name, string preyKey, Vector3 position, int count, float radius, float respawn)
+        private static void Spawner(Transform parent, string name, string preyKey, Vector3 position, int count, float radius, float respawn, bool summoned = false)
         {
             var prey = AssetDatabase.LoadAssetAtPath<PreyDefinition>(FindContent(preyKey));
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.position = position;
-            go.AddComponent<PreySpawner>().Configure(prey, count, radius, respawn);
+            go.AddComponent<PreySpawner>().Configure(prey, count, radius, respawn, summoned);
         }
 
         private static string FindContent(string key)

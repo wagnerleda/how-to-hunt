@@ -94,8 +94,8 @@ namespace HowToHunt.Editor
                 "Three boars! You're ready for the worst of it, then.");
             QuestDefinition king = Quest("the_old_bear", "The Old Bear", 9, ash, tusks, QuestObjective.TakeDown, bear, 1, 800,
                 "Bring down the Old Bear of the Pines",
-                "There's a bear in the south-east glade older than this trading post. It charges anyone who comes near its den and it doesn't tire. Bring friends. Keep your distance, and when it roars, move.",
-                "It heals if you all run off. Stay on it, and stay out of its reach.",
+                "There's a bear in the south-east glade older than this trading post. It sleeps until it smells honey: buy a Honeycomb Bait at the stall behind me and it comes out of its den. It charges, it leaps at anyone who keeps their distance, and every third blow it slams the ground. Bring friends.",
+                "A deep roar means the slam: get out or jump. When it crouches low, it's about to leap. It heals if you all run off.",
                 "The Old Bear... I never thought I'd see the day. The whole forest will be talking about you.");
             king.Unlocks = ForestBossFlag;
             EditorUtility.SetDirty(king);
