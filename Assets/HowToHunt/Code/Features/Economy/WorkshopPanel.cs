@@ -104,7 +104,8 @@ namespace HowToHunt.Economy
             Glassy(Panel("Header", new Vector2(0f, 1f), new Vector2(380f, -112f), new Vector2(680f, 190f), Glass));
             _title = Label("Title", new Vector2(0f, 1f), new Vector2(66f, -38f), 24f, Dim, TextAlignmentOptions.TopLeft);
             _gunName = Label("Gun", new Vector2(0f, 1f), new Vector2(66f, -70f), 60f, Color.white, TextAlignmentOptions.TopLeft);
-            _gunName.fontStyle = FontStyles.Bold;
+            UiFonts.Use(_gunName).fontSize = 70f;
+            UiFonts.Use(_title);
             _wallet = Label("Wallet", new Vector2(0f, 1f), new Vector2(66f, -150f), 28f, Accent, TextAlignmentOptions.TopLeft);
             Label("Hint", new Vector2(0f, 1f), new Vector2(40f, -222f), 18f, Dim, TextAlignmentOptions.TopLeft)
                 .SetText($"{KeyBindings.DisplayName(GameAction.Interact)}, Esc or gamepad B to step back from the counter");
@@ -116,13 +117,13 @@ namespace HowToHunt.Economy
             // The right-hand column: the slot's attachments, the action, the numbers.
             Glassy(Panel("Column", new Vector2(0.5f, 0.5f), new Vector2(ListX, -30f), new Vector2(ColumnWidth, 820f), Glass));
             _listTitle = Label("List Title", new Vector2(0.5f, 0.5f), new Vector2(ListX, ListTop + 58f), 28f, Accent, TextAlignmentOptions.Center);
-            _listTitle.fontStyle = FontStyles.Bold;
+            UiFonts.Use(_listTitle).fontSize = 32f;
             _action = Panel("Action", new Vector2(0.5f, 0.5f), new Vector2(ListX, ActionY), new Vector2(340f, 58f), Better);
             Round(_action, 14);
             _action.raycastTarget = true;
             _action.gameObject.AddComponent<Button>().onClick.AddListener(OnAction);
             _actionLabel = Child(_action.rectTransform, "Action Label", Vector2.zero, new Vector2(340f, 58f), 24f, Color.white, TextAlignmentOptions.Center);
-            _actionLabel.fontStyle = FontStyles.Bold;
+            UiFonts.Use(_actionLabel).fontSize = 28f;
 
             _dmg = BigStat("DMG", new Vector2(ListX - 180f, StatsY));
             _rof = BigStat("ROF", new Vector2(ListX, StatsY));
@@ -229,7 +230,7 @@ namespace HowToHunt.Economy
             Label($"{name} Label", new Vector2(0.5f, 0.5f), pos + new Vector2(0f, 44f), 18f, Dim, TextAlignmentOptions.Center).SetText(name);
             TextMeshProUGUI t = Label(name, new Vector2(0.5f, 0.5f), pos, 48f, Color.white, TextAlignmentOptions.Center);
             t.rectTransform.sizeDelta = new Vector2(170f, 64f);
-            t.fontStyle = FontStyles.Bold;
+            UiFonts.Use(t).fontSize = 54f;
             return t;
         }
 
@@ -312,7 +313,7 @@ namespace HowToHunt.Economy
                 Glassy(tab.Image, 12);
                 tab.Image.raycastTarget = true;
                 tab.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _tool = tool; _selected = null; Sfx.Play2D("Kenney/click_001", 0.4f); Refresh(); });
-                tab.Label = Child(tab.Image.rectTransform, "Label", Vector2.zero, new Vector2(196f, 46f), 17f, Color.white, TextAlignmentOptions.Center);
+                tab.Label = UiFonts.Use(Child(tab.Image.rectTransform, "Label", Vector2.zero, new Vector2(196f, 46f), 20f, Color.white, TextAlignmentOptions.Center));
                 UpgradeDefinition unlock = Loadouts.Local.Owns(tool) ? null : GunUnlock(tool);
                 tab.Label.SetText(unlock == null ? tool.DisplayName : $"{tool.DisplayName}  <color=#F2C66F>{unlock.CostCoins:0}c</color>");
                 _tabs.Add(tab);

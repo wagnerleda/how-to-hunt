@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_long_ears
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.long_ears
+  _displayName: Long Ears
+  _description: Take down 4 jackrabbits
+  Giver: {fileID: 11400000, guid: ac45b6804c5f28d468a761c6826afde2, type: 2}
+  Requires: {fileID: 0}
+  Objective: 2
+  Prey: {fileID: 11400000, guid: 777455c23215af043ace3df17f6f496c, type: 2}
+  Count: 4
+  RewardCoins: 260
+  Unlocks: 
+  Offer: Jackrabbits eat my garden. Four of them, any way you like.
+  Task: Take down 4 jackrabbits
+  Waiting: They tire after a few seconds. Bunny hop after them.
+  Done: Four! My lettuce thanks you.
+  Order: 20

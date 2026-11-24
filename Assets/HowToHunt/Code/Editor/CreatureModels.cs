@@ -23,6 +23,196 @@ namespace HowToHunt.Editor
             Save("Fox", Fox());
             Save("Boar", Boar());
             Save("OldBear", OldBear());
+            // The Red Desert (2026-11-24).
+            Save("Jackrabbit", Jackrabbit());
+            Save("Lizard", Lizard());
+            Save("Scorpion", Scorpion());
+            Save("Rattlesnake", Rattlesnake());
+            Save("Coyote", Coyote());
+            SaveMesh(Saguaro(0));
+            SaveMesh(Saguaro(1));
+            SaveMesh(BarrelCactus());
+            SaveMesh(DeadBush());
+            SaveMesh(Skull());
+        }
+
+        /// <summary>A desert prop mesh (vertex colours, M_Terrain), built by BuildAll: Prop_Saguaro0/1, Prop_Barrel, Prop_DeadBush, Prop_Skull.</summary>
+        public static Mesh PropMesh(string name) => AssetDatabase.LoadAssetAtPath<Mesh>($"{GeneratedAssets.MeshesDir}/{name}.asset");
+
+        // --- the desert ----------------------------------------------------------------------------------------------
+
+        private static Mesh Jackrabbit()
+        {
+            var b = new Builder();
+            Color tan = C(0.72f, 0.6f, 0.45f), pale = C(0.92f, 0.86f, 0.74f), pink = C(0.85f, 0.6f, 0.55f), dark = C(0.12f, 0.09f, 0.07f);
+            b.Block(new Vector3(0f, 0.22f, -0.02f), new Vector3(0.2f, 0.2f, 0.34f), tan, front: 0.85f);
+            b.Block(new Vector3(0f, 0.17f, 0.08f), new Vector3(0.14f, 0.12f, 0.12f), pale);                       // belly
+            b.Block(new Vector3(0f, 0.33f, 0.19f), new Vector3(0.12f, 0.12f, 0.15f), tan, front: 0.75f);         // head
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Block(new Vector3(s * 0.035f, 0.5f, 0.14f), new Vector3(0.05f, 0.24f, 0.025f), tan, top: 0.6f, pitch: -12f); // long ears
+                b.Block(new Vector3(s * 0.035f, 0.5f, 0.155f), new Vector3(0.03f, 0.18f, 0.01f), pink, top: 0.6f, pitch: -12f);
+                b.Block(new Vector3(s * 0.055f, 0.36f, 0.24f), new Vector3(0.015f, 0.02f, 0.015f), dark);                         // eyes
+                b.Block(new Vector3(s * 0.05f, 0.06f, 0.12f), new Vector3(0.035f, 0.12f, 0.035f), tan);                           // fore legs
+                b.Block(new Vector3(s * 0.07f, 0.08f, -0.12f), new Vector3(0.05f, 0.14f, 0.16f), tan);                            // long hind legs
+            }
+            b.Block(new Vector3(0f, 0.25f, -0.21f), new Vector3(0.07f, 0.07f, 0.06f), pale);                     // tail
+            return b.Mesh("Creature_Jackrabbit");
+        }
+
+        private static Mesh Lizard()
+        {
+            var b = new Builder();
+            Color green = C(0.55f, 0.6f, 0.35f), band = C(0.85f, 0.55f, 0.25f), dark = C(0.12f, 0.12f, 0.08f);
+            b.Block(new Vector3(0f, 0.05f, 0f), new Vector3(0.09f, 0.05f, 0.22f), green, front: 0.8f);
+            b.Block(new Vector3(0f, 0.075f, -0.02f), new Vector3(0.06f, 0.012f, 0.16f), band);                   // a stripe down the back
+            b.Block(new Vector3(0f, 0.055f, 0.15f), new Vector3(0.06f, 0.04f, 0.08f), green, front: 0.6f);       // head
+            b.Block(new Vector3(0f, 0.04f, -0.2f), new Vector3(0.04f, 0.03f, 0.2f), green, front: 1.6f);         // tail
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Block(new Vector3(s * 0.025f, 0.07f, 0.17f), new Vector3(0.012f, 0.012f, 0.012f), dark);       // eyes
+                b.Block(new Vector3(s * 0.065f, 0.02f, 0.07f), new Vector3(0.05f, 0.02f, 0.025f), green);         // legs
+                b.Block(new Vector3(s * 0.065f, 0.02f, -0.07f), new Vector3(0.05f, 0.02f, 0.025f), green);
+            }
+            return b.Mesh("Creature_Lizard");
+        }
+
+        private static Mesh Scorpion()
+        {
+            var b = new Builder();
+            Color shell = C(0.72f, 0.25f, 0.12f), dark = C(0.35f, 0.12f, 0.07f), sting = C(0.15f, 0.08f, 0.05f);
+            b.Block(new Vector3(0f, 0.06f, 0f), new Vector3(0.14f, 0.06f, 0.2f), shell, front: 0.8f);           // body
+            b.Block(new Vector3(0f, 0.06f, 0.11f), new Vector3(0.09f, 0.05f, 0.06f), dark);                      // head
+            // The tail: five segments arching up and over the back, the sting at the end.
+            Vector3 p = new Vector3(0f, 0.07f, -0.11f);
+            float[] pitch = { 25f, 55f, 85f, 120f, 150f }; // up and back, then forward over the body
+            for (int i = 0; i < pitch.Length; i++)
+            {
+                Vector3 dir = Quaternion.Euler(pitch[i], 0f, 0f) * new Vector3(0f, 0f, -1f);
+                p += dir * 0.05f;
+                b.Block(p, new Vector3(0.05f - i * 0.005f, 0.045f, 0.06f), i % 2 == 0 ? shell : dark, pitch: pitch[i]);
+            }
+            b.Block(p + new Vector3(0f, 0.02f, 0.04f), new Vector3(0.025f, 0.03f, 0.05f), sting, pitch: 40f, front: 0.3f);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Block(new Vector3(s * 0.08f, 0.06f, 0.15f), new Vector3(0.03f, 0.025f, 0.09f), shell);            // arms
+                b.Block(new Vector3(s * 0.1f, 0.06f, 0.22f), new Vector3(0.05f, 0.035f, 0.07f), dark, front: 0.6f); // claws
+                for (int k = 0; k < 4; k++)
+                    b.Block(new Vector3(s * 0.1f, 0.025f, 0.06f - k * 0.045f), new Vector3(0.09f, 0.015f, 0.015f), dark); // legs
+            }
+            return b.Mesh("Creature_Scorpion");
+        }
+
+        private static Mesh Rattlesnake()
+        {
+            var b = new Builder();
+            Color sand = C(0.62f, 0.5f, 0.32f), diamond = C(0.36f, 0.27f, 0.17f), belly = C(0.82f, 0.74f, 0.55f), rattle = C(0.85f, 0.78f, 0.6f), dark = C(0.08f, 0.06f, 0.04f);
+            // The body lies in a lazy S; the head is raised at the front, the rattle up at the back.
+            const int n = 12;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)(n - 1);
+                float z = Mathf.Lerp(-0.5f, 0.3f, t);
+                float x = Mathf.Sin(t * Mathf.PI * 2.2f) * 0.1f;
+                float w = Mathf.Lerp(0.05f, 0.09f, Mathf.Sin(t * Mathf.PI));
+                b.Block(new Vector3(x, 0.04f, z), new Vector3(w, 0.06f, 0.08f), i % 2 == 0 ? sand : diamond);
+                b.Block(new Vector3(x, 0.012f, z), new Vector3(w * 0.8f, 0.01f, 0.07f), belly);
+            }
+            b.Block(new Vector3(0f, 0.1f, 0.34f), new Vector3(0.05f, 0.1f, 0.05f), sand, pitch: 20f);          // the raised neck
+            b.Block(new Vector3(0f, 0.17f, 0.41f), new Vector3(0.08f, 0.05f, 0.1f), diamond, front: 0.6f);      // the head
+            for (int s = -1; s <= 1; s += 2) b.Block(new Vector3(s * 0.035f, 0.185f, 0.43f), new Vector3(0.01f, 0.01f, 0.01f), dark);
+            b.Block(new Vector3(0.02f, 0.09f, -0.55f), new Vector3(0.035f, 0.1f, 0.035f), rattle, top: 0.5f, pitch: 20f); // the rattle
+            return b.Mesh("Creature_Rattlesnake");
+        }
+
+        private static Mesh Coyote()
+        {
+            var b = new Builder();
+            Color coat = C(0.7f, 0.58f, 0.42f), grey = C(0.5f, 0.45f, 0.4f), pale = C(0.9f, 0.85f, 0.75f), black = C(0.12f, 0.1f, 0.1f);
+            b.Block(new Vector3(0f, 0.46f, 0f), new Vector3(0.24f, 0.24f, 0.66f), coat, front: 0.9f);
+            b.Block(new Vector3(0f, 0.58f, 0.05f), new Vector3(0.18f, 0.06f, 0.5f), grey);                     // darker back
+            b.Block(new Vector3(0f, 0.4f, 0.27f), new Vector3(0.17f, 0.2f, 0.14f), pale);                      // chest
+            b.Block(new Vector3(0f, 0.58f, 0.42f), new Vector3(0.18f, 0.16f, 0.18f), coat, front: 0.75f);     // head
+            b.Block(new Vector3(0f, 0.54f, 0.56f), new Vector3(0.08f, 0.07f, 0.16f), pale, front: 0.6f);      // long snout
+            b.Block(new Vector3(0f, 0.55f, 0.645f), new Vector3(0.035f, 0.03f, 0.03f), black);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Block(new Vector3(s * 0.06f, 0.7f, 0.38f), new Vector3(0.06f, 0.12f, 0.03f), coat, top: 0.25f);   // big ears
+                b.Block(new Vector3(s * 0.06f, 0.6f, 0.51f), new Vector3(0.02f, 0.02f, 0.015f), black);
+                b.Block(new Vector3(s * 0.075f, 0.18f, 0.23f), new Vector3(0.05f, 0.36f, 0.05f), coat);              // long legs
+                b.Block(new Vector3(s * 0.075f, 0.18f, -0.23f), new Vector3(0.055f, 0.36f, 0.055f), coat);
+            }
+            b.Block(new Vector3(0f, 0.36f, -0.48f), new Vector3(0.1f, 0.1f, 0.34f), grey, pitch: 30f, front: 1.1f); // drooping tail
+            b.Block(new Vector3(0f, 0.25f, -0.62f), new Vector3(0.08f, 0.08f, 0.08f), black, pitch: 30f);
+            return b.Mesh("Creature_Coyote");
+        }
+
+        /// <summary>A saguaro: a ribbed column with one or two arms bent up, ~4.5 m at scale 1.</summary>
+        private static Mesh Saguaro(int variant)
+        {
+            var b = new Builder();
+            Color green = C(0.35f, 0.52f, 0.3f), rib = C(0.28f, 0.44f, 0.25f), top = C(0.5f, 0.62f, 0.38f);
+            b.Block(new Vector3(0f, 2.1f, 0f), new Vector3(0.5f, 4.2f, 0.5f), green, top: 0.8f);
+            b.Block(new Vector3(0f, 2.1f, 0f), new Vector3(0.56f, 4f, 0.3f), rib, top: 0.75f);
+            b.Block(new Vector3(0f, 4.3f, 0f), new Vector3(0.36f, 0.25f, 0.36f), top, top: 0.6f);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                if (variant == 1 && s > 0) continue;
+                float h = s < 0 ? 1.8f : 2.4f;
+                b.Block(new Vector3(s * 0.5f, h, 0f), new Vector3(0.6f, 0.32f, 0.32f), green);                     // the elbow
+                b.Block(new Vector3(s * 0.72f, h + 0.75f, 0f), new Vector3(0.32f, 1.5f, 0.32f), green, top: 0.8f); // the arm up
+                b.Block(new Vector3(s * 0.72f, h + 1.55f, 0f), new Vector3(0.24f, 0.16f, 0.24f), top, top: 0.6f);
+            }
+            return b.Mesh($"Prop_Saguaro{variant}");
+        }
+
+        private static Mesh BarrelCactus()
+        {
+            var b = new Builder();
+            Color green = C(0.38f, 0.55f, 0.3f), rib = C(0.3f, 0.45f, 0.24f), flower = C(0.95f, 0.45f, 0.4f);
+            b.Block(new Vector3(0f, 0.3f, 0f), new Vector3(0.6f, 0.6f, 0.6f), green, top: 0.7f);
+            b.Block(new Vector3(0f, 0.3f, 0f), new Vector3(0.66f, 0.55f, 0.35f), rib, top: 0.7f);
+            b.Block(new Vector3(0f, 0.3f, 0f), new Vector3(0.35f, 0.55f, 0.66f), rib, top: 0.7f);
+            b.Block(new Vector3(0f, 0.63f, 0f), new Vector3(0.16f, 0.08f, 0.16f), flower, top: 1.4f);
+            return b.Mesh("Prop_Barrel");
+        }
+
+        private static Mesh DeadBush()
+        {
+            var b = new Builder();
+            Color wood = C(0.55f, 0.45f, 0.33f), dark = C(0.42f, 0.33f, 0.24f);
+            for (int i = 0; i < 7; i++)
+            {
+                Vector3 dir = Quaternion.Euler(-35f - (i % 3) * 12f, i * 51f, 0f) * Vector3.forward;
+                b.Block(dir * 0.3f + new Vector3(0f, 0.18f, 0f), new Vector3(0.05f, 0.05f, 0.65f), i % 2 == 0 ? wood : dark, front: 0.4f);
+            }
+            return b.Mesh("Prop_DeadBush");
+        }
+
+        private static Mesh Skull()
+        {
+            var b = new Builder();
+            Color bone = C(0.93f, 0.9f, 0.82f), dark = C(0.25f, 0.2f, 0.17f);
+            b.Block(new Vector3(0f, 0.12f, 0f), new Vector3(0.28f, 0.22f, 0.3f), bone, front: 0.8f);
+            b.Block(new Vector3(0f, 0.08f, 0.24f), new Vector3(0.16f, 0.12f, 0.24f), bone, front: 0.7f);      // snout
+            for (int s = -1; s <= 1; s += 2)
+            {
+                b.Block(new Vector3(s * 0.08f, 0.16f, 0.14f), new Vector3(0.06f, 0.05f, 0.03f), dark);             // eye holes
+                b.Block(new Vector3(s * 0.2f, 0.24f, -0.02f), new Vector3(0.3f, 0.05f, 0.05f), bone, front: 0.5f); // horns
+            }
+            return b.Mesh("Prop_Skull");
+        }
+
+        private static void SaveMesh(Mesh mesh)
+        {
+            string meshPath = $"{GeneratedAssets.MeshesDir}/{mesh.name}.asset";
+            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(mesh, existing);
+                Object.DestroyImmediate(mesh);
+            }
+            else AssetDatabase.CreateAsset(mesh, meshPath);
         }
 
         // --- the animals --------------------------------------------------------------------------------------------

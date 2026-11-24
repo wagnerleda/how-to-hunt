@@ -108,6 +108,7 @@ namespace HowToHunt.Economy
                             profile.Upgrades.Add(u.Id.Value);
                             loadout.AddUpgrade(u.Id.Value);
                             result.Unlocks.Add(new Unlock { Upgrade = u, Seconds = t });
+                            if (freeSlots > 0 && u.Effect == UpgradeEffect.InventorySlots) freeSlots += Math.Max(0, (int)Math.Round(u.Value)); // a bigger bag carries more per trip
                             bought = true;
                         }
                     } while (bought);

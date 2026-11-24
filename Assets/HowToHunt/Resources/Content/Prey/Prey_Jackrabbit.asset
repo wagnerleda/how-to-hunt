@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2876ba8925b5104082614fae68a5006, type: 3}
+  m_Name: Prey_Jackrabbit
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
+  _key: prey.jackrabbit
+  _displayName: Jackrabbit
+  _description: 'Long ears, long legs: hears you from far off and zigzags away faster than a sprint. An Ironwood Net holds it.'
+  Allowed: 3
+  MaxHealth: 12
+  CaptureDifficulty: 3
+  MinKillTier: 1
+  OverkillRatio: 3
+  Hitboxes:
+  - A: {x: 0, y: 0.2, z: -0.12}
+    B: {x: 0, y: 0.22, z: 0.1}
+    Radius: 0.14
+    WeakPoint: 0
+  - A: {x: 0, y: 0.34, z: 0.18}
+    B: {x: 0, y: 0.36, z: 0.26}
+    Radius: 0.09
+    WeakPoint: 1
+  BaseValue: 16
+  TrophiesOnKill: 1
+  Movement: 1
+  WalkSpeed: 1.2
+  FleeSpeed: 9.2
+  FleeRadius: 10
+  SightRange: 26
+  HearingRange: 60
+  Wariness: 1.2
+  CalmDownSeconds: 3
+  WanderRadius: 18
+  StunSeconds: 0.15
+  StaminaSeconds: 4
+  TiredSpeed: 5.8
+  HalfExtents: {x: 0.14, y: 0.18, z: 0.24}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  SlamEvery: 0
+  SlamRadius: 5
+  SlamWindup: 1
+  SlamDamage: 40
+  SlamPush: 12
+  SlamDodgeHeight: 0.5
+  PounceRange: 0
+  PounceSpeed: 15
+  PounceWindup: 0.55
+  PounceCooldown: 6
+  EnrageBelow: 0
+  EnrageTempo: 0.75
+  EnrageSpeed: 1.1
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
+  Visual: {fileID: 6714838652277726745, guid: 921e12be39f25f145b366ae227d8f5e0, type: 3}
+  VisualScale: 1
+  Noun: a jackrabbit
+  BloodColor: {r: 0.72, g: 0.07, b: 0.06, a: 1}
+  GibColor: {r: 0.72, g: 0.6, b: 0.45, a: 1}
+  GibCount: 5
+  Voice: 0
+  StackSize: 1

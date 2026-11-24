@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FishNet.Component.Transforming.Beta;
@@ -44,6 +45,7 @@ namespace HowToHunt.Editor
             CreatureModels.BuildAll();
             EnsureDialogueTheme();
             EnsureMenuTheme();
+            EnsureDisplayFont();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
@@ -54,6 +56,42 @@ namespace HowToHunt.Editor
         /// The dialogue look-and-feel asset (Resources/UI/DialogueTheme): created with the defaults if missing, never
         /// overwritten afterwards, so tuning it in the Inspector sticks.
         /// </summary>
+        public const string DisplayFontSource = Root + "/Art/Fonts/TheWildeast/TheWildeast-HowToHunt.ttf";
+        public const string DisplayFontPath = ResourcesDir + "/Fonts & Materials/" + UiFonts.DisplayName + ".asset";
+
+        /// <summary>
+        /// The display font (The Wildeast, completed with punctuation by tools/fonts/complete_wildeast.py) as a static
+        /// TextMeshPro SDF asset in Resources/Fonts &amp; Materials, so code (UiFonts.Display) and rich text
+        /// (&lt;font="Wildeast SDF"&gt;) both find it. Every glyph the font has is baked in; anything else falls back
+        /// to the default font. Rebuilt each time (it is generated).
+        /// </summary>
+        public static void EnsureDisplayFont()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<Font>(DisplayFontSource);
+            if (source == null) { Debug.LogWarning($"[HowToHunt] Missing display font {DisplayFontSource}"); return; }
+            EnsureFolder(ResourcesDir + "/Fonts & Materials");
+            AssetDatabase.DeleteAsset(DisplayFontPath);
+            TMPro.TMP_FontAsset font = TMPro.TMP_FontAsset.CreateFontAsset(source, 90, 9, UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA, 1024, 1024,
+                TMPro.AtlasPopulationMode.Dynamic, true);
+            font.name = UiFonts.DisplayName;
+            var chars = new System.Text.StringBuilder();
+            for (char c = ' '; c < (char)0x2100; c++) chars.Append(c);
+            font.TryAddCharacters(chars.ToString(), out _);
+            font.atlasPopulationMode = TMPro.AtlasPopulationMode.Static;
+            var fallback = TMPro.TMP_Settings.defaultFontAsset;
+            if (fallback != null) font.fallbackFontAssetTable = new List<TMPro.TMP_FontAsset> { fallback };
+            AssetDatabase.CreateAsset(font, DisplayFontPath);
+            foreach (Texture2D atlas in font.atlasTextures)
+            {
+                atlas.name = UiFonts.DisplayName + " Atlas";
+                AssetDatabase.AddObjectToAsset(atlas, font);
+            }
+            font.material.name = UiFonts.DisplayName + " Material";
+            AssetDatabase.AddObjectToAsset(font.material, font);
+            EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssets();
+        }
+
         /// <summary>The menu look-and-feel asset (Resources/UI/MenuTheme): created once, never overwritten.</summary>
         public static void EnsureMenuTheme()
         {

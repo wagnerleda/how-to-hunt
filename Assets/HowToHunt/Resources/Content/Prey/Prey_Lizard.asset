@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2876ba8925b5104082614fae68a5006, type: 3}
+  m_Name: Prey_Lizard
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
+  _key: prey.lizard
+  _displayName: Desert Lizard
+  _description: Basks on warm rocks and darts off in short bursts. Any net holds it; three fit in a slot.
+  Allowed: 3
+  MaxHealth: 5
+  CaptureDifficulty: 1
+  MinKillTier: 1
+  OverkillRatio: 3
+  Hitboxes:
+  - A: {x: 0, y: 0.05, z: -0.12}
+    B: {x: 0, y: 0.05, z: 0.12}
+    Radius: 0.06
+    WeakPoint: 0
+  - A: {x: 0, y: 0.06, z: 0.15}
+    B: {x: 0, y: 0.06, z: 0.2}
+    Radius: 0.05
+    WeakPoint: 1
+  BaseValue: 8
+  TrophiesOnKill: 1
+  Movement: 1
+  WalkSpeed: 0.8
+  FleeSpeed: 7.6
+  FleeRadius: 5
+  SightRange: 12
+  HearingRange: 30
+  Wariness: 0.8
+  CalmDownSeconds: 1.5
+  WanderRadius: 18
+  StunSeconds: 0.2
+  StaminaSeconds: 1.5
+  TiredSpeed: 3
+  HalfExtents: {x: 0.07, y: 0.05, z: 0.2}
+  Aggression: 0
+  AggroRange: 20
+  LeashRadius: 40
+  AttackRange: 1.8
+  AttackWindup: 0.6
+  AttackCooldown: 1.5
+  AttackDamage: 15
+  AttackPush: 7
+  ChargeSpeed: 7
+  ProvokeSeconds: 8
+  RegenPerSecond: 0
+  SlamEvery: 0
+  SlamRadius: 5
+  SlamWindup: 1
+  SlamDamage: 40
+  SlamPush: 12
+  SlamDodgeHeight: 0.5
+  PounceRange: 0
+  PounceSpeed: 15
+  PounceWindup: 0.55
+  PounceCooldown: 6
+  EnrageBelow: 0
+  EnrageTempo: 0.75
+  EnrageSpeed: 1.1
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
+  Visual: {fileID: 2675078868542107901, guid: 4931d7b780f14cf4b8d61221a40d0e3e, type: 3}
+  VisualScale: 1.3
+  Noun: a lizard
+  BloodColor: {r: 0.6, g: 0.1, b: 0.06, a: 1}
+  GibColor: {r: 0.55, g: 0.6, b: 0.35, a: 1}
+  GibCount: 3
+  Voice: 0
+  StackSize: 3

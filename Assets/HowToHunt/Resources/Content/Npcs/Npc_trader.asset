@@ -23,6 +23,7 @@ MonoBehaviour:
   Idle: Quiet day. The rabbits by the river logs have been fat this year.
   Station: 0
   HasStation: 1
+  Activity: 0
   VoicePitch: 0.9
   VoiceClip: {fileID: 0}
   Barks:

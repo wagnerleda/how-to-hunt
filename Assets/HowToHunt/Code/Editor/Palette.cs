@@ -33,6 +33,9 @@ namespace HowToHunt.Editor
             { "Felt", (Hex("2E5A46"), 0.02f) },         // the gunsmith's counter mat
             { "Cliff", (Hex("8C8273"), 0.05f) },        // boundary ridges: warm grey stone
             { "CliffDark", (Hex("6E665A"), 0.05f) },
+            { "Mesa", (Hex("B8603E"), 0.05f) },         // the Red Desert's rock
+            { "MesaDark", (Hex("8F4632"), 0.05f) },
+            { "Adobe", (Hex("D9A877"), 0.05f) },
         };
 
         public static Material Get(string name)

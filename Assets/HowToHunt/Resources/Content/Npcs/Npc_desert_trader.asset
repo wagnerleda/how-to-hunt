@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e011f083ad9444496d455592186b81, type: 3}
+  m_Name: Npc_desert_trader
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
+  _key: npc.desert_trader
+  _displayName: Rosa
+  _description: Runs the trading post at Dry Creek. Desert catch sells for twice the Plains price.
+  Role: Desert Trader
+  Greetings:
+  - Dust on your boots already? Welcome to Dry Creek.
+  - Water's free. Everything else costs.
+  - Snakes, scorpions, long-eared hares. Bring them here.
+  Idle: Shake your boots out before you put them on. Trust me.
+  Station: 0
+  HasStation: 1
+  Activity: 0
+  VoicePitch: 1.1
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[shout] Desert prices! Twice what the Plains pay!'
+  - Mind the rocks, that's where they hide.
+  - '[think] Too hot for this...'
+  Mask: 

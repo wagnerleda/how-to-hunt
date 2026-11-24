@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.pack_large
   _displayName: Hunter's Backpack
-  _description: Two more inventory slots.
+  _description: Room for a real day's hunt.
   Tool: {fileID: 0}
   Effect: 4
   Value: 2
-  CostCoins: 360
+  CostCoins: 650
   CostTrophies: 0
   Requires: {fileID: 11400000, guid: 18ebe334a5187f14486ff710915abaf0, type: 2}
   SortOrder: 60
-  Unlisted: 1
+  Unlisted: 0
   SoldByGunsmith: 0
   CampGunsmith: 0
   Summons: {fileID: 0}

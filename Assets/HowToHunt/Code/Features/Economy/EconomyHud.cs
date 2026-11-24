@@ -19,6 +19,7 @@ namespace HowToHunt.Economy
         private CampStation _promptStation;
         private int _promptBag = -1;
         private WorldItem _promptItem;
+        private Component _promptWanderer;
         private readonly ModifierStack _scratch = new ModifierStack();
 
         private void Awake()
@@ -169,18 +170,22 @@ namespace HowToHunt.Economy
                 station = CampStation.Nearest(pos, CampStationKind.Sell) ?? CampStation.Nearest(pos, CampStationKind.Shop) ?? CampStation.Nearest(pos, CampStationKind.Workshop);
             }
 
+            // Characters about camp without a stall (at the fire, chopping wood): talk to them where they are.
+            Component wanderer = me != null && !Game.UiHasFocus && item == null && station == null && NearbyWanderer != null ? NearbyWanderer(me.transform.position) : null;
             int bag = EconomyNet.Local.Inventory.PreyCount;
-            if (item != _promptItem || station != _promptStation || bag != _promptBag)
+            if (item != _promptItem || station != _promptStation || bag != _promptBag || wanderer != _promptWanderer)
             {
                 _promptItem = item;
                 _promptStation = station;
                 _promptBag = bag;
-                string text = item != null ? PromptFor(item) : station != null ? PromptFor(station) : null;
+                _promptWanderer = wanderer;
+                string text = item != null ? PromptFor(item) : station != null ? PromptFor(station) : wanderer != null ? WandererPrompt?.Invoke(wanderer) : null;
                 if (text != null) _prompt.SetText(text);
                 _prompt.gameObject.SetActive(text != null);
             }
 
             if (!KeyBindings.WasPressedThisFrame(GameAction.Interact)) return;
+            if (wanderer != null && TalkToWanderer != null && TalkToWanderer(wanderer)) return;
             if (item == null && station != null && TalkAt != null && TalkAt(station)) return; // the stall's NPC takes it from here
             if (item != null) EconomyNet.RequestPickUp(item.Id);
             else if (station != null)
@@ -204,6 +209,10 @@ namespace HowToHunt.Economy
 
         /// <summary>Set by the NPC feature: talk to whoever runs this stall (true: handled, the stall's own action waits).</summary>
         public static System.Func<CampStation, bool> TalkAt;
+        /// <summary>The NPC feature: a stall-less character within talking range of a point (null: none).</summary>
+        public static System.Func<Vector3, Component> NearbyWanderer;
+        public static System.Func<Component, string> WandererPrompt;
+        public static System.Func<Component, bool> TalkToWanderer;
         /// <summary>Set by the NPC feature: the prompt near a stall with someone at it ("[E] Talk to Tomas").</summary>
         public static System.Func<CampStation, string> TalkPrompt;
 

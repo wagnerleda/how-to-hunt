@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2876ba8925b5104082614fae68a5006, type: 3}
+  m_Name: Prey_Coyote
+  m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
+  _key: prey.coyote
+  _displayName: Coyote
+  _description: Runs in pairs and keeps its distance; hurt one and it snaps back at you for a while (12 damage). Worth the chase.
+  Allowed: 3
+  MaxHealth: 40
+  CaptureDifficulty: 4
+  MinKillTier: 1
+  OverkillRatio: 4
+  Hitboxes:
+  - A: {x: 0, y: 0.45, z: -0.3}
+    B: {x: 0, y: 0.47, z: 0.3}
+    Radius: 0.16
+    WeakPoint: 0
+  - A: {x: 0, y: 0.17, z: -0.22}
+    B: {x: 0, y: 0.17, z: 0.22}
+    Radius: 0.08
+    WeakPoint: 0
+  - A: {x: 0, y: 0.58, z: 0.42}
+    B: {x: 0, y: 0.55, z: 0.6}
+    Radius: 0.11
+    WeakPoint: 1
+  BaseValue: 48
+  TrophiesOnKill: 4
+  Movement: 1
+  WalkSpeed: 1.4
+  FleeSpeed: 9
+  FleeRadius: 14
+  SightRange: 34
+  HearingRange: 60
+  Wariness: 1.3
+  CalmDownSeconds: 4
+  WanderRadius: 18
+  StunSeconds: 0.25
+  StaminaSeconds: 6
+  TiredSpeed: 6.4
+  HalfExtents: {x: 0.17, y: 0.3, z: 0.42}
+  Aggression: 1
+  AggroRange: 0
+  LeashRadius: 40
+  AttackRange: 1.4
+  AttackWindup: 0.4
+  AttackCooldown: 1.3
+  AttackDamage: 12
+  AttackPush: 6
+  ChargeSpeed: 7.6
+  ProvokeSeconds: 7
+  RegenPerSecond: 0
+  SlamEvery: 0
+  SlamRadius: 5
+  SlamWindup: 1
+  SlamDamage: 40
+  SlamPush: 12
+  SlamDodgeHeight: 0.5
+  PounceRange: 0
+  PounceSpeed: 15
+  PounceWindup: 0.55
+  PounceCooldown: 6
+  EnrageBelow: 0
+  EnrageTempo: 0.75
+  EnrageSpeed: 1.1
+  IsBoss: 0
+  BossTitle: 
+  BossRewardCoins: 0
+  BossRewardTrophies: 0
+  Visual: {fileID: 2077963448808817714, guid: f8db85e71c7115b45ab3ac35004f1f3a, type: 3}
+  VisualScale: 1
+  Noun: a coyote
+  BloodColor: {r: 0.7, g: 0.06, b: 0.05, a: 1}
+  GibColor: {r: 0.7, g: 0.58, b: 0.42, a: 1}
+  GibCount: 7
+  Voice: 2
+  StackSize: 1

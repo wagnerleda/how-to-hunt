@@ -428,7 +428,7 @@ namespace HowToHunt.Editor
                 u.Requires = null;
             });
 
-            Asset<UpgradeDefinition>("Upgrades/Upgrade_WideHoop", "upgrade.net_wide", "Wide Hoop",
+            UpgradeDefinition wide = Asset<UpgradeDefinition>("Upgrades/Upgrade_WideHoop", "upgrade.net_wide", "Wide Hoop",
                 "Scoop from further away.", u =>
             {
                 u.Tool = net;
@@ -437,6 +437,18 @@ namespace HowToHunt.Editor
                 u.CostCoins = 150;
                 u.SortOrder = 30;
                 u.Requires = sturdy;
+            });
+
+            // The net's third step (2026-11-24): strong enough for foxes, jackrabbits and scorpions.
+            Asset<UpgradeDefinition>("Upgrades/Upgrade_IronwoodNet", "upgrade.net_ironwood", "Ironwood Net",
+                "Holds a fox, a jackrabbit or a scorpion.", u =>
+            {
+                u.Tool = net;
+                u.Effect = UpgradeEffect.CaptureStrength;
+                u.Value = 1f;
+                u.CostCoins = 380;
+                u.SortOrder = 35;
+                u.Requires = wide;
             });
 
             // The Plains gunsmith's only gun (owner, 2026-11-24); the armory in the movement lab has every gun.
@@ -454,25 +466,25 @@ namespace HowToHunt.Editor
             });
 
             UpgradeDefinition pack = Asset<UpgradeDefinition>("Upgrades/Upgrade_PackSmall", "upgrade.pack_small", "Hunter's Satchel",
-                "Two more inventory slots.", u =>
+                "Carry two more catches before the walk to the trader.", u =>
             {
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
-                u.Unlisted = true; // Phase 3.5: slots come later in the game (later areas, quests), not from the Plains shop
+                u.Unlisted = false; // owner, 2026-11-24: slots are bought at the Outfitter (the bag column)
                 u.Value = 2f;
-                u.CostCoins = 180;
+                u.CostCoins = 250;
                 u.SortOrder = 50;
                 u.Requires = null;
             });
 
             Asset<UpgradeDefinition>("Upgrades/Upgrade_PackLarge", "upgrade.pack_large", "Hunter's Backpack",
-                "Two more inventory slots.", u =>
+                "Room for a real day's hunt.", u =>
             {
                 u.Tool = null;
                 u.Effect = UpgradeEffect.InventorySlots;
-                u.Unlisted = true; // Phase 3.5: slots come later in the game (later areas, quests), not from the Plains shop
+                u.Unlisted = false;
                 u.Value = 2f;
-                u.CostCoins = 360;
+                u.CostCoins = 650;
                 u.SortOrder = 60;
                 u.Requires = pack;
             });
@@ -574,7 +586,9 @@ namespace HowToHunt.Editor
             Builtin("intervention_bipod", "Intervention Bipod", "Braced: the gun kicks half as much in the hand; half the spread down the scope.", AttachmentSlot.Underbarrel, 800, 230, intervention, "Cube.003_low;Cylinder.034_low;Cylinder.038_low;Cylinder.008_low", a => { a.KickMultiplier = 0.5f; a.AdsSpreadMultiplier = 0.5f; });
 
             BuildForestFauna();
+            BuildDesertFauna();
             BuildNpcsAndQuests();
+            BuildDesertNpcsAndQuests();
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))

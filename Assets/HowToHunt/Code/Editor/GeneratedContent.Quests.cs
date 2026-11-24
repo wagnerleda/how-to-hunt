@@ -42,6 +42,26 @@ namespace HowToHunt.Editor
             ash.Idle = "Forest catch sells for more here. Nobody wants to carry it back up.";
             Voice(ash, 1.05f, "The pines are watching.", "[whisper] Walk softly near the deer.", "Stay clear of the south-east glade... <shake>it</shake> sleeps there.");
 
+            // Characters about camp (2026-11-24): not every NPC stands behind a counter.
+            NpcDefinition hank = NpcAbout("hank", "Hank", "Old-timer", "Warms his hands at the Plains campfire and knows every rabbit by name.", NpcActivity.Campfire,
+                "Sit a spell. The fire's free.",
+                "Rabbits run in circles. Wait, and they come back round.",
+                "Back in my day we hunted with a stick and a prayer.");
+            hank.Idle = "Crouch and they can't see you half as far. Old trick.";
+            Voice(hank, 0.65f, "[think] Where'd I put my pipe...", "Cold one tonight.", "Mind the river, it's deeper than it looks.");
+            NpcDefinition mae = NpcAbout("mae", "Mae", "Woodcutter", "Keeps the camp in firewood. Swings an axe like she means it.", NpcActivity.ChopWood,
+                "Mind the axe! Stand where I can see you.",
+                "Firewood doesn't cut itself.",
+                "Nets from Wren, guns from Gus, firewood from me. Free, today.");
+            mae.Idle = "The Sturdy Net's worth every coin. Rabbits tear the cheap one.";
+            Voice(mae, 1.15f, "[shout] Timber!", "One more log...", "[think] Hands are getting blisters.");
+            NpcDefinition fern = NpcAbout("fern", "Fern", "Whittler", "Sits by Ash's fire carving little wooden animals.", NpcActivity.Whittle,
+                "Shh. You'll make me cut a leg off this fox.",
+                "I carve what I see. Lots of deer lately.",
+                "The bear? I carved it once. Couldn't get the eyes right.");
+            fern.Idle = "Foxes hide in the trees. Come at them slow, crouched.";
+            Voice(fern, 1.3f, "[whisper] Almost done...", "[think] Hmm, needs a tail.", "Nice day for it.");
+
             PreyDefinition deer = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Deer.asset");
 
             QuestDefinition freshStock = Quest("fresh_stock", "Fresh Stock", 1, tomas, null, QuestObjective.Sell, null, 3, 60,
@@ -54,6 +74,12 @@ namespace HowToHunt.Editor
                 "Tomas says you can hunt. Spend some of that coin on my rack.",
                 "Something for every budget.",
                 "Suits you. Gus at the gunsmith was asking about you.");
+            PreyDefinition rabbit = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_Rabbit.asset");
+            Quest("rabbit_stew", "Rabbit Stew", 2, hank, freshStock, QuestObjective.TakeDown, rabbit, 4, 90,
+                "Take down 4 rabbits",
+                "My stew pot's empty. Four rabbits would fill it.",
+                "Wait by the warrens. They come back round.",
+                "That'll make a fine stew. Here, take this.");
             QuestDefinition steadyHands = Quest("steady_hands", "Steady Hands", 3, gus, kittedOut, QuestObjective.Kill, null, 5, 120,
                 "Take down 5 prey (killed, not caught)",
                 "A hunter brings things down. Five of them, no catching alive.",
@@ -115,6 +141,17 @@ namespace HowToHunt.Editor
                 n.Role = role;
                 n.Station = station;
                 n.HasStation = true;
+                n.Activity = NpcActivity.Stall;
+                n.Greetings = new List<string>(greetings);
+            });
+
+        /// <summary>A character about camp, not at a stall (owner, 2026-11-24): at the fire, chopping wood, whittling.</summary>
+        private static NpcDefinition NpcAbout(string id, string name, string role, string description, NpcActivity activity, params string[] greetings) =>
+            Asset<NpcDefinition>("Npcs/Npc_" + id, "npc." + id, name, description, n =>
+            {
+                n.Role = role;
+                n.HasStation = false;
+                n.Activity = activity;
                 n.Greetings = new List<string>(greetings);
             });
 

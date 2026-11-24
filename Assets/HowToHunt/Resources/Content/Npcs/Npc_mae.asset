@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e011f083ad9444496d455592186b81, type: 3}
+  m_Name: Npc_mae
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
+  _key: npc.mae
+  _displayName: Mae
+  _description: Keeps the camp in firewood. Swings an axe like she means it.
+  Role: Woodcutter
+  Greetings:
+  - Mind the axe! Stand where I can see you.
+  - Firewood doesn't cut itself.
+  - Nets from Wren, guns from Gus, firewood from me. Free, today.
+  Idle: The Sturdy Net's worth every coin. Rabbits tear the cheap one.
+  Station: 0
+  HasStation: 0
+  Activity: 2
+  VoicePitch: 1.15
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[shout] Timber!'
+  - One more log...
+  - '[think] Hands are getting blisters.'
+  Mask: 

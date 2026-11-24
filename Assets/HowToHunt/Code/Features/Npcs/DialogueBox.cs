@@ -108,8 +108,8 @@ namespace HowToHunt.Npcs
             if (_bubble != null) _bubble.Hide();
             NpcDefinition def = _npc.Definition;
             string body = BubbleText.ParseStyle(_pages[index], BubbleStyle.Say, out BubbleStyle style);
-            // Name plate on the first page: who is talking.
-            string line = index == 0 ? $"<size=70%><b>{def.DisplayName}</b>, {def.Role}</size>\n{body}" : body;
+            // Name plate on the first page: who is talking (the name in the display font).
+            string line = index == 0 ? $"<size=85%>{UiFonts.Span(def.DisplayName)}</size><size=70%>, {def.Role}</size>\n{body}" : body;
             _bubble = SpeechBubble.Show(_npc.transform, line, style, def.VoicePitch, NpcVoices.For(def));
             _bubble.ShowNext = true;
         }

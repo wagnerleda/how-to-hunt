@@ -36,3 +36,4 @@ A development build runs a fixed camera tour and logs frame times, render counte
 - **Unsigned**: Windows SmartScreen shows "Windows protected your PC" → *More info* → *Run anyway*. Code signing (an OV/EV certificate, roughly 100–400 USD/year, or Azure Trusted Signing) removes most warnings; needs the owner's approval to buy.
 - **Steam**: players need the Steam client running to host/join. App 480 is a shared test app; shipping publicly needs our own app id through Steam Direct (100 USD fee, owner's approval). With our own id the game installs through Steam and the custom installer becomes optional.
 - **IL2CPP** for release builds (ADR 0012); development builds stay Mono.
+- **Licenses to settle before a public release**: The Wildeast font (personal use only today; buy the commercial license from Trustha Studio) and the owner gun assets marked "to confirm" in docs/ASSETS.md.

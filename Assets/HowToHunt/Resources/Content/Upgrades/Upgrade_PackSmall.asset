@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.UpgradeDefinition
   _key: upgrade.pack_small
   _displayName: Hunter's Satchel
-  _description: Two more inventory slots.
+  _description: Carry two more catches before the walk to the trader.
   Tool: {fileID: 0}
   Effect: 4
   Value: 2
-  CostCoins: 180
+  CostCoins: 250
   CostTrophies: 0
   Requires: {fileID: 0}
   SortOrder: 50
-  Unlisted: 1
+  Unlisted: 0
   SoldByGunsmith: 0
   CampGunsmith: 0
   Summons: {fileID: 0}

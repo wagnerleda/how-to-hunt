@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e011f083ad9444496d455592186b81, type: 3}
+  m_Name: Npc_prospector
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
+  _key: npc.prospector
+  _displayName: Dusty
+  _description: Sits by the fire at Dry Creek, full of stories about the desert.
+  Role: Prospector
+  Greetings:
+  - Pull up a rock. Fire's warm, the night gets cold out here.
+  - Forty years I've panned these creeks. Found one nugget. Lost it.
+  - Coyotes sing at night. They're not singing to you.
+  Idle: Rattlers lie in the shade. If you hear the rattle, jump back.
+  Station: 0
+  HasStation: 0
+  Activity: 1
+  VoicePitch: 0.7
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[think] Gold in them hills... somewhere.'
+  - Hot one today.
+  - '[whisper] Heard a coyote out by the mesa.'
+  Mask: 

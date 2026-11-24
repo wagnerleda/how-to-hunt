@@ -30,19 +30,26 @@ namespace HowToHunt.Npcs
                 Npc npc = Npc.At(station);
                 return npc != null && DialogueBox.Open(npc);
             };
-            EconomyHud.TalkPrompt = station =>
-            {
-                Npc npc = Npc.At(station);
-                if (npc == null) return null;
-                string key = KeyBindings.DisplayName(GameAction.Interact);
-                EconomyNet.QuestFrom(npc.Definition, EconomyNet.Local, out QuestState state);
-                string note = state == QuestState.Ready ? "  (quest done!)" : state == QuestState.Available ? "  (has work for you)" : string.Empty;
-                return $"[{key}] Talk to {npc.Definition.DisplayName}, the {npc.Definition.Role}{note}";
-            };
+            EconomyHud.TalkPrompt = station => Prompt(Npc.At(station));
+            EconomyHud.NearbyWanderer = point => Npc.NearWanderer(point);
+            EconomyHud.WandererPrompt = c => Prompt(c as Npc);
+            EconomyHud.TalkToWanderer = c => c is Npc npc && DialogueBox.Open(npc);
+        }
+
+        private static string Prompt(Npc npc)
+        {
+            if (npc == null) return null;
+            string key = KeyBindings.DisplayName(GameAction.Interact);
+            EconomyNet.QuestFrom(npc.Definition, EconomyNet.Local, out QuestState state);
+            string note = state == QuestState.Ready ? "  (quest done!)" : state == QuestState.Available ? "  (has work for you)" : string.Empty;
+            return $"[{key}] Talk to {npc.Definition.DisplayName}, the {npc.Definition.Role}{note}";
         }
 
         public void Shutdown()
         {
+            EconomyHud.NearbyWanderer = null;
+            EconomyHud.WandererPrompt = null;
+            EconomyHud.TalkToWanderer = null;
             EconomyHud.TalkAt = null;
             EconomyHud.TalkPrompt = null;
         }

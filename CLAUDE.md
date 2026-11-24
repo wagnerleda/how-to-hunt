@@ -15,7 +15,7 @@
 - Branch `dev`; small commits; never push; tag checkpoints (`m0-setup`, `m1-movement-lab`, ...).
 - Foundation and Sim must not reference UnityEngine. Use `System.Numerics`, convert with `VectorConvert`.
 - No allocations in per-tick/per-frame gameplay code (no LINQ/closures in loops, pool everything). Add an allocation test for new hot paths with `AllocationAssert.None` (`GC.GetAllocatedBytesForCurrentThread` is always 0 on Unity's Mono: never measure with it).
-- UI is uGUI + TextMeshPro. Look-and-feel numbers live in `MenuTheme` / `DialogueTheme` (Resources/UI), motion uses `Ease` and respects `UiFeel.Calm` (ui_reduce_motion); menus and dialogue navigate through `UiInput` (keyboard + gamepad); every gameplay action also has a gamepad button in `KeyBindings`. IMGUI is left only in the console and the mask editor, always through `ImGuiHost` (an enabled `OnGUI` allocates every frame).
+- UI is uGUI + TextMeshPro. The display font (The Wildeast) goes through `UiFonts.Use`/`UiFonts.Span`, only on titles, headings, buttons, names and signs (never running text or small labels: readability first); regenerate it with `python tools/fonts/complete_wildeast.py <src.ttf> Assets/HowToHunt/Art/Fonts/TheWildeast/TheWildeast-HowToHunt.ttf` (needs fonttools) then `GeneratedAssets.EnsureDisplayFont()`. Its license is personal use: buy it before any public release. Look-and-feel numbers live in `MenuTheme` / `DialogueTheme` (Resources/UI), motion uses `Ease` and respects `UiFeel.Calm` (ui_reduce_motion); menus and dialogue navigate through `UiInput` (keyboard + gamepad); every gameplay action also has a gamepad button in `KeyBindings`. IMGUI is left only in the console and the mask editor, always through `ImGuiHost` (an enabled `OnGUI` allocates every frame).
 - One MonoBehaviour per file, file named after the class (player builds break otherwise).
 - Every tunable is a cvar (Archive for settings, `Replicated|Cheat` for sv_*). No magic numbers in gameplay code.
 - Content is ScriptableObjects deriving `ContentDefinition`; keys are permanent; `ContentValidationTests` must pass.
@@ -26,6 +26,8 @@
 - Ask before paid services or unclear licenses; log every asset in docs/ASSETS.md. New ideas go to docs/IDEAS.md.
 
 ## Movement lab
+- The lab is the test zone: the full Armory (every gun) next to the spawn plaza and test pads (BHOP, GAPS, SURF, DESERT).
+- Maps: Plains (camp at (-30, 0, 135)), Pine Forest (y -50, camp (392, -50, 203)), Red Desert (camp (410, 0, -530)); each biome is a `GrayboxSceneBuilder.<Biome>.cs` + `GeneratedContent.<Biome>.cs`. Boundaries are visible rock ridges (`RockWall`), never invisible walls.
 - Rebuild the map: `HowToHunt.Editor.GrayboxSceneBuilder.Build()` (also exports collision to Tests/Data/Worlds).
 - Regenerate scripted demos after an intended physics/map change: `HowToHunt.Editor.MovementLabTools.GenerateScriptedDemos()`. ReplayTests replays every demo in Tests/Data/Demos (including ones recorded in the editor with `record`/`stop`).
 - Editor Play mode runs offline (no Steam) unless How to Hunt > Use Steam in Play Mode is ticked: an Editor registered as app 480 is closed by Steam whenever another app-480 instance (test builds, bots-test) exits. Always leave Play mode when done testing.

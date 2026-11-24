@@ -36,3 +36,6 @@ Not approved for building. Each needs the owner's yes before work starts.
 - **Bait as a carried item**: set the bait down in the den yourself instead of it working from the stall (the boss comes to the bait).
 - **Blender models** for the squirrel, fox, boar and the Old Bear (now procedural blocks), with a walk cycle.
 - **Boss loot**: a unique trophy or cosmetic (a bear-claw mask) for everyone in the fight.
+- **Desert boss** (after the Old Bear): a giant scorpion or a sand wyrm under the dunes, summoned by its own bait at Dry Creek; a pounce from under the sand as its new `PreyStrike`.
+- **Desert flyers**: vultures circling over a carcass (they'd show where something died).
+- **More camp life**: a fisherman at the Plains river, a gunsmith's apprentice cleaning rifles, characters walking between the stalls.

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_rabbit_stew
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.rabbit_stew
+  _displayName: Rabbit Stew
+  _description: Take down 4 rabbits
+  Giver: {fileID: 11400000, guid: c6a1ce2c7b1b63340a9bb8c9d8489b51, type: 2}
+  Requires: {fileID: 11400000, guid: 1bbdf5055e8ee8746a4c3e30c02a444a, type: 2}
+  Objective: 2
+  Prey: {fileID: 11400000, guid: 4f69ff2e37f7a5849b896bee7eec3d11, type: 2}
+  Count: 4
+  RewardCoins: 90
+  Unlocks: 
+  Offer: My stew pot's empty. Four rabbits would fill it.
+  Task: Take down 4 rabbits
+  Waiting: Wait by the warrens. They come back round.
+  Done: That'll make a fine stew. Here, take this.
+  Order: 2

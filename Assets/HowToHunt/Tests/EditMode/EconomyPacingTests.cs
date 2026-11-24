@@ -29,7 +29,14 @@ namespace HowToHunt.Tests
 
             Assert.That(r.AllOwned, Is.True, "Every Plains upgrade should be reachable.");
             Assert.That(r.Unlocks[0].Seconds, Is.InRange(210.0, 390.0), "First upgrade should take a few minutes of hunting (about 4-6).");
-            Assert.That(r.Seconds, Is.InRange(780.0, 1080.0), "All Plains upgrades in about 15 minutes (owner, Phase 3.5).");
+            // The starter kit (net, knife, revolver) in about 15 minutes (owner, Phase 3.5); the later rack (the bag
+            // column and the Ironwood Net, owner 2026-11-24) is for the forest and desert, so it takes a while longer.
+            double starter = 0;
+            foreach (EconomySimulator.Unlock u in r.Unlocks)
+                if (u.Upgrade.Key == "upgrade.net_sturdy" || u.Upgrade.Key == "upgrade.knife_whetstone" || u.Upgrade.Key == "upgrade.net_wide" || u.Upgrade.Key == "upgrade.revolver")
+                    starter = System.Math.Max(starter, u.Seconds);
+            Assert.That(starter, Is.InRange(660.0, 1200.0), "The starter kit in about 15 minutes (owner, Phase 3.5).");
+            Assert.That(r.Seconds, Is.InRange(1500.0, 2700.0), "The whole Plains rack, bag and Ironwood Net included, in 25-45 minutes.");
         }
 
         [Test]
@@ -57,6 +64,30 @@ namespace HowToHunt.Tests
             loadout.AddUpgrade(sturdy.Id.Value);
             Sim.Hunting.TakedownResult after = Sim.Hunting.Takedown.Resolve(rabbit.Stats, rabbit.MaxHealth, loadout.StatsFor(net, out _), false);
             Assert.That(after.Outcome, Is.EqualTo(Sim.Hunting.TakedownOutcome.Captured));
+        }
+
+        [Test]
+        public void IronwoodNet_HoldsFoxesJackrabbitsAndScorpions_TheWideHoopDoesNot()
+        {
+            ContentRegistry.Reset();
+            Loadouts.Reset();
+            ToolDefinition net = ContentRegistry.Get<ToolDefinition>("tool.net");
+            var loadout = new Loadout();
+            foreach (string key in new[] { "upgrade.net_sturdy", "upgrade.net_wide" }) loadout.AddUpgrade(ContentRegistry.Get<UpgradeDefinition>(key).Id.Value);
+            foreach (string prey in new[] { "prey.fox", "prey.jackrabbit", "prey.scorpion" })
+            {
+                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(prey);
+                Assert.That(p, Is.Not.Null, prey);
+                var before = Sim.Hunting.Takedown.Resolve(p.Stats, p.MaxHealth, loadout.StatsFor(net, out _), false);
+                Assert.That(before.Reason, Is.EqualTo(Sim.Hunting.RejectReason.TooWeakToHold), prey + " slips out of the Wide Hoop");
+            }
+            loadout.AddUpgrade(ContentRegistry.Get<UpgradeDefinition>("upgrade.net_ironwood").Id.Value);
+            foreach (string prey in new[] { "prey.fox", "prey.jackrabbit", "prey.scorpion" })
+            {
+                PreyDefinition p = ContentRegistry.Get<PreyDefinition>(prey);
+                var after = Sim.Hunting.Takedown.Resolve(p.Stats, p.MaxHealth, loadout.StatsFor(net, out _), false);
+                Assert.That(after.Outcome, Is.EqualTo(Sim.Hunting.TakedownOutcome.Captured), prey + " is held by the Ironwood Net");
+            }
         }
     }
 }

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e011f083ad9444496d455592186b81, type: 3}
+  m_Name: Npc_fern
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
+  _key: npc.fern
+  _displayName: Fern
+  _description: Sits by Ash's fire carving little wooden animals.
+  Role: Whittler
+  Greetings:
+  - Shh. You'll make me cut a leg off this fox.
+  - I carve what I see. Lots of deer lately.
+  - The bear? I carved it once. Couldn't get the eyes right.
+  Idle: Foxes hide in the trees. Come at them slow, crouched.
+  Station: 0
+  HasStation: 0
+  Activity: 3
+  VoicePitch: 1.3
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[whisper] Almost done...'
+  - '[think] Hmm, needs a tail.'
+  - Nice day for it.
+  Mask: 

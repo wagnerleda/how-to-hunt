@@ -54,7 +54,7 @@ namespace HowToHunt.Editor
             });
 
             Asset<PreyDefinition>("Prey/Prey_Fox", "prey.fox", "Red Fox",
-                "Sly and wary: sees you from 40 m and outruns a sprint. Too strong for any net yet; a clean shot or a sneaky blade.", p =>
+                "Sly and wary: sees you from 40 m and outruns a sprint. An Ironwood Net holds it; or a clean shot, or a sneaky blade.", p =>
             {
                 p.Allowed = TakedownMethods.Either;
                 p.MaxHealth = 25f;

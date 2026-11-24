@@ -43,9 +43,9 @@ Numbers live in content (`GeneratedContent.cs`) and cvars; pacing is checked by 
 | Hunting Knife | 2 | 6 dmg (x2 head), reach 2 m | start |
 | Old Revolver | 3 | 25 dmg (x2 head), 150 m: ruins butterflies, a head shot ruins a rabbit | bought |
 
-Upgrades (Outfitter; the Old Revolver is at the Gunsmith since 2026-11-24): Sturdy Net (+1 strength, 60 c), Whetstone (knife x1.6, 45 c), Wide Hoop (+0.8 m reach, 90 c, needs Sturdy Net), Hunter's Satchel (+2 slots, 70 c), Hunter's Backpack (+2 slots, 160 c, needs the Satchel).
+Upgrades (Outfitter; the Old Revolver is at the Gunsmith since 2026-11-24). The rack shows one column per thing you improve, each headed by the item and what it does now, its upgrades in order joined by arrows, each with one clear state (owned, buy, N more coins, needs the one above): **Butterfly Net** Sturdy Net (+1 strength, 130 c), Wide Hoop (+0.8 m reach, 150 c), Ironwood Net (+1 strength: holds foxes, jackrabbits and scorpions, 380 c); **Hunting Knife** Whetstone (x1.6 damage, 110 c); **Your bag** (your slots drawn as boxes) Hunter's Satchel (+2 slots, 250 c), Hunter's Backpack (+2 slots, 650 c). Pacing: the starter kit in about 15 minutes, the whole rack in 25-45 (EconomyPacingTests).
 
-Inventory: 3 slots to start (tools included: net, knife and one catch; more slots come later in the game, not from the Plains shop), butterflies stack to 10, rabbits take a slot each. Catches go straight into the inventory; kills drop a carcass you must pick up (E). Sell everything you carry at the Trader, buy at the Outfitter (both at camp, Interact = E). Throw (Q) drops what you hold on a tap and throws it when held: the longer you hold, the further (capped). Throwing a prey into the Trader sells it; a throw that hits a prey or a player slows them 10 % for 0.75 s (never a stun).
+Inventory: 3 slots to start (tools included: net, knife and one catch; the Outfitter's bag column adds 2 + 2), butterflies stack to 10, rabbits take a slot each. Catches go straight into the inventory; kills drop a carcass you must pick up (E). Sell everything you carry at the Trader, buy at the Outfitter (both at camp, Interact = E). Throw (Q) drops what you hold on a tap and throws it when held: the longer you hold, the further (capped). Throwing a prey into the Trader sells it; a throw that hits a prey or a player slows them 10 % for 0.75 s (never a stun).
 
 A missed bunny hop costs little: for 0.2 s after landing, ground friction is cut to 15 %. Sprint (Shift) runs on a stamina bar (3 s from fresh, refills while you are not sprinting). Dropped items lie on their natural resting face and roll a little. Throw charges show as a ring at the centre of the screen.
 
@@ -57,7 +57,11 @@ Guns use their own model parts: a part a gun already has (the Uzi's suppressor, 
 
 Gun handling follows How to Fish (the owner's own game, studied from its code): every shot kicks the view up (and randomly aside) and it stays there, you pull it back down; aiming does not soften it. The gun model is thrown back and up and springs home through a second, softer rig, stiffer while aiming. From the hip the gun drifts in a small free-aim box as you turn and fire, and bullets follow the barrel; aiming centres it. Only muzzle devices change the view kick (a little); grips, stocks and bipods steady the gun in the hand instead. Shotguns and launchers shove you back along your view (firing at your feet lifts you). Sprinting lowers and turns the gun; reloads tilt in, flick the old magazine out, slap the new one home and rack only when the gun was empty (a reload with rounds left is quicker); the magazine counts as in at 75-90 % of the reload. The head bobs with your steps and tips with vertical speed (cl_viewbob, cl_falltilt). The gun model's turn is held to soft limits like How to Fish's joints (about 1 degree up, 3 aside), so a shot shoves the gun back in the hands rather than flipping it, and the free-aim drift follows on a spring. During reloads the off hand works the gun: it takes the magazine down and brings the new one up and slaps it home, racks the slide, charging handle or bolt on an empty gun, turns a revolver's cylinder, reaches into a shotgun's open breech, and rams the cannon from its muzzle (pistols show a second hand just for the reload).
 
+Typography: titles, headings, buttons, names, world signs and the boss bar use The Wildeast (a hand-drawn western brush; its missing punctuation drawn from its own strokes); running text (dialogue, descriptions, numbers) stays in the plain face. Readability first: small text never uses the brush.
+
 Main menu: the Plains at sunset seen from behind a hunter sitting on a boulder, rifle on the shoulder, wearing your own mask; the hunter breathes and looks around, the camera drifts, the light is a low orange sun. The menu stands on the left. Settings > Progress > Reset progress (asked twice; main menu only) starts you over as a new hunter: coins, gear, attachments, quests and opened paths go; the mask and settings stay.
+
+Not every character stands at a stall: Hank warms his hands at the Plains campfire, Mae splits firewood behind the Outfitter (an axe on a block, a thunk each swing), Fern whittles by Ash's fire, Dusty sits at the Dry Creek fire. Walk up and talk to them where they are; they stop what they're doing and turn to you. Hank gives "Rabbit Stew" (take down 4 rabbits, 90).
 
 Talking to a camp character is short: their quest is settled in one line (a new one is taken on with its task and reward, a finished one handed in and the next one taken, one in progress shows how far you are); the only replies are their stall's business and goodbye.
 
@@ -65,6 +69,19 @@ Hunters: everyone has the same body, a skin-coloured stick figure (thin limbs, b
 
 ## Pine Forest (second map, Phase 6)
 The east clearing of the Plains is blocked by fallen trees until the party finishes "Beyond the Trees" (Tomas). Then a trail leads to a cliff ledge; three surf ramps (7 degrees down, 8 m gaps, each 7 m lower) cross a wooded ravine to the Pine Forest. Holding strafe into the ramp is enough to make it (about 12 s); a fall puts you back on the ledge. No invisible walls: every boundary is a rocky ridge you can see (the Plains and the forest all round, the corridor from the lab, the trail to the ledge, the sides of the forest landing); the ledge is open, a fall into the ravine brings you back to it. The forest is a smaller valley (120 m) 50 m below the Plains: pines, deer glades, rabbit warrens, Ash's trading post (forest prices x1.5, bigger cash bursts) and a pad back to the Plains camp (the quick way home). Once you have landed, falls respawn you at the forest landing. New prey: the Pine Deer (60 HP, wary, flees fast, worth 45; Ash's quest "Ghost of the Pines").
+
+## The Red Desert (third biome, started 2026-11-24)
+A basin of low dunes ringed by striped red mesas, south of the movement lab. Reached by a pad at Ash's forest camp that appears once the Old Bear has fallen (the lab has a test pad); pads at Dry Creek go back to the forest and the Plains. Dry Creek camp: Rosa's trading post (desert prices x2, the best so far), Dusty the prospector by the fire, an adobe hut, a well. Saguaros (solid), barrel cacti, dead bushes, skulls, red rock formations you can climb.
+
+| Prey | HP | Take-down | Value | Behaviour | Quest |
+|---|---|---|---|---|---|
+| Jackrabbit | 12 | either (Ironwood Net) | 16 | hears you from 60 m, outruns a sprint for 4 s | Long Ears: take down 4 (Rosa, 260) |
+| Desert Lizard | 5 | either (any net), stacks 3 | 8 | basks on rock piles, short dashes | - |
+| Red Scorpion | 14 | either (Ironwood Net), stacks 2 | 22 | doesn't flee: comes at you within 4 m and stings (10) after the tail rears | Sting Operation: catch 2 alive (Rosa, 340) |
+| Rattlesnake | 20 | kill only | 30 | waits in the shade of rock piles; within 3.5 m it rattles, then strikes 1.6 m (18) | Rattled: kill 3 (Rosa, 420) |
+| Coyote | 40 | either | 48 | in pairs, wary (34 m), hurt one and it snaps back for 7 s (12) | Coyote Trouble: take down 2 (Dusty, 380) |
+
+A desert boss comes later (IDEAS).
 
 ## Forest fauna and the first boss (2026-11-24)
 New forest prey, each with an Ash quest after "Ghost of the Pines":

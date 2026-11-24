@@ -35,6 +35,9 @@ Every asset and third-party package is listed here with its source and license. 
 | Pine Deer | Modelled in Blender for this game (`Art/Source/Deer.blend`) | Ours | `Art/Models/Deer/Deer.fbx`, 332 faces |
 | Red squirrel, red fox, wild boar, the Old Bear | Procedural (`CreatureModels.cs`): flat-shaded tapered blocks in vertex colours | Ours | `Prefabs/Prey/*.prefab`, M_Terrain; placeholders a Blender model can replace via `Visual` |
 | Surf ramp bands (`T_SurfRamp.png`, `M_SurfRamp`) | Generated (`Palette.cs`) | Ours | 64 px; orange, cream bands, dark ridge and base lines |
+| Jackrabbit, desert lizard, red scorpion, rattlesnake, coyote; saguaros, barrel cactus, dead bush, skull | Procedural (`CreatureModels.cs`), like the forest animals | Ours | `Prefabs/Prey/*.prefab`, `Generated/Meshes/Prop_*.asset`, M_Terrain (2026-11-24) |
+| Desert terrain, mesas, Dry Creek camp | Procedural (`GrayboxSceneBuilder.Desert.cs`) | Ours | vertex colours, palette `Mesa`/`MesaDark`/`Adobe` |
+| **The Wildeast** font (display face) | Trustha Studio (dribbble.com/trustha), supplied by the owner 2026-11-24 | **Personal use only until a commercial license is bought: buy it before any public release (Steam).** The file says "Copyright 2019 Trustha Studio, all rights reserved" | `Art/Fonts/TheWildeast/TheWildeast-HowToHunt.ttf`: the original letters and digits plus punctuation drawn from its own strokes by `tools/fonts/complete_wildeast.py` (ours); TMP asset generated into `Resources/Fonts & Materials/Wildeast SDF` |
 | UI shapes (rounded panels, bubble tail, circle, glow), menu sky and vignette | Procedural at runtime (`UiSprites.cs`, `MenuBackdrop.cs`) | Ours | no files |
 | Voice blips | Procedural (`ProceduralSounds.Blip`) | Ours | pitched per character; `NpcDefinition.VoiceClip` can replace it |
 | Menu sounds (tick, confirmation, drop, maximize, error, toggle) | Kenney Interface Sounds, already listed above | CC0 1.0 | `UiFeel` |

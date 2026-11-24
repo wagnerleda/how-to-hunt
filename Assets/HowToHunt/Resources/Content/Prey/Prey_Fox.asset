@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
   _key: prey.fox
   _displayName: Red Fox
-  _description: 'Sly and wary: sees you from 40 m and outruns a sprint. Too strong for any net yet; a clean shot or a sneaky blade.'
+  _description: 'Sly and wary: sees you from 40 m and outruns a sprint. An Ironwood Net holds it; or a clean shot, or a sneaky blade.'
   Allowed: 3
   MaxHealth: 25
   CaptureDifficulty: 3

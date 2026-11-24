@@ -36,6 +36,15 @@ Status: accepted (2026-11-24, owner request: livelier menus, NPC speech bubbles,
   and restores them when a party starts; `RestingHunter` poses the figure. `MenuBackdrop` keeps the pollen, tint
   and vignette on top; its drawn sun is off. The main menu panel stands at 30 % of the width.
 
+### Amendment 2 (2026-11-24, owner: a display font, a clearer shop)
+- **Display font**: The Wildeast (owner-supplied; personal-use license until bought, docs/ASSETS.md) completed with
+  punctuation from its own strokes (`tools/fonts/complete_wildeast.py`), baked into a static TMP SDF asset in
+  `Resources/Fonts & Materials` by `GeneratedAssets.EnsureDisplayFont`, falling back to the default face for
+  anything else. `UiFonts.Use` puts it on what is read at a glance (titles, headings, buttons of 18 px and up, names,
+  signs, the boss bar); running text keeps the default face: readability first.
+- **Shop as columns**: `ShopPanel` groups the stall's upgrades by item and shows each column's current numbers and
+  every card's single state; the bag column draws your slots.
+
 ## Consequences
 - IMGUI remains only for the developer console and the mask editor (both through `ImGuiHost`).
 - The gamepad layout is not rebindable yet; the mask editor needs a mouse.

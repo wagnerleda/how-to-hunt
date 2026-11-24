@@ -335,6 +335,7 @@ namespace HowToHunt.Editor
             Prop(camp, "campfire_logs", c, 3f, rng, collide: false, yaw: 30f);
             Campfire(camp, c + new Vector3(0f, 0.25f, 0f));
             Prop(camp, "log", c + new Vector3(-2.4f, 0f, 0.6f), 3f, rng, collide: false, yaw: 80f);
+            NpcAbout(camp, "npc.fern", c + new Vector3(-2.05f, 0f, 0.55f), 90f); // whittling by the fire
             Prop(camp, "tent_smallOpen", c + new Vector3(-3f, 0f, -7.5f), 4f, rng, collide: true, yaw: 20f);
             Prop(camp, "log_stack", c + new Vector3(4f, 0f, -6.5f), 3f, rng, collide: true, yaw: 0f);
 

@@ -105,6 +105,14 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 6 | Alone (nobody standing to revive you): back at camp 3 s after going down | "no 30 s wait when alone" |
 | 7 | Main menu: the Plains at sunset behind a hunter sitting on a rock with a rifle, slowly animated | "the Plains at sunset, the character on a rock with a rifle" |
 
+## Phase 6.5: clearer shop, characters about camp, the desert begins, the display font (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | The Outfitter remade: a column per item (net, knife, bag), the item and its numbers on top, upgrades in order with one clear state each; slots are bought there (Satchel, Backpack); a new Ironwood Net | "redo where you buy slots, improve the net, much clearer and nicer" |
+| 2 | Characters about camp: Hank at the Plains fire (and his quest), Mae chopping wood, Fern whittling in the forest, Dusty at the desert fire | "NPCs not only at stalls" |
+| 3 | The Red Desert, first version: map, Dry Creek camp (Rosa x2 prices, Dusty), jackrabbit, lizard, scorpion, rattlesnake, coyote, four quests; opened by the Old Bear (lab test pad) | "start the third biome, the desert, with scorpions and snakes" |
+| 4 | The Wildeast across the game where it stays readable (titles, buttons, names, signs), punctuation drawn from its own strokes; license to buy before release | "integrate the font everywhere, readability first" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

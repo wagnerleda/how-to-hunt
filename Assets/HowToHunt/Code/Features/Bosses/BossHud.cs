@@ -34,6 +34,7 @@ namespace HowToHunt.Bosses
         {
             _title = Hud.Text("Boss Title", new Vector2(0.5f, 1f), new Vector2(0f, -44f), 24f, TextAlignmentOptions.Center, Title);
             _title.rectTransform.sizeDelta = new Vector2(BarWidth + 200f, 34f); // sits just above the bar, not over it
+            UiFonts.Use(_title).fontSize = 30f;
             _back = Hud.Rect("Boss Bar", new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(BarWidth, BarHeight), Back);
             _fill = Hud.Rect("Fill", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(BarWidth, BarHeight), Fill);
             _fill.rectTransform.SetParent(_back.rectTransform, false);

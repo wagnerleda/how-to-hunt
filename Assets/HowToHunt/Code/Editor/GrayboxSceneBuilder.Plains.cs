@@ -405,7 +405,7 @@ namespace HowToHunt.Editor
         /// the rock itself), each with a collision-only cap from just under its top up to <paramref name="capTop"/> so
         /// nobody launches over it. The cap is only met high in the air, over the rocks.
         /// </summary>
-        private static void RockWall(Transform parent, string name, Vector3 a, Vector3 b, System.Func<float, float, float> ground, float capTop, System.Random rng)
+        private static void RockWall(Transform parent, string name, Vector3 a, Vector3 b, System.Func<float, float, float> ground, float capTop, System.Random rng, string stoneA = "Cliff", string stoneB = "CliffDark")
         {
             Vector3 d = b - a;
             d.y = 0f;
@@ -419,14 +419,14 @@ namespace HowToHunt.Editor
                 Vector3 p = Vector3.Lerp(a, b, (i + 0.5f) / n);
                 float g = ground(p.x, p.z);
                 float h = Range(rng, RockMinHeight, RockMaxHeight), w = Range(rng, 2.4f, 3.6f);
-                string stone = rng.Next(3) == 0 ? "CliffDark" : "Cliff";
+                string stone = rng.Next(3) == 0 ? stoneB : stoneA;
                 // Sunk 2.5 m so a slope along the piece never opens a gap underneath; jagged in and out, in two tones.
                 Vector3 at = p + side * Range(rng, -0.5f, 0.5f);
                 Box(parent, $"{name} Rock {i}", new Vector3(at.x, g - 2.5f + h * 0.5f, at.z), new Vector3(w, h, step * 1.35f + 0.5f), stone, yaw + Range(rng, -14f, 14f));
                 // Fallen blocks at its feet (both sides) break the line; solid like everything you can see.
                 float s = rng.Next(2) == 0 ? -1f : 1f, bh = Range(rng, 1.2f, 2.4f);
                 Vector3 block = p + side * s * (w * 0.5f + Range(rng, 0.2f, 0.9f)) + (d / len) * Range(rng, -1f, 1f);
-                Box(parent, $"{name} Block {i}", new Vector3(block.x, ground(block.x, block.z) - 0.6f + bh * 0.5f, block.z), new Vector3(Range(rng, 1f, 1.9f), bh, Range(rng, 1f, 2f)), stone == "Cliff" ? "CliffDark" : "Cliff", Range(rng, 0f, 90f));
+                Box(parent, $"{name} Block {i}", new Vector3(block.x, ground(block.x, block.z) - 0.6f + bh * 0.5f, block.z), new Vector3(Range(rng, 1f, 1.9f), bh, Range(rng, 1f, 2f)), stone == stoneA ? stoneB : stoneA, Range(rng, 0f, 90f));
                 float capBottom = g + RockMinHeight - 2.5f - 0.4f;
                 GameObject cap = Box(parent, $"{name} Cap {i}", new Vector3(p.x, (capBottom + capTop) * 0.5f, p.z), new Vector3(1f, capTop - capBottom, step + 0.6f), "Wall", yaw);
                 cap.GetComponent<MeshRenderer>().enabled = false;
@@ -478,6 +478,10 @@ namespace HowToHunt.Editor
             // Gunsmith (Phase 5): the Old Revolver and attachments (every gun is at the armory in the movement lab).
             Station(camp, signs, CampStationKind.Workshop, "Gunsmith", "GUNSMITH\n<size=55%>the Old Revolver, attachments</size>", c + new Vector3(0f, 0f, 7.5f), 0f, "npc.gunsmith");
             Prop(camp, "log_stack", c + new Vector3(-10.5f, 0f, -2.5f), 3f, rng, collide: true, yaw: 90f);
+            // Characters about camp (2026-11-24): Hank warms his hands on the log by the fire; Mae splits firewood.
+            NpcAbout(camp, "npc.hank", c + new Vector3(-2.25f, 0f, 2.15f), 90f);
+            Prop(camp, "stump_round", c + new Vector3(-13f, 0f, -3.9f), 2.6f, rng, collide: true, yaw: 0f);
+            NpcAbout(camp, "npc.mae", c + new Vector3(-13f, 0f, -4.75f), 0f);
             Prop(camp, "pot_large", c + new Vector3(10.3f, 0f, -2.8f), 3f, rng, collide: false, yaw: 0f);
             Prop(camp, "crop_pumpkin", c + new Vector3(9.4f, 0f, 1.3f), 3f, rng, collide: false, yaw: 20f);
         }
@@ -598,6 +602,35 @@ namespace HowToHunt.Editor
             go.transform.SetPositionAndRotation(feet + new Vector3(0f, MovementConfigHalfHeight, 0f), Quaternion.Euler(0f, yaw, 0f));
             AvatarBuilder.BuildFigure(go.transform);
             go.AddComponent<Npcs.Npc>().Configure(def, 4.5f); // customers stand across the counter
+            go.AddComponent<Npcs.NpcBody>();
+        }
+
+        /// <summary>
+        /// A character about camp, not at a stall (2026-11-24): stands (or sits, NpcBody lowers them onto the seat the
+        /// caller placed) at feet, facing yaw, with what their activity needs in hand: an axe to chop wood, a stick to
+        /// whittle. You talk to them where they are (a shorter range than across a counter).
+        /// </summary>
+        private static void NpcAbout(Transform parent, string key, Vector3 feet, float yaw)
+        {
+            var def = AssetDatabase.LoadAssetAtPath<NpcDefinition>($"{GeneratedContent.ContentDir}/Npcs/Npc_{key.Substring(key.IndexOf('.') + 1)}.asset");
+            if (def == null) { Debug.LogWarning($"[HowToHunt] No NPC {key}"); return; }
+            var go = new GameObject($"NPC {def.DisplayName}");
+            go.transform.SetParent(parent, true);
+            go.transform.SetPositionAndRotation(OnGround(feet) + new Vector3(0f, MovementConfigHalfHeight, 0f), Quaternion.Euler(0f, yaw, 0f));
+            AvatarBuilder.BuildFigure(go.transform);
+            if (def.Activity == NpcActivity.ChopWood)
+            {
+                Transform axe = Group(go.transform, "Tool");
+                Visual(axe, "Handle", Vector3.zero, new Vector3(0.04f, 0.04f, 0.8f), "Wood").transform.localPosition = new Vector3(0f, 0f, 0.3f);
+                Visual(axe, "Head", Vector3.zero, new Vector3(0.035f, 0.17f, 0.11f), "Gunmetal").transform.localPosition = new Vector3(0f, 0.05f, 0.66f);
+                foreach (Transform t in axe) t.localRotation = Quaternion.identity;
+            }
+            else if (def.Activity == NpcActivity.Whittle)
+            {
+                Transform stick = Group(go.transform, "Tool");
+                Visual(stick, "Stick", Vector3.zero, new Vector3(0.035f, 0.035f, 0.26f), "Crate").transform.localPosition = Vector3.zero;
+            }
+            go.AddComponent<Npcs.Npc>().Configure(def, 3.2f);
             go.AddComponent<Npcs.NpcBody>();
         }
 

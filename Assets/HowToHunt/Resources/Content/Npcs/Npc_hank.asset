@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e011f083ad9444496d455592186b81, type: 3}
+  m_Name: Npc_hank
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.NpcDefinition
+  _key: npc.hank
+  _displayName: Hank
+  _description: Warms his hands at the Plains campfire and knows every rabbit by name.
+  Role: Old-timer
+  Greetings:
+  - Sit a spell. The fire's free.
+  - Rabbits run in circles. Wait, and they come back round.
+  - Back in my day we hunted with a stick and a prayer.
+  Idle: Crouch and they can't see you half as far. Old trick.
+  Station: 0
+  HasStation: 0
+  Activity: 1
+  VoicePitch: 0.65
+  VoiceClip: {fileID: 0}
+  Barks:
+  - '[think] Where''d I put my pipe...'
+  - Cold one tonight.
+  - Mind the river, it's deeper than it looks.
+  Mask: 

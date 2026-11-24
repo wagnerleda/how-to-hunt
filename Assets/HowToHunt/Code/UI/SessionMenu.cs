@@ -105,6 +105,8 @@ namespace HowToHunt.UI
             _title.rectTransform.anchorMin = _title.rectTransform.anchorMax = new Vector2(0.5f, 1f);
             _title.rectTransform.sizeDelta = new Vector2(Inner, 64f);
             _title.SetText("How to Hunt");
+            UiFonts.Use(_title);
+            _title.fontSize = 66f; // the brush face reads smaller than the old bold
             _title.outlineWidth = 0.18f;
             _title.outlineColor = new Color32(60, 26, 6, 255);
             _subtitle = Txt("Subtitle", _panel, 17f, FontStyles.Normal, TextAlignmentOptions.Center);
@@ -412,6 +414,7 @@ namespace HowToHunt.UI
             it.Label = Txt("Label", it.Body, size, style, kind == MenuItemKind.Header ? TextAlignmentOptions.BottomLeft : TextAlignmentOptions.TopLeft);
             Stretch(it.Label.rectTransform);
             it.Label.color = color;
+            if (kind == MenuItemKind.Header) UiFonts.Use(it.Label); // headings in the display font, body text stays plain
             it.Label.SetText(text);
             it.Height = Mathf.Ceil(it.Label.GetPreferredValues(text, Inner, 0f).y) + (kind == MenuItemKind.Header ? 10f : 2f);
         }
@@ -469,6 +472,12 @@ namespace HowToHunt.UI
             it.Label = Txt("Label", parent, size, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(it.Label.rectTransform);
             it.Label.textWrappingMode = TextWrappingModes.NoWrap;
+            // The display font for readable sizes only: small buttons keep the plain face (readability first).
+            if (size >= 18f)
+            {
+                UiFonts.Use(it.Label);
+                it.Label.fontSize = size * 1.3f;
+            }
             it.Label.SetText(label);
         }
 

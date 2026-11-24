@@ -77,6 +77,21 @@ namespace HowToHunt.Npcs
             return null;
         }
 
+        /// <summary>The nearest stall-less character (at the fire, chopping wood...) within talking range of a point.</summary>
+        public static Npc NearWanderer(Vector3 point)
+        {
+            Npc found = null;
+            float best = float.MaxValue;
+            for (int i = 0; i < Registered.Count; i++)
+            {
+                Npc n = Registered[i];
+                if (n._definition == null || n._definition.HasStation) continue;
+                float d = (n.transform.position - point).sqrMagnitude;
+                if (d <= n._talkRange * n._talkRange && d < best) { best = d; found = n; }
+            }
+            return found;
+        }
+
         /// <summary>The nearest character within talking range of a point (stall-less characters too).</summary>
         public static Npc Near(Vector3 point)
         {
