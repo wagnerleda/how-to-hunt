@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2a065a1b3697be45ad8191c1196d45f, type: 3}
+  m_Name: MenuTheme
+  m_EditorClassIdentifier: HowToHunt.UI::HowToHunt.UI.MenuTheme
+  Stagger: 0.035
+  ItemInSeconds: 0.34
+  ItemInEase: 1
+  ItemRise: 18
+  PageOutSeconds: 0.12
+  PanelInSeconds: 0.38
+  FocusScale: 1.045
+  FocusNudge: 6
+  FocusSharpness: 18
+  PressScale: 0.94
+  IdleBreath: 0.008
+  Panel: {r: 0.07, g: 0.1, b: 0.12, a: 0.93}
+  PanelEdge: {r: 1, g: 0.62, b: 0.15, a: 0.45}
+  Title: {r: 1, g: 0.62, b: 0.15, a: 1}
+  Text: {r: 0.92, g: 0.94, b: 0.96, a: 1}
+  Dim: {r: 0.68, g: 0.74, b: 0.78, a: 1}
+  Button: {r: 0.17, g: 0.23, b: 0.27, a: 1}
+  ButtonText: {r: 0.94, g: 0.95, b: 0.96, a: 1}
+  Focus: {r: 0.97, g: 0.62, b: 0.2, a: 1}
+  FocusText: {r: 0.1, g: 0.07, b: 0.05, a: 1}
+  Disabled: {r: 0.13, g: 0.15, b: 0.17, a: 1}
+  DisabledText: {r: 0.45, g: 0.5, b: 0.53, a: 1}
+  SkyTop: {r: 1, g: 0.74, b: 0.42, a: 0.35}
+  SkyTopAlt: {r: 0.98, g: 0.6, b: 0.52, a: 0.35}
+  SkyCycle: 18
+  Vignette: 0.55
+  Pollen: 42
+  Parallax: 22
+  PauseDim: 0.45

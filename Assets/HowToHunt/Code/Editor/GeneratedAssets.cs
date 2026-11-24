@@ -43,6 +43,7 @@ namespace HowToHunt.Editor
             BuildAttachmentPrefabs();
             CreatureModels.BuildAll();
             EnsureDialogueTheme();
+            EnsureMenuTheme();
             GeneratedContent.Build();
             EditorApplication.ExecuteMenuItem("Tools/Fish-Networking/Utility/Refresh Default Prefabs");
             AssetDatabase.SaveAssets();
@@ -53,6 +54,16 @@ namespace HowToHunt.Editor
         /// The dialogue look-and-feel asset (Resources/UI/DialogueTheme): created with the defaults if missing, never
         /// overwritten afterwards, so tuning it in the Inspector sticks.
         /// </summary>
+        /// <summary>The menu look-and-feel asset (Resources/UI/MenuTheme): created once, never overwritten.</summary>
+        public static void EnsureMenuTheme()
+        {
+            const string path = ResourcesDir + "/UI/MenuTheme.asset";
+            if (AssetDatabase.LoadAssetAtPath<UI.MenuTheme>(path) != null) return;
+            EnsureFolder(ResourcesDir + "/UI");
+            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<UI.MenuTheme>(), path);
+            AssetDatabase.SaveAssets();
+        }
+
         public static void EnsureDialogueTheme()
         {
             const string path = ResourcesDir + "/UI/DialogueTheme.asset";

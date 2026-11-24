@@ -1,45 +1,59 @@
+using System;
 using System.Collections.Generic;
 using HowToHunt.Core;
 using HowToHunt.Foundation;
 using HowToHunt.Net;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace HowToHunt.UI
 {
     /// <summary>
-    /// Menus (IMGUI for now; the art pass in M3 restyles them): main menu, in-game menu with the party and host
-    /// controls, settings with key rebinding, and the hold-Tab scoreboard. Parties are invite-only through Steam.
-    /// The window sizes itself to its content and scales with screen height. Menus may allocate; gameplay doesn't.
+    /// The menus (uGUI; ADR 0010 planned the move off IMGUI): main menu, in-game menu with the party and host
+    /// controls, settings with key rebinding, the hold-Tab scoreboard and toasts. Pages come in as a cascade, the
+    /// focused item glows, grows and breathes, presses squash; a living background on the main menu (MenuBackdrop);
+    /// keyboard, mouse and gamepad all drive the same focus. Sounds and motion follow UiFeel (snd_ui,
+    /// ui_reduce_motion); every look-and-feel number is in MenuTheme. Menus may allocate when a page changes;
+    /// steady frames don't. Parties are invite-only through Steam.
     /// </summary>
     public sealed class SessionMenu : MonoBehaviour
     {
         private enum Page { Home, Settings }
 
-        private const int WindowId = 0x4854;
-        private const float Width = 480f;
-        private const float FriendRefreshSeconds = 5f;
-        private const float ToastSeconds = 7f;
+        private const float PanelWidth = 560f, Inner = 496f, HeaderHeight = 118f, Pad = 32f, Gap = 8f, ScreenMargin = 40f;
+        private const float FriendRefreshSeconds = 5f, ToastSeconds = 7f, LiveRefreshSeconds = 0.5f;
 
-        private Rect _window = new Rect(0, 0, Width, 10);
-        private bool _pauseOpen;
         private Page _page = Page.Home;
+        private bool _pauseOpen;
         private GameAction? _rebinding;
         private float _nextFriendRefresh;
         private string _inviteHint = string.Empty;
         private string _toast = string.Empty;
-        private float _toastUntil;
-        private Vector2 _settingsScroll;
-        private GUIStyle _windowStyle, _title, _big, _label, _small, _header, _toastStyle, _boardStyle;
-        private Texture2D _panel, _toastBg;
-        private ImGuiHost _gui;
+        private float _toastUntil, _toastAge;
+
+        // uGUI
+        private RectTransform _canvasRt, _panel, _viewport, _content, _toastRt, _board;
+        private CanvasGroup _panelGroup, _toastGroup;
+        private Image _panelFill, _panelEdge, _shadow, _selector, _toastFill;
+        private TextMeshProUGUI _title, _subtitle, _toastText, _boardText;
+        private MenuBackdrop _backdrop;
+        private readonly List<MenuItem> _items = new List<MenuItem>(48);
+        private int _focus = -1;
+        private float _scroll, _scrollTarget, _contentHeight, _viewportHeight;
+        private int _signature = int.MinValue;
+        private Page _builtPage;
+        private bool _builtPause, _shown;
+        private float _panelAge, _outT, _liveAt, _titleAge;
+        private bool _switching;
+        private int _dragging = -1;
+        private string _boardShown;
+        private float _boardAt;
 
         private static bool Online => Game.Platform != null && Game.Platform.IsOnline && Game.Platform.Lobbies != null;
         private static bool InSession => NetSession.State == SessionState.Hosting || NetSession.State == SessionState.Connected;
-
         private bool Visible => !InSession || _pauseOpen;
-
-        private void Awake() => _gui = ImGuiHost.Attach(gameObject, DrawGui);
 
         private void OnEnable() => EventBus.Subscribe<SessionStateChanged>(OnSessionStateChanged);
         private void OnDisable() => EventBus.Unsubscribe<SessionStateChanged>(OnSessionStateChanged);
@@ -52,9 +66,494 @@ namespace HowToHunt.UI
                 _page = Page.Home;
                 _toast = e.Message;
                 _toastUntil = Time.unscaledTime + ToastSeconds;
+                _toastAge = 0f;
             }
             _inviteHint = string.Empty;
         }
+
+        // --- build --------------------------------------------------------------------------------------------------
+
+        private void Awake()
+        {
+            MenuTheme theme = MenuTheme.Current;
+            var go = new GameObject("[Menu]", typeof(Canvas), typeof(CanvasScaler));
+            DontDestroyOnLoad(go);
+            var canvas = go.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 50; // above the HUD and dialogue
+            var scaler = go.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 1f;
+            _canvasRt = (RectTransform)go.transform;
+            _backdrop = new MenuBackdrop(_canvasRt, theme);
+
+            _panel = New("Panel", _canvasRt);
+            _panel.anchorMin = _panel.anchorMax = new Vector2(0.5f, 0.5f);
+            _panelGroup = _panel.gameObject.AddComponent<CanvasGroup>();
+            _shadow = Img("Shadow", _panel, UiSprites.Rounded(26), stretch: true);
+            _shadow.color = new Color(0f, 0f, 0f, 0.35f);
+            _shadow.rectTransform.offsetMin = new Vector2(10f, -14f);
+            _shadow.rectTransform.offsetMax = new Vector2(10f, -14f);
+            _panelFill = Img("Fill", _panel, UiSprites.Rounded(26), stretch: true);
+            _panelEdge = Img("Edge", _panel, UiSprites.Rounded(26, 2), stretch: true);
+            _title = Txt("Title", _panel, 54f, FontStyles.Bold, TextAlignmentOptions.Center);
+            _title.rectTransform.anchorMin = _title.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            _title.rectTransform.sizeDelta = new Vector2(Inner, 64f);
+            _title.SetText("How to Hunt");
+            _title.outlineWidth = 0.18f;
+            _title.outlineColor = new Color32(60, 26, 6, 255);
+            _subtitle = Txt("Subtitle", _panel, 17f, FontStyles.Normal, TextAlignmentOptions.Center);
+            _subtitle.rectTransform.anchorMin = _subtitle.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            _subtitle.rectTransform.sizeDelta = new Vector2(Inner, 24f);
+
+            _viewport = New("Viewport", _panel);
+            _viewport.anchorMin = _viewport.anchorMax = new Vector2(0.5f, 1f);
+            _viewport.pivot = new Vector2(0.5f, 1f);
+            _viewport.gameObject.AddComponent<RectMask2D>().padding = new Vector4(-24f, 0f, -24f, 0f);
+            _content = New("Content", _viewport);
+            _content.anchorMin = _content.anchorMax = new Vector2(0.5f, 1f);
+            _content.pivot = new Vector2(0.5f, 1f);
+            _selector = Img("Selector", _content, UiSprites.Tail(), stretch: false);
+            _selector.rectTransform.anchorMin = _selector.rectTransform.anchorMax = new Vector2(0.5f, 1f); // like the items
+            _selector.rectTransform.sizeDelta = new Vector2(18f, 14f);
+            _selector.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+
+            _toastRt = New("Toast", _canvasRt);
+            _toastRt.anchorMin = _toastRt.anchorMax = new Vector2(0.5f, 1f);
+            _toastGroup = _toastRt.gameObject.AddComponent<CanvasGroup>();
+            _toastFill = Img("Fill", _toastRt, UiSprites.Rounded(20), stretch: true);
+            _toastText = Txt("Text", _toastRt, 20f, FontStyles.Normal, TextAlignmentOptions.Center);
+            Stretch(_toastText.rectTransform);
+            _toastRt.gameObject.SetActive(false);
+
+            _board = New("Scoreboard", _canvasRt);
+            _board.anchorMin = _board.anchorMax = new Vector2(0.5f, 1f);
+            _board.pivot = new Vector2(0.5f, 1f);
+            Image boardFill = Img("Fill", _board, UiSprites.Rounded(20), stretch: true);
+            boardFill.color = new Color(0.07f, 0.1f, 0.12f, 0.85f);
+            _boardText = Txt("Text", _board, 19f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+            Stretch(_boardText.rectTransform);
+            _boardText.margin = new Vector4(22f, 16f, 22f, 12f);
+            _board.gameObject.SetActive(false);
+
+            _panel.gameObject.SetActive(false);
+        }
+
+        private static RectTransform New(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            return (RectTransform)go.transform;
+        }
+
+        private static RectTransform Stretch(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            return rt;
+        }
+
+        private static Image Img(string name, Transform parent, Sprite sprite, bool stretch)
+        {
+            RectTransform rt = New(name, parent);
+            if (stretch) Stretch(rt);
+            Image i = rt.gameObject.AddComponent<Image>();
+            i.sprite = sprite;
+            i.type = sprite != null && sprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+            i.raycastTarget = false;
+            return i;
+        }
+
+        private static TextMeshProUGUI Txt(string name, Transform parent, float size, FontStyles style, TextAlignmentOptions align)
+        {
+            RectTransform rt = New(name, parent);
+            TextMeshProUGUI t = rt.gameObject.AddComponent<TextMeshProUGUI>();
+            t.fontSize = size;
+            t.fontStyle = style;
+            t.alignment = align;
+            t.raycastTarget = false;
+            t.textWrappingMode = TextWrappingModes.Normal;
+            return t;
+        }
+
+        // --- pages --------------------------------------------------------------------------------------------------
+
+        /// <summary>Everything a page shows depends on these: when any changes, the page is rebuilt.</summary>
+        private int Signature()
+        {
+            unchecked
+            {
+                int h = (int)_page * 31 + (_pauseOpen ? 7 : 0) + (int)NetSession.State * 131 + (Online ? 1 : 0) * 997;
+                h = h * 17 + (NetSession.LastMessage?.GetHashCode() ?? 0);
+                h = h * 17 + (_rebinding.HasValue ? (int)_rebinding.Value + 1 : 0);
+                h = h * 17 + _inviteHint.Length;
+                h = h * 17 + MenuPanels.Buttons.Count;
+                h = h * 17 + (CoreCvars.FpsMax.Value > 0 ? 1 : 0);
+                if (Online) h = h * 17 + Game.Platform.Lobbies.FriendParties.Count;
+                IReadOnlyList<PartyMember> members = PartyRoster.Members;
+                h = h * 17 + members.Count + (PartyRoster.Locked ? 1000 : 0);
+                for (int i = 0; i < members.Count; i++) h = h * 17 + members[i].ClientId;
+                if (NetSession.IsServer && ConsoleSystem.Global.TryGetCvar("sv_pvp", out Cvar pvp)) h = h * 17 + pvp.ValueString.GetHashCode();
+                return h;
+            }
+        }
+
+        private void Rebuild(bool animate)
+        {
+            string keep = _focus >= 0 && _focus < _items.Count ? _items[_focus].Key : null;
+            foreach (MenuItem it in _items) Destroy(it.Root.gameObject);
+            _items.Clear();
+            _builtPage = _page;
+            _builtPause = _pauseOpen;
+
+            if (_page == Page.Settings) BuildSettings();
+            else if (_pauseOpen) BuildPause();
+            else if (NetSession.State == SessionState.Offline) BuildMain();
+            else BuildBusy();
+
+            Layout();
+            _focus = -1;
+            for (int i = 0; i < _items.Count; i++)
+                if (_items[i].Focusable && (keep == null || _items[i].Key == keep)) { _focus = i; break; }
+            if (_focus < 0) _focus = NextFocusable(-1, 1);
+            for (int i = 0; i < _items.Count; i++)
+            {
+                MenuItem it = _items[i];
+                it.Delay = animate ? 0.06f + i * MenuTheme.Current.Stagger : 0f;
+                it.Age = animate ? 0f : 10f;
+                it.Highlight = i == _focus ? 1f : 0f;
+            }
+            if (animate) { _scroll = _scrollTarget = 0f; _titleAge = 0f; }
+        }
+
+        private void BuildMain()
+        {
+            Button("host", "Host a party", () => NetSession.Host(), big: true, enabled: Online);
+            Small(Online ? "Then invite friends through Steam (Esc > Invite friends)." : Game.Platform?.OfflineReason ?? string.Empty);
+            if (Online)
+            {
+                Header("Friends' parties");
+                Button("refresh", "Refresh", () =>
+                {
+                    _nextFriendRefresh = Time.unscaledTime + FriendRefreshSeconds;
+                    Game.Platform.Lobbies.RefreshFriendParties();
+                }, small: true);
+                IReadOnlyList<FriendParty> parties = Game.Platform.Lobbies.FriendParties;
+                if (parties.Count == 0) Small("None right now. When a friend invites you, accept it in Steam and you join automatically.");
+                foreach (FriendParty p in parties)
+                {
+                    ulong lobby = p.LobbyId;
+                    Captioned($"join{lobby}", $"{p.FriendName}  ({p.Members}/{p.MaxMembers})" + (p.SameVersion ? string.Empty : "  · different version"), "Join", () => NetSession.JoinLobby(lobby), p.SameVersion);
+                }
+            }
+            Spacer(6f);
+            foreach (MenuPanels.Entry e in MenuPanels.Buttons)
+            {
+                MenuPanels.Entry entry = e;
+                Button("panel" + e.Label, e.Label, () => entry.Open?.Invoke(), big: true);
+            }
+            Button("solo", "Play solo", () => NetSession.Host(forceLocal: true), big: true);
+            Button("settings", "Settings", () => SwitchTo(Page.Settings));
+            Button("localhost", "Local host (test)", () => NetSession.Host(forceLocal: true), small: true, half: true);
+            Button("connect", "Connect 127.0.0.1 (test)", () => NetSession.ConnectLocal("127.0.0.1"), small: true, half: true);
+            Small("Console: key left of 1, or F1");
+            if (!string.IsNullOrEmpty(NetSession.LastMessage)) Text(NetSession.LastMessage);
+        }
+
+        private void BuildBusy()
+        {
+            Text(NetSession.LastMessage);
+            Button("cancel", "Cancel", () => NetSession.Disconnect("Cancelled."));
+        }
+
+        private void BuildPause()
+        {
+            bool onlineHost = NetSession.IsServer && NetSession.Transport == SessionTransport.Steam;
+            if (onlineHost)
+            {
+                Button("invite", "Invite friends", () =>
+                {
+                    _inviteHint = NetSession.OpenInviteDialog()
+                        ? string.Empty
+                        : "The Steam overlay can't open in this build (dev app id). Friends can join from 'Friends' parties' in their main menu, or right-click them in your Steam friends list > Invite to game.";
+                }, big: true);
+                Small(string.IsNullOrEmpty(_inviteHint) ? "Or right-click a friend in Steam > Invite to game." : _inviteHint);
+            }
+
+            IReadOnlyList<PartyMember> members = PartyRoster.Members;
+            Header($"Party  {members.Count}/{GameIdentity.MaxPartySize}" + (!NetSession.IsServer && PartyRoster.Locked ? "  · locked" : string.Empty));
+            if (NetSession.IsServer) Toggle("lock", "Lock party", () => PartyRoster.Locked, v => PartyRoster.SetLocked(v));
+            foreach (PartyMember m in members)
+            {
+                PartyMember member = m;
+                if (NetSession.IsServer && !m.IsHost)
+                    Captioned($"kick{m.ClientId}", m.Name, "Kick", () => PartyRoster.Kick(member.ClientId), true, () => $"{member.Ping} ms");
+                else
+                    Small(m.IsHost ? $"{m.Name}  (host)" : $"{m.Name}   {m.Ping} ms");
+            }
+            if (NetSession.IsServer) Small(PartyRoster.Locked ? "Locked: nobody new can join." : "Friends can join any time (join in progress).");
+
+            Spacer(6f);
+            Button("resume", "Resume", () => _pauseOpen = false, big: true);
+            if (NetSession.IsServer && ConsoleSystem.Global.TryGetCvar("sv_pvp", out Cvar pvp))
+            {
+                // The host decides whether hunters can hurt each other (friendly fire follows it).
+                bool on = pvp.ValueString == "1" || pvp.ValueString == "true";
+                Button("pvp", on ? "PvP: ON (hunters can hurt each other)" : "PvP: OFF", () => Game.Console.Execute(on ? "sv_pvp 0" : "sv_pvp 1"));
+            }
+            Button("settings", "Settings", () => SwitchTo(Page.Settings));
+            Button("leave", NetSession.IsServer ? "End party" : "Leave party", () =>
+            {
+                _pauseOpen = false;
+                NetSession.Disconnect("You left the session.");
+            });
+            Button("quit", "Quit game", () => Game.Console.Execute("quit"), small: true);
+        }
+
+        private void BuildSettings()
+        {
+            Header("Settings");
+            Slider("sens", "Mouse sensitivity", CoreCvars.Sensitivity, 0.1f, 8f, "0.00");
+            Slider("fov", "Field of view", CoreCvars.Fov, 70f, 120f, "0");
+            Slider("volume", "Master volume", CoreCvars.Volume, 0f, 1f, "%");
+            if (Game.Console.TryGetCvar("snd_movement", out Cvar move) && move is FloatCvar moveF) Slider("movevol", "Movement sounds", moveF, 0f, 1f, "%");
+            Slider("uivol", "Menu and dialogue sounds", UiFeel.Volume, 0f, 1f, "%");
+            ToggleCvar("invert", "Invert mouse Y", CoreCvars.InvertY);
+            ToggleByName("autohop", "Auto-hop (hold jump to keep hopping)", "cl_autohop");
+            ToggleByName("crosshair", "Crosshair", "cl_crosshair");
+            ToggleByName("speed", "Speedometer", "cl_showspeed");
+            ToggleCvar("calm", "Reduce animations (no shake, flashes, particles)", UiFeel.ReduceMotion);
+            Choice("fps", "Frame rate limit", new[] { 0, 30, 60, 120, 144, 165, 240 }, new[] { "None", "30", "60", "120", "144", "165", "240" },
+                () => CoreCvars.FpsMax.Value, v => CoreCvars.FpsMax.Value = v);
+            if (CoreCvars.FpsMax.Value <= 0) ToggleCvar("vsync", "Vertical sync", CoreCvars.VSync);
+            else Small("Vertical sync: off while a frame rate limit is set");
+
+            Header("Keys (choose one, then press a key; Esc cancels)");
+            for (int i = 0; i < KeyBindings.Count; i++)
+            {
+                var action = (GameAction)i;
+                Captioned("key" + i, action.ToString(), _rebinding == action ? "press a key..." : KeyBindings.DisplayName(action), () => _rebinding = action, true);
+            }
+            Spacer(6f);
+            Button("back", "Back", () => SwitchTo(Page.Home), big: true);
+        }
+
+        private void SwitchTo(Page page)
+        {
+            _page = page;
+            if (page == Page.Home) _rebinding = null;
+            BeginSwitch();
+        }
+
+        /// <summary>Page change: the current items slide out quickly, then the new page cascades in.</summary>
+        private void BeginSwitch()
+        {
+            _switching = true;
+            _outT = 0f;
+        }
+
+        // --- item factories ------------------------------------------------------------------------------------------
+
+        private MenuItem Add(MenuItemKind kind, string key, float height)
+        {
+            var it = new MenuItem { Kind = kind, Key = key, Height = height };
+            it.Root = New(key ?? kind.ToString(), _content);
+            it.Root.anchorMin = it.Root.anchorMax = new Vector2(0.5f, 1f);
+            it.Group = it.Root.gameObject.AddComponent<CanvasGroup>();
+            it.Body = New("Body", it.Root);
+            Stretch(it.Body);
+            _items.Add(it);
+            return it;
+        }
+
+        private void Text(string text) => TextItem(text, 18f, MenuTheme.Current.Text, FontStyles.Normal, MenuItemKind.Text);
+        private void Small(string text) => TextItem(text, 15f, MenuTheme.Current.Dim, FontStyles.Normal, MenuItemKind.Small);
+        private void Header(string text) => TextItem(text, 20f, MenuTheme.Current.Title, FontStyles.Bold, MenuItemKind.Header);
+
+        private void TextItem(string text, float size, Color color, FontStyles style, MenuItemKind kind)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            MenuItem it = Add(kind, null, 0f);
+            it.Label = Txt("Label", it.Body, size, style, kind == MenuItemKind.Header ? TextAlignmentOptions.BottomLeft : TextAlignmentOptions.TopLeft);
+            Stretch(it.Label.rectTransform);
+            it.Label.color = color;
+            it.Label.SetText(text);
+            it.Height = Mathf.Ceil(it.Label.GetPreferredValues(text, Inner, 0f).y) + (kind == MenuItemKind.Header ? 10f : 2f);
+        }
+
+        private void Spacer(float h) => Add(MenuItemKind.Spacer, null, h);
+
+        private MenuItem Button(string key, string label, Action onClick, bool big = false, bool small = false, bool half = false, bool enabled = true)
+        {
+            MenuItem it = Add(MenuItemKind.Button, key, big ? 48f : small ? 32f : 40f);
+            it.Half = half;
+            it.Enabled = enabled;
+            it.OnActivate = onClick;
+            ButtonLook(it, it.Body, label, big ? 21f : small ? 16f : 18f);
+            return it;
+        }
+
+        /// <summary>Text on the left, a compact button on the right (friend parties, kicks, key bindings).</summary>
+        private void Captioned(string key, string caption, string button, Action onClick, bool enabled, Func<string> live = null)
+        {
+            MenuItem it = Add(MenuItemKind.Button, key, 36f);
+            it.Enabled = enabled;
+            it.OnActivate = onClick;
+            it.Caption = caption;
+            it.ButtonWidth = 190f;
+            it.CaptionText = Txt("Caption", it.Body, 17f, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            Stretch(it.CaptionText.rectTransform);
+            it.CaptionText.rectTransform.offsetMax = new Vector2(-it.ButtonWidth - 70f, 0f);
+            it.CaptionText.color = MenuTheme.Current.Text;
+            it.CaptionText.textWrappingMode = TextWrappingModes.NoWrap;
+            it.CaptionText.overflowMode = TextOverflowModes.Ellipsis;
+            it.CaptionText.SetText(caption);
+            if (live != null)
+            {
+                it.Live = live;
+                it.Value = Txt("Live", it.Body, 15f, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
+                Stretch(it.Value.rectTransform);
+                it.Value.rectTransform.offsetMax = new Vector2(-it.ButtonWidth - 12f, 0f);
+                it.Value.color = MenuTheme.Current.Dim;
+            }
+            RectTransform holder = New("Button", it.Body);
+            holder.anchorMin = new Vector2(1f, 0f);
+            holder.anchorMax = new Vector2(1f, 1f);
+            holder.pivot = new Vector2(1f, 0.5f);
+            holder.sizeDelta = new Vector2(it.ButtonWidth, 0f);
+            ButtonLook(it, holder, button, 16f);
+        }
+
+        private static void ButtonLook(MenuItem it, RectTransform parent, string label, float size)
+        {
+            it.Glow = Img("Glow", parent, UiSprites.Glow(), stretch: true);
+            it.Glow.rectTransform.offsetMin = new Vector2(-26f, -20f);
+            it.Glow.rectTransform.offsetMax = new Vector2(26f, 20f);
+            it.Fill = Img("Fill", parent, UiSprites.Rounded(14), stretch: true);
+            it.Outline = Img("Outline", parent, UiSprites.Rounded(14, 2), stretch: true);
+            it.Label = Txt("Label", parent, size, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(it.Label.rectTransform);
+            it.Label.textWrappingMode = TextWrappingModes.NoWrap;
+            it.Label.SetText(label);
+        }
+
+        private void Toggle(string key, string label, Func<bool> get, Action<bool> set)
+        {
+            MenuItem it = Add(MenuItemKind.Toggle, key, 34f);
+            it.GetToggle = get;
+            it.SetToggle = set;
+            it.OnActivate = () => { set(!get()); UiFeel.Play(UiFeel.ToggleSound, 0.6f); };
+            it.Box = Img("Box", it.Body, UiSprites.Rounded(7, 2), stretch: false);
+            Place(it.Box.rectTransform, new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(26f, 26f));
+            it.Check = Img("Check", it.Box.rectTransform, UiSprites.Rounded(5), stretch: true);
+            it.Check.rectTransform.offsetMin = new Vector2(5f, 5f);
+            it.Check.rectTransform.offsetMax = new Vector2(-5f, -5f);
+            it.Label = Txt("Label", it.Body, 18f, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            Stretch(it.Label.rectTransform);
+            it.Label.rectTransform.offsetMin = new Vector2(40f, 0f);
+            it.Label.SetText(label);
+        }
+
+        private void ToggleCvar(string key, string label, BoolCvar cvar) => Toggle(key, label, () => cvar.Value, v => cvar.Value = v);
+
+        private void ToggleByName(string key, string label, string name)
+        {
+            if (!Game.Console.TryGetCvar(name, out Cvar c)) return;
+            Toggle(key, label, () => c.ValueString != "0" && c.ValueString != "false", v => Game.Console.TrySet(name, v ? "1" : "0"));
+        }
+
+        private void Slider(string key, string label, FloatCvar cvar, float min, float max, string format)
+        {
+            MenuItem it = Add(MenuItemKind.Slider, key, 40f);
+            it.Min = min;
+            it.Max = max;
+            it.Format = format;
+            it.GetValue = () => cvar.Value;
+            it.SetValue = v => cvar.Value = v;
+            it.Label = Txt("Label", it.Body, 18f, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            Stretch(it.Label.rectTransform);
+            it.Label.rectTransform.offsetMax = new Vector2(-260f, 0f);
+            it.Label.SetText(label);
+            it.Track = Img("Track", it.Body, UiSprites.Rounded(4), stretch: false);
+            Place(it.Track.rectTransform, new Vector2(1f, 0.5f), new Vector2(-70f, 0f), new Vector2(180f, 8f), new Vector2(1f, 0.5f));
+            it.Track.color = new Color(1f, 1f, 1f, 0.16f);
+            it.TrackFill = Img("Fill", it.Track.rectTransform, UiSprites.Rounded(4), stretch: false);
+            Place(it.TrackFill.rectTransform, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(0f, 8f), new Vector2(0f, 0.5f));
+            it.Knob = Img("Knob", it.Track.rectTransform, UiSprites.Circle(), stretch: false);
+            Place(it.Knob.rectTransform, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(18f, 18f));
+            it.Value = Txt("Value", it.Body, 16f, FontStyles.Normal, TextAlignmentOptions.MidlineRight);
+            Stretch(it.Value.rectTransform);
+            it.Value.color = MenuTheme.Current.Dim;
+        }
+
+        private void Choice(string key, string label, int[] values, string[] labels, Func<int> get, Action<int> set)
+        {
+            MenuItem it = Add(MenuItemKind.Choice, key, 62f);
+            it.ChoiceValues = values;
+            it.ChoiceLabels = labels;
+            it.GetChoice = get;
+            it.SetChoice = set;
+            it.Label = Txt("Label", it.Body, 18f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+            Stretch(it.Label.rectTransform);
+            it.Label.SetText(label);
+            it.OptionBacks = new Image[values.Length];
+            it.Options = new TextMeshProUGUI[values.Length];
+            float w = (Inner - (values.Length - 1) * 6f) / values.Length;
+            for (int i = 0; i < values.Length; i++)
+            {
+                Image back = Img("Option", it.Body, UiSprites.Rounded(10), stretch: false);
+                Place(back.rectTransform, new Vector2(0f, 0f), new Vector2(i * (w + 6f) + w * 0.5f, 15f), new Vector2(w, 28f));
+                TextMeshProUGUI t = Txt("Text", back.rectTransform, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
+                Stretch(t.rectTransform);
+                t.SetText(labels[i]);
+                it.OptionBacks[i] = back;
+                it.Options[i] = t;
+            }
+        }
+
+        private static void Place(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size, Vector2? pivot = null)
+        {
+            rt.anchorMin = rt.anchorMax = anchor;
+            rt.pivot = pivot ?? new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+        }
+
+        /// <summary>Stacks the items top-down (half-width buttons two to a row) and sizes the panel to fit the screen.</summary>
+        private void Layout()
+        {
+            float y = 0f;
+            for (int i = 0; i < _items.Count; i++)
+            {
+                MenuItem it = _items[i];
+                bool pair = it.Half && i + 1 < _items.Count && _items[i + 1].Half;
+                float w = it.Half ? Inner * 0.5f - 4f : Inner;
+                it.Root.sizeDelta = new Vector2(w, it.Height);
+                it.Home = new Vector2(it.Half ? -Inner * 0.25f + 2f : 0f, -y - it.Height * 0.5f);
+                if (pair)
+                {
+                    MenuItem next = _items[i + 1];
+                    next.Root.sizeDelta = new Vector2(w, next.Height);
+                    next.Home = new Vector2(Inner * 0.25f - 2f, it.Home.y);
+                    i++;
+                }
+                it.Root.anchoredPosition = it.Home;
+                y += it.Height + Gap;
+            }
+            _contentHeight = Mathf.Max(0f, y - Gap);
+            float canvasH = _canvasRt.rect.height;
+            _viewportHeight = Mathf.Min(_contentHeight, canvasH - ScreenMargin * 2f - HeaderHeight - Pad * 2f);
+            _content.sizeDelta = new Vector2(Inner, _contentHeight);
+            _viewport.sizeDelta = new Vector2(Inner + 48f, _viewportHeight);
+            _viewport.anchoredPosition = new Vector2(0f, -HeaderHeight - Pad * 0.5f);
+            _panel.sizeDelta = new Vector2(PanelWidth, HeaderHeight + _viewportHeight + Pad * 1.5f);
+            _title.rectTransform.anchoredPosition = new Vector2(0f, -48f);
+            _subtitle.rectTransform.anchoredPosition = new Vector2(0f, -94f);
+        }
+
+        // --- frame ----------------------------------------------------------------------------------------------------
 
         private void Update()
         {
@@ -65,11 +564,22 @@ namespace HowToHunt.UI
             else
             {
                 Keyboard kb = Keyboard.current;
-                if (kb != null && kb.escapeKey.wasPressedThisFrame && !DevConsoleView.IsOpen && !(Game.UiHasFocus && !Visible))
+                Gamepad pad = Gamepad.current;
+                bool escape = kb != null && kb.escapeKey.wasPressedThisFrame;
+                bool start = pad != null && pad.startButton.wasPressedThisFrame;
+                bool consoleOrPanel = DevConsoleView.IsOpen || MenuPanels.Open != null;
+                if (!consoleOrPanel && !(Game.UiHasFocus && !Visible))
                 {
-                    if (MenuPanels.Open != null) { } // the open panel handles Esc itself
-                    else if (_page == Page.Settings) _page = Page.Home;
-                    else if (InSession) _pauseOpen = !_pauseOpen;
+                    if (Visible && (UiInput.Back || start))
+                    {
+                        if (_page == Page.Settings) { UiFeel.Back(); SwitchTo(Page.Home); }
+                        else if (InSession) { UiFeel.Back(); _pauseOpen = false; }
+                    }
+                    else if (!Visible && InSession && (escape || start))
+                    {
+                        _pauseOpen = true;
+                        UiFeel.Open();
+                    }
                 }
             }
 
@@ -82,16 +592,13 @@ namespace HowToHunt.UI
                 Cursor.visible = true;
             }
 
-            // Draw only when something is on screen: the menu, a toast, or the scoreboard while its key is held.
-            bool toast = !Visible && Time.unscaledTime <= _toastUntil && !string.IsNullOrEmpty(_toast);
-            bool board = InSession && KeyBindings.IsPressed(GameAction.Scoreboard) && !DevConsoleView.IsOpen;
-            _gui.Show(Visible || toast || board);
-
             if (!InSession && Online && Time.unscaledTime >= _nextFriendRefresh)
             {
                 _nextFriendRefresh = Time.unscaledTime + FriendRefreshSeconds;
                 Game.Platform.Lobbies.RefreshFriendParties();
             }
+
+            Animate();
         }
 
         private void UpdateRebind()
@@ -100,324 +607,264 @@ namespace HowToHunt.UI
             if (kb != null && kb.escapeKey.wasPressedThisFrame)
             {
                 _rebinding = null;
+                UiFeel.Back();
                 return;
             }
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && _rebinding == GameAction.Fire)
             {
                 KeyBindings.BindMouse(GameAction.Fire);
                 _rebinding = null;
+                UiFeel.Confirm();
                 return;
             }
             Key key = KeyBindings.AnyKeyPressedThisFrame();
             if (key == Key.None) return;
             KeyBindings.Bind(_rebinding.Value, key);
             _rebinding = null;
+            UiFeel.Confirm();
         }
 
-        private void DrawGui()
+        private void Animate()
         {
-            EnsureStyles();
-            float scale = Mathf.Max(1f, Screen.height / 720f);
-            Matrix4x4 previous = GUI.matrix;
-            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            float screenW = Screen.width / scale, screenH = Screen.height / scale;
+            MenuTheme theme = MenuTheme.Current;
+            float dt = Time.unscaledDeltaTime;
+            bool calm = UiFeel.Calm;
+            bool show = Visible && MenuPanels.Open == null;
+            Vector2 canvasSize = _canvasRt.rect.size;
 
-            DrawToast(screenW);
-            if (Visible && MenuPanels.Open == null)
+            _backdrop.Update(!show ? MenuBackdrop.Mode.Off : InSession ? MenuBackdrop.Mode.Pause : MenuBackdrop.Mode.Main, theme, dt, canvasSize);
+            UpdateToast(theme, dt, calm);
+            UpdateScoreboard();
+
+            if (show != _shown)
             {
-                _window.height = 10f; // shrink-to-fit every frame (GUILayout.Window only grows)
-                _window = GUILayout.Window(WindowId, _window, DrawWindow, GUIContent.none, _windowStyle, GUILayout.Width(Width));
-                _window.x = Mathf.Round((screenW - _window.width) * 0.5f);
-                _window.y = Mathf.Round(Mathf.Max(10f, (screenH - _window.height) * 0.5f));
-            }
-            else if (InSession && KeyBindings.IsPressed(GameAction.Scoreboard) && !DevConsoleView.IsOpen)
-            {
-                DrawScoreboard(screenW);
-            }
-            GUI.matrix = previous;
-        }
-
-        private void DrawWindow(int id)
-        {
-            GUILayout.Label("How to Hunt", _title);
-            GUILayout.Label($"v{Game.Version}  ·  {(Online ? $"Steam: {Game.Platform.LocalUserName}" : "Offline")}", _small);
-            GUILayout.Space(12);
-
-            if (_page == Page.Settings) DrawSettings();
-            else if (_pauseOpen) DrawPause();
-            else if (NetSession.State == SessionState.Offline) DrawMain();
-            else DrawBusy();
-
-            if (_page == Page.Home && NetSession.State == SessionState.Offline && !string.IsNullOrEmpty(NetSession.LastMessage))
-            {
-                GUILayout.Space(10);
-                GUILayout.Label(NetSession.LastMessage, _label);
-            }
-        }
-
-        private void DrawMain()
-        {
-            GUI.enabled = Online;
-            if (GUILayout.Button("Host a party", _big, GUILayout.Height(46))) NetSession.Host();
-            GUI.enabled = true;
-            GUILayout.Label(Online ? "Then invite friends through Steam (Esc > Invite friends)." : Game.Platform?.OfflineReason ?? string.Empty, _small);
-
-            if (Online)
-            {
-                GUILayout.Space(12);
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Friends' parties", _header);
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Refresh", GUILayout.Width(80)))
+                _shown = show;
+                _panelAge = 0f;
+                if (show)
                 {
-                    _nextFriendRefresh = Time.unscaledTime + FriendRefreshSeconds;
-                    Game.Platform.Lobbies.RefreshFriendParties();
+                    _panel.gameObject.SetActive(true); // TextMeshPro sets its font up in Awake: measure only once active
+                    Rebuild(true);
+                    _signature = Signature();
                 }
-                GUILayout.EndHorizontal();
+            }
+            if (!show)
+            {
+                _panelGroup.alpha = Mathf.MoveTowards(_panelGroup.alpha, 0f, dt * 8f);
+                if (_panelGroup.alpha <= 0f && _panel.gameObject.activeSelf) _panel.gameObject.SetActive(false);
+                return;
+            }
+            if (!_panel.gameObject.activeSelf) _panel.gameObject.SetActive(true);
 
-                IReadOnlyList<FriendParty> parties = Game.Platform.Lobbies.FriendParties;
-                if (parties.Count == 0)
-                    GUILayout.Label("None right now. When a friend invites you, accept it in Steam and you join automatically.", _small);
-                foreach (FriendParty p in parties)
+            // Page switches: slide out, rebuild, cascade in. Content changes on the same page: rebuild quietly.
+            if (_switching)
+            {
+                _outT = Mathf.Min(1f, _outT + dt / Mathf.Max(0.01f, theme.PageOutSeconds));
+                if (_outT >= 1f) { _switching = false; _outT = 0f; Rebuild(true); _signature = Signature(); }
+            }
+            else
+            {
+                int sig = Signature();
+                if (sig != _signature)
                 {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"{p.FriendName}  ({p.Members}/{p.MaxMembers})" + (p.SameVersion ? string.Empty : "  · different version"), _label);
-                    GUILayout.FlexibleSpace();
-                    GUI.enabled = p.SameVersion;
-                    if (GUILayout.Button("Join", GUILayout.Width(80), GUILayout.Height(28))) NetSession.JoinLobby(p.LobbyId);
-                    GUI.enabled = true;
-                    GUILayout.EndHorizontal();
+                    bool pageChanged = _builtPage != _page || _builtPause != _pauseOpen;
+                    _signature = sig;
+                    if (pageChanged && !calm) BeginSwitch();
+                    else Rebuild(pageChanged);
                 }
             }
 
-            GUILayout.Space(14);
-            foreach (MenuPanels.Entry e in MenuPanels.Buttons)
+            // Panel: pops in, the title's letters drop in one by one, then sway gently.
+            _panelAge += dt;
+            float p = Mathf.Clamp01(_panelAge / Mathf.Max(0.01f, theme.PanelInSeconds));
+            _panelGroup.alpha = Mathf.Clamp01(p * 2f);
+            float ps = calm ? 1f : Mathf.LerpUnclamped(0.92f, 1f, Ease.OutBack(p));
+            _panel.localScale = new Vector3(ps, ps, 1f);
+            _panelFill.color = theme.Panel;
+            _panelEdge.color = theme.PanelEdge;
+            _title.color = theme.Title;
+            _subtitle.color = theme.Dim;
+            _subtitle.SetText(Online ? $"v{Game.Version}  ·  Steam: {Game.Platform.LocalUserName}" : $"v{Game.Version}  ·  Offline");
+            _titleAge += dt;
+            AnimateTitle(calm);
+
+            HandleInput(theme, dt);
+
+            bool live = Time.unscaledTime >= _liveAt;
+            if (live) _liveAt = Time.unscaledTime + LiveRefreshSeconds;
+            for (int i = 0; i < _items.Count; i++)
             {
-                if (GUILayout.Button(e.Label, _big, GUILayout.Height(40))) e.Open?.Invoke();
-                GUILayout.Space(4);
+                MenuItem it = _items[i];
+                it.Animate(theme, dt, i == _focus, calm, _switching ? Ease.OutCubic(_outT) : 0f);
+                if (live && it.Live != null && it.Value != null) it.Value.SetText(it.Live());
             }
-            if (GUILayout.Button("Play solo", GUILayout.Height(34))) NetSession.Host(forceLocal: true);
-            GUILayout.Space(4);
-            if (GUILayout.Button("Settings", GUILayout.Height(30))) _page = Page.Settings;
-            GUILayout.Space(4);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Local host (test)", GUILayout.Height(24))) NetSession.Host(forceLocal: true);
-            if (GUILayout.Button("Connect 127.0.0.1 (test)", GUILayout.Height(24))) NetSession.ConnectLocal("127.0.0.1");
-            GUILayout.EndHorizontal();
-            GUILayout.Label("Console: key left of 1, or F1", _small);
+
+            // Scroll so the focused item stays in view; the selector arrow points at it.
+            _scroll = Ease.Damp(_scroll, _scrollTarget, 14f, dt);
+            _content.anchoredPosition = new Vector2(0f, _scroll);
+            bool hasFocus = _focus >= 0 && _focus < _items.Count;
+            _selector.enabled = hasFocus;
+            if (hasFocus)
+            {
+                MenuItem f = _items[_focus];
+                float bob = calm ? 0f : Mathf.Sin(Time.unscaledTime * 6f) * 4f;
+                float left = f.Home.x - f.Root.sizeDelta.x * 0.5f;
+                _selector.rectTransform.anchoredPosition = new Vector2(left - 16f + bob, f.Home.y);
+                _selector.color = new Color(theme.Focus.r, theme.Focus.g, theme.Focus.b, f.Group.alpha);
+            }
         }
 
-        private void DrawBusy()
+        private void HandleInput(MenuTheme theme, float dt)
         {
-            GUILayout.Label(NetSession.LastMessage, _label);
-            GUILayout.Space(8);
-            if (GUILayout.Button("Cancel", GUILayout.Height(32))) NetSession.Disconnect("Cancelled.");
+            if (_switching || _rebinding.HasValue || DevConsoleView.IsOpen) return;
+            int before = _focus;
+            Vector2Int move = UiInput.Move;
+            MenuItem focused = _focus >= 0 && _focus < _items.Count ? _items[_focus] : null;
+            if (move.y != 0) _focus = NextFocusable(_focus, -move.y);
+            if (move.x != 0 && focused != null)
+            {
+                if (focused.Kind == MenuItemKind.Slider) { focused.StepSlider(move.x); UiFeel.Hover(); }
+                else if (focused.Kind == MenuItemKind.Choice) { focused.StepChoice(move.x); UiFeel.Hover(); }
+                else if (focused.Half) _focus = NextFocusable(_focus, move.x);
+            }
+
+            Mouse mouse = Mouse.current;
+            int hovered = -1;
+            if (mouse != null)
+            {
+                Vector2 mp = mouse.position.ReadValue();
+                bool insideView = RectTransformUtility.RectangleContainsScreenPoint(_viewport, mp, null);
+                for (int i = 0; i < _items.Count && insideView; i++)
+                    if (_items[i].Focusable && RectTransformUtility.RectangleContainsScreenPoint(_items[i].Root, mp, null)) hovered = i;
+                if (hovered >= 0 && mouse.delta.ReadValue().sqrMagnitude > 0.01f) _focus = hovered;
+                float wheel = mouse.scroll.ReadValue().y;
+                if (Mathf.Abs(wheel) > 0.01f && insideView) _scrollTarget = Mathf.Clamp(_scrollTarget - Mathf.Sign(wheel) * 60f, 0f, Mathf.Max(0f, _contentHeight - _viewportHeight));
+
+                // Sliders follow a drag; choice rows take a click on an option.
+                if (mouse.leftButton.wasPressedThisFrame && hovered >= 0 && _items[hovered].Kind == MenuItemKind.Slider) _dragging = hovered;
+                if (!mouse.leftButton.isPressed) _dragging = -1;
+                if (_dragging >= 0)
+                {
+                    MenuItem s = _items[_dragging];
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(s.Track.rectTransform, mp, null, out Vector2 local);
+                    float k = Mathf.Clamp01((local.x - s.Track.rectTransform.rect.xMin) / Mathf.Max(1f, s.Track.rectTransform.rect.width));
+                    s.SetValue(Mathf.Lerp(s.Min, s.Max, k));
+                }
+                if (mouse.leftButton.wasPressedThisFrame && hovered >= 0 && _items[hovered].Kind == MenuItemKind.Choice)
+                {
+                    int option = _items[hovered].OptionAt(mp);
+                    if (option >= 0) { _items[hovered].SetChoice(_items[hovered].ChoiceValues[option]); UiFeel.Confirm(); }
+                }
+            }
+            if (_focus != before && _focus >= 0)
+            {
+                UiFeel.Hover();
+                KeepInView(_items[_focus]);
+            }
+
+            bool click = mouse != null && mouse.leftButton.wasPressedThisFrame && hovered >= 0 && hovered == _focus;
+            bool confirm = UiInput.Confirm;
+            if ((confirm || click) && _focus >= 0 && _focus < _items.Count)
+            {
+                MenuItem it = _items[_focus];
+                if (it.Kind == MenuItemKind.Slider || it.Kind == MenuItemKind.Choice) return;
+                if (!it.Enabled) { UiFeel.Error(); return; }
+                it.Press = 1f;
+                if (it.Kind != MenuItemKind.Toggle) UiFeel.Confirm();
+                it.OnActivate?.Invoke();
+            }
         }
 
-        private void DrawPause()
+        private int NextFocusable(int from, int step)
         {
-            bool onlineHost = NetSession.IsServer && NetSession.Transport == SessionTransport.Steam;
-            if (onlineHost)
+            int n = _items.Count;
+            for (int k = 1; k <= n; k++)
             {
-                if (GUILayout.Button("Invite friends", _big, GUILayout.Height(44)))
-                    _inviteHint = NetSession.OpenInviteDialog()
-                        ? string.Empty
-                        : "The Steam overlay can't open in this build (dev app id). Friends can join from 'Friends' parties' in their main menu, or right-click them in your Steam friends list > Invite to game.";
-                GUILayout.Label(string.IsNullOrEmpty(_inviteHint) ? "Or right-click a friend in Steam > Invite to game." : _inviteHint, _small);
-                GUILayout.Space(8);
+                int i = from + k * step;
+                if (i < 0 || i >= n) break;
+                if (_items[i].Focusable) return i;
             }
-
-            DrawParty();
-
-            GUILayout.Space(8);
-            if (GUILayout.Button("Resume", _big, GUILayout.Height(40))) _pauseOpen = false;
-            if (NetSession.IsServer && ConsoleSystem.Global.TryGetCvar("sv_pvp", out Cvar pvp))
-            {
-                // The host decides whether hunters can hurt each other (friendly fire follows it).
-                bool on = pvp.ValueString == "1" || pvp.ValueString == "true";
-                GUILayout.Space(4);
-                if (GUILayout.Button(on ? "PvP: ON (hunters can hurt each other)" : "PvP: OFF", GUILayout.Height(30))) Game.Console.Execute(on ? "sv_pvp 0" : "sv_pvp 1");
-            }
-            GUILayout.Space(4);
-            if (GUILayout.Button("Settings", GUILayout.Height(30))) _page = Page.Settings;
-            GUILayout.Space(4);
-            if (GUILayout.Button(NetSession.IsServer ? "End party" : "Leave party", GUILayout.Height(30)))
-            {
-                _pauseOpen = false;
-                NetSession.Disconnect("You left the session.");
-            }
-            GUILayout.Space(4);
-            if (GUILayout.Button("Quit game", GUILayout.Height(26))) Game.Console.Execute("quit");
+            return from >= 0 && from < n && _items[from].Focusable ? from : FirstFocusable();
         }
 
-        private void DrawParty()
+        private int FirstFocusable()
         {
+            for (int i = 0; i < _items.Count; i++) if (_items[i].Focusable) return i;
+            return -1;
+        }
+
+        private void KeepInView(MenuItem it)
+        {
+            float top = -it.Home.y - it.Height * 0.5f, bottom = top + it.Height;
+            if (top < _scrollTarget) _scrollTarget = Mathf.Max(0f, top - 12f);
+            else if (bottom > _scrollTarget + _viewportHeight) _scrollTarget = Mathf.Min(_contentHeight - _viewportHeight, bottom - _viewportHeight + 12f);
+        }
+
+        private void AnimateTitle(bool calm)
+        {
+            _title.ForceMeshUpdate();
+            TMP_TextInfo info = _title.textInfo;
+            for (int i = 0; i < info.characterCount; i++)
+            {
+                TMP_CharacterInfo c = info.characterInfo[i];
+                if (!c.isVisible) continue;
+                float t = Mathf.Clamp01((_titleAge - i * 0.045f) / 0.4f);
+                float drop = calm ? 0f : (1f - Ease.OutBack(t)) * 36f;
+                float sway = calm ? 0f : Mathf.Sin(Time.unscaledTime * 2.2f + i * 0.5f) * 2.2f;
+                var offset = new Vector3(0f, drop + sway, 0f);
+                Vector3[] v = info.meshInfo[c.materialReferenceIndex].vertices;
+                Color32[] col = info.meshInfo[c.materialReferenceIndex].colors32;
+                byte a = (byte)(255 * Mathf.Clamp01(t * 2f));
+                for (int k = 0; k < 4; k++)
+                {
+                    v[c.vertexIndex + k] += offset;
+                    col[c.vertexIndex + k].a = a;
+                }
+            }
+            _title.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
+        }
+
+        private void UpdateToast(MenuTheme theme, float dt, bool calm)
+        {
+            bool on = !Visible && Time.unscaledTime <= _toastUntil && !string.IsNullOrEmpty(_toast);
+            if (_toastRt.gameObject.activeSelf != on)
+            {
+                _toastRt.gameObject.SetActive(on);
+                if (on)
+                {
+                    _toastText.SetText(_toast);
+                    Vector2 size = _toastText.GetPreferredValues(_toast, 900f, 0f);
+                    _toastRt.sizeDelta = new Vector2(Mathf.Min(980f, size.x + 48f), size.y + 22f);
+                    _toastAge = 0f;
+                }
+            }
+            if (!on) return;
+            _toastAge += dt;
+            float t = Mathf.Clamp01(_toastAge / 0.4f);
+            float left = _toastUntil - Time.unscaledTime;
+            _toastGroup.alpha = Mathf.Clamp01(t * 2f) * Mathf.Clamp01(left / 0.4f);
+            _toastRt.anchoredPosition = new Vector2(0f, -40f + (calm ? 0f : (1f - Ease.OutBack(t)) * 50f));
+            _toastFill.color = new Color(theme.Panel.r, theme.Panel.g, theme.Panel.b, 0.85f);
+            _toastText.color = theme.Text;
+        }
+
+        private void UpdateScoreboard()
+        {
+            bool on = InSession && !Visible && KeyBindings.IsPressed(GameAction.Scoreboard) && !DevConsoleView.IsOpen;
+            if (_board.gameObject.activeSelf != on) _board.gameObject.SetActive(on);
+            if (!on || Time.unscaledTime < _boardAt) return;
+            _boardAt = Time.unscaledTime + LiveRefreshSeconds; // pings change slowly: no garbage every frame while Tab is held
             IReadOnlyList<PartyMember> members = PartyRoster.Members;
-            GUILayout.BeginHorizontal();
-            GUILayout.Label($"Party  {members.Count}/{GameIdentity.MaxPartySize}", _header);
-            GUILayout.FlexibleSpace();
-            if (NetSession.IsServer)
-            {
-                bool locked = GUILayout.Toggle(PartyRoster.Locked, " Lock party");
-                if (locked != PartyRoster.Locked) PartyRoster.SetLocked(locked);
-            }
-            else if (PartyRoster.Locked)
-            {
-                GUILayout.Label("locked", _small);
-            }
-            GUILayout.EndHorizontal();
-
+            var sb = new System.Text.StringBuilder(128);
+            sb.Append("<b><color=#FF9E26>Party  ").Append(members.Count).Append('/').Append(GameIdentity.MaxPartySize).Append("</color></b>");
+            if (PartyRoster.Locked) sb.Append("  · locked");
             foreach (PartyMember m in members)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(m.IsHost ? $"{m.Name}  (host)" : m.Name, _label, GUILayout.Width(250));
-                GUILayout.Label(m.IsHost ? "-" : $"{m.Ping} ms", _small, GUILayout.Width(70));
-                GUILayout.FlexibleSpace();
-                if (NetSession.IsServer && !m.IsHost && GUILayout.Button("Kick", GUILayout.Width(60))) PartyRoster.Kick(m.ClientId);
-                GUILayout.EndHorizontal();
-            }
-            if (NetSession.IsServer)
-                GUILayout.Label(PartyRoster.Locked ? "Locked: nobody new can join." : "Friends can join any time (join in progress).", _small);
-        }
-
-        private void DrawScoreboard(float screenW)
-        {
-            IReadOnlyList<PartyMember> members = PartyRoster.Members;
-            float w = 420f, h = 54f + members.Count * 26f;
-            var r = new Rect((screenW - w) * 0.5f, 80f, w, h);
-            GUI.DrawTexture(r, _toastBg);
-            GUILayout.BeginArea(new Rect(r.x + 16, r.y + 10, w - 32, h - 16));
-            GUILayout.Label($"Party  {members.Count}/{GameIdentity.MaxPartySize}" + (PartyRoster.Locked ? "  · locked" : string.Empty), _header);
-            foreach (PartyMember m in members)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(m.IsHost ? $"{m.Name}  (host)" : m.Name, _boardStyle);
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(m.IsHost ? "-" : $"{m.Ping} ms", _boardStyle);
-                GUILayout.EndHorizontal();
-            }
-            GUILayout.EndArea();
-        }
-
-        private void DrawSettings()
-        {
-            GUILayout.Label("Settings", _header);
-            _settingsScroll = GUILayout.BeginScrollView(_settingsScroll, GUILayout.Height(Mathf.Min(520f, Screen.height / Mathf.Max(1f, Screen.height / 720f) - 220f)));
-
-            Slider("Mouse sensitivity", CoreCvars.Sensitivity, 0.1f, 8f, "0.00");
-            Slider("Field of view", CoreCvars.Fov, 70f, 120f, "0");
-            Slider("Master volume", CoreCvars.Volume, 0f, 1f, "0%");
-            SliderByName("Movement sounds", "snd_movement", 0f, 1f, "0%");
-            Toggle("Invert mouse Y", CoreCvars.InvertY);
-            ToggleByName("Auto-hop (hold jump to keep hopping)", "cl_autohop");
-            ToggleByName("Crosshair", "cl_crosshair");
-            ToggleByName("Speedometer", "cl_showspeed");
-            FrameRateLimit();
-            if (CoreCvars.FpsMax.Value <= 0) Toggle("Vertical sync", CoreCvars.VSync);
-            else GUILayout.Label("Vertical sync: off while a frame rate limit is set", _small);
-
-            GUILayout.Space(10);
-            GUILayout.Label("Keys (click, then press a key; Esc cancels)", _header);
-            for (int i = 0; i < KeyBindings.Count; i++)
-            {
-                var action = (GameAction)i;
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(action.ToString(), _label, GUILayout.Width(170));
-                string text = _rebinding == action ? "press a key..." : KeyBindings.DisplayName(action);
-                if (GUILayout.Button(text, GUILayout.Width(180), GUILayout.Height(26))) _rebinding = action;
-                GUILayout.EndHorizontal();
-            }
-            GUILayout.EndScrollView();
-
-            GUILayout.Space(8);
-            if (GUILayout.Button("Back", _big, GUILayout.Height(38)))
-            {
-                _page = Page.Home;
-                _rebinding = null;
-            }
-        }
-
-        private void Slider(string label, FloatCvar cvar, float min, float max, string format)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(label, _label, GUILayout.Width(170));
-            float v = GUILayout.HorizontalSlider(cvar.Value, min, max, GUILayout.Width(200));
-            GUILayout.Label(format == "0%" ? $"{v * 100f:0}%" : v.ToString(format), _small, GUILayout.Width(50));
-            GUILayout.EndHorizontal();
-            if (!Mathf.Approximately(v, cvar.Value)) cvar.Value = v;
-        }
-
-        private static readonly int[] FrameRateChoices = { 0, 30, 60, 120, 144, 165, 240 };
-
-        /// <summary>fps_max as a row of buttons (0 = none, then vsync applies).</summary>
-        private void FrameRateLimit()
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Frame rate limit", _label, GUILayout.Width(170));
-            for (int i = 0; i < FrameRateChoices.Length; i++)
-            {
-                int fps = FrameRateChoices[i];
-                bool on = CoreCvars.FpsMax.Value == fps;
-                if (GUILayout.Toggle(on, fps == 0 ? "None" : fps.ToString(), GUI.skin.button, GUILayout.Height(24)) && !on) CoreCvars.FpsMax.Value = fps;
-            }
-            GUILayout.EndHorizontal();
-        }
-
-        private void SliderByName(string label, string name, float min, float max, string format)
-        {
-            if (Game.Console.TryGetCvar(name, out Cvar c) && c is FloatCvar f) Slider(label, f, min, max, format);
-        }
-
-        private void Toggle(string label, BoolCvar cvar)
-        {
-            bool v = GUILayout.Toggle(cvar.Value, " " + label);
-            if (v != cvar.Value) cvar.Value = v;
-        }
-
-        private void ToggleByName(string label, string name)
-        {
-            if (!Game.Console.TryGetCvar(name, out Cvar c)) return;
-            bool on = c.ValueString != "0";
-            bool v = GUILayout.Toggle(on, " " + label);
-            if (v != on) Game.Console.TrySet(name, v ? "1" : "0");
-        }
-
-        private void DrawToast(float screenW)
-        {
-            if (Time.unscaledTime > _toastUntil || string.IsNullOrEmpty(_toast) || Visible) return;
-            var content = new GUIContent(_toast);
-            Vector2 size = _toastStyle.CalcSize(content);
-            float w = Mathf.Min(size.x + 32f, screenW - 40f);
-            var r = new Rect((screenW - w) * 0.5f, 24f, w, size.y + 16f);
-            GUI.DrawTexture(r, _toastBg);
-            GUI.Label(r, content, _toastStyle);
-        }
-
-        private void EnsureStyles()
-        {
-            if (_title != null) return;
-            _panel = MakeTex(new Color(0.08f, 0.11f, 0.13f, 0.95f));
-            _toastBg = MakeTex(new Color(0.08f, 0.11f, 0.13f, 0.8f));
-            _windowStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(24, 24, 18, 20) };
-            _windowStyle.normal.background = _panel;
-            _title = new GUIStyle(GUI.skin.label) { fontSize = 30, fontStyle = FontStyle.Bold };
-            _title.normal.textColor = new Color(1f, 0.62f, 0.15f);
-            _label = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = true };
-            _label.normal.textColor = new Color(0.92f, 0.94f, 0.96f);
-            _small = new GUIStyle(_label) { fontSize = 13 };
-            _small.normal.textColor = new Color(0.7f, 0.76f, 0.8f);
-            _header = new GUIStyle(_label) { fontSize = 16, fontStyle = FontStyle.Bold };
-            _big = new GUIStyle(GUI.skin.button) { fontSize = 18, fontStyle = FontStyle.Bold };
-            _toastStyle = new GUIStyle(_label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = false };
-            _boardStyle = new GUIStyle(_label) { fontSize = 16, wordWrap = false };
-        }
-
-        private static Texture2D MakeTex(Color c)
-        {
-            var t = new Texture2D(1, 1);
-            t.SetPixel(0, 0, c);
-            t.Apply();
-            return t;
+                sb.Append('\n').Append(m.Name).Append(m.IsHost ? "  (host)" : string.Empty).Append("<pos=78%>").Append(m.IsHost ? "-" : m.Ping + " ms");
+            string text = sb.ToString();
+            if (text == _boardShown) return;
+            _boardShown = text;
+            _boardText.SetText(text);
+            _board.sizeDelta = new Vector2(440f, 56f + members.Count * 26f);
+            _board.anchoredPosition = new Vector2(0f, -80f);
         }
     }
 }
