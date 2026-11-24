@@ -93,6 +93,27 @@ namespace HowToHunt.Tests
         }
 
         [Test]
+        public void DesertSurf_TheHardRouteCanBeDone()
+        {
+            // The scripted run (MovementLabTools.DesertPilot) rides all five ramps and leaves the last one above the
+            // desert landing (y -178 from z -172 south): the route is hard, not impossible.
+            MoveDemo demo = LoadDemo("scripted_desert_surf");
+            MoveState s = demo.Start;
+            BrushWorld world = World(demo.Map);
+            float best = 0f;
+            bool overLanding = false;
+            foreach (MoveCmd cmd in demo.Cmds)
+            {
+                MoveCmd c = cmd;
+                PlayerMove.Step(ref s, in c, demo.Config, world, demo.TickDelta);
+                best = System.MathF.Max(best, PlayerMove.HorizontalSpeed(s.Velocity));
+                if (s.Position.Z < -172f && s.Position.Y > -178f) overLanding = true;
+            }
+            Assert.IsTrue(overLanding, "the run should reach the desert landing still above its floor");
+            Assert.Greater(best, 30f, "the hard route is fast");
+        }
+
+        [Test]
         public void Bhop_StrafeAutopilot_GainsSpeed()
         {
             MoveDemo demo = LoadDemo("scripted_bhop_flat");

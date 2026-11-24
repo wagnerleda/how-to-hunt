@@ -29,6 +29,12 @@ namespace HowToHunt.Core
             if (enabled != on) enabled = on;
         }
 
-        private void OnGUI() => _draw?.Invoke();
+        private void OnGUI()
+        {
+            // The game's font on IMGUI screens too (console, mask editor): owner, 2026-11-24.
+            Font font = UiFonts.ImGui;
+            if (font != null && GUI.skin.font != font) GUI.skin.font = font;
+            _draw?.Invoke();
+        }
     }
 }

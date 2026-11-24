@@ -37,7 +37,8 @@ Status: accepted (2026-11-24, owner request: livelier menus, NPC speech bubbles,
   and vignette on top; its drawn sun is off. The main menu panel stands at 30 % of the width.
 
 ### Amendment 2 (2026-11-24, owner: a display font, a clearer shop)
-- **Display font**: The Wildeast (owner-supplied; personal-use license until bought, docs/ASSETS.md) completed with
+- **Display font** (superseded the same day: the owner wants it on every text; it is now TMP's default and IMGUI's,
+  HUD text scaled by `Hud.TextScale`): The Wildeast (owner-supplied; personal-use license until bought, docs/ASSETS.md) completed with
   punctuation from its own strokes (`tools/fonts/complete_wildeast.py`), baked into a static TMP SDF asset in
   `Resources/Fonts & Materials` by `GeneratedAssets.EnsureDisplayFont`, falling back to the default face for
   anything else. `UiFonts.Use` puts it on what is read at a glance (titles, headings, buttons of 18 px and up, names,

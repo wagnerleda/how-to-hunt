@@ -241,7 +241,7 @@ namespace HowToHunt.Core
         private void EnsureStyles()
         {
             if (_lineStyle != null) return;
-            _lineStyle = new GUIStyle(GUI.skin.label) { wordWrap = true, richText = false, fontSize = 13, margin = new RectOffset(0, 0, 0, 0), padding = new RectOffset(0, 0, 1, 1) };
+            _lineStyle = new GUIStyle(GUI.skin.label) { wordWrap = true, richText = false, fontSize = 16, margin = new RectOffset(0, 0, 0, 0), padding = new RectOffset(0, 0, 1, 1) };
             _background = new Texture2D(1, 1);
             _background.SetPixel(0, 0, new Color(0.05f, 0.07f, 0.09f, 0.92f));
             _background.Apply();

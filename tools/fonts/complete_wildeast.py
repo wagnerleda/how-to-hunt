@@ -3,7 +3,7 @@ Completes The Wildeast (Trustha Studio; letters and digits only) with punctuatio
 titles, buttons and signs can use it. The dot of the "i", the stem of the "l" and the curve of the "C" are copied,
 scaled, sheared or turned into . , : ; ' " - / ( ) ! ? % + and an ellipsis; the chalky texture comes along.
 
-    python tools/fonts/complete_wildeast.py <The Wildeast.ttf> Assets/HowToHunt/Art/Fonts/TheWildeast/TheWildeast-HowToHunt.ttf
+    python tools/fonts/complete_wildeast.py <The Wildeast.ttf> "Assets/HowToHunt/Resources/Fonts & Materials/TheWildeast-HowToHunt.ttf"
 
 Needs fontTools (pip install fonttools). docs/ASSETS.md: the font's license is personal use until bought.
 """

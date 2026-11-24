@@ -7,25 +7,26 @@ using UnityEngine;
 namespace HowToHunt.Editor
 {
     /// <summary>
-    /// The third biome, the Red Desert (started 2026-11-24): a basin of low dunes ringed by striped red mesas, south of
-    /// the movement lab and far from the other maps. Dry Creek camp (Rosa's trading post, prices x2; Dusty by the fire),
+    /// The third biome, the Red Desert (started 2026-11-24): a basin of low dunes ringed by striped red mesas, 90 m
+    /// below the forest at the bottom of the hard surf route (GrayboxSceneBuilder.DesertRoute.cs). Dry Creek camp (Rosa's trading post, prices x2; Dusty by the fire),
     /// saguaros and barrel cacti, rock piles where lizards bask and rattlesnakes wait, scorpion flats, jackrabbit runs
-    /// and coyote country. The way in is a pad at Ash's forest camp that appears once the Old Bear has fallen (the
-    /// forest boss flag); the movement lab has a test pad. Pads at Dry Creek go back to the forest and to the Plains.
+    /// and coyote country. The way in is the hard surf route from the forest's south rim (open once the Old Bear has
+    /// fallen); the movement lab has a test pad. Pads at Dry Creek go back to the forest and to the Plains.
     /// Deterministic like the other maps, with its own random sequence.
     /// </summary>
     public static partial class GrayboxSceneBuilder
     {
-        private const float DesertY = 0f;
-        private const float DMinX = 380f, DMaxX = 520f, DMinZ = -640f, DMaxZ = -500f, DCorner = 30f, DBand = 26f;
+        private const float DesertY = -178f;     // 128 m below the forest: the hard surf route comes down to it
+        private const float DMinX = 380f, DMaxX = 520f, DMinZ = -341f, DMaxZ = -201f, DCorner = 30f, DBand = 26f;
+        private const float DesertLandingHalfWidth = 14f; // the opening in the north rim where the surf route lands
         private const double DesertExpectedSale = 220;
         private const float DesertPriceMultiplier = 2f;
-        private static readonly Vector3 DesertCamp = new Vector3(410f, DesertY, -530f);
-        private static readonly Vector3[] JackrabbitRuns = { new Vector3(470f, 0f, -540f), new Vector3(440f, 0f, -600f), new Vector3(500f, 0f, -590f) };
-        private static readonly Vector3[] LizardRocks = { new Vector3(430f, 0f, -560f), new Vector3(490f, 0f, -520f), new Vector3(405f, 0f, -610f) };
-        private static readonly Vector3[] ScorpionFlats = { new Vector3(455f, 0f, -575f), new Vector3(500f, 0f, -625f), new Vector3(420f, 0f, -585f) };
-        private static readonly Vector3[] SnakeRocks = { new Vector3(475f, 0f, -560f), new Vector3(398f, 0f, -572f), new Vector3(470f, 0f, -625f) };
-        private static readonly Vector3[] CoyoteDens = { new Vector3(505f, 0f, -555f), new Vector3(450f, 0f, -625f) };
+        private static readonly Vector3 DesertCamp = new Vector3(410f, DesertY, -231f);
+        private static readonly Vector3[] JackrabbitRuns = { new Vector3(470f, 0f, -241f), new Vector3(440f, 0f, -301f), new Vector3(500f, 0f, -291f) };
+        private static readonly Vector3[] LizardRocks = { new Vector3(430f, 0f, -261f), new Vector3(490f, 0f, -221f), new Vector3(405f, 0f, -311f) };
+        private static readonly Vector3[] ScorpionFlats = { new Vector3(455f, 0f, -276f), new Vector3(500f, 0f, -326f), new Vector3(420f, 0f, -286f) };
+        private static readonly Vector3[] SnakeRocks = { new Vector3(475f, 0f, -261f), new Vector3(398f, 0f, -273f), new Vector3(470f, 0f, -326f) };
+        private static readonly Vector3[] CoyoteDens = { new Vector3(505f, 0f, -256f), new Vector3(450f, 0f, -326f) };
 
         private static float OutsideDesert(float x, float z)
         {
@@ -36,8 +37,16 @@ namespace HowToHunt.Editor
             return outside + Mathf.Min(Mathf.Max(dx, dz), 0f) - DCorner;
         }
 
-        private static float DesertFlat(float x, float z) =>
-            1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(((new Vector2(x, z) - new Vector2(DesertCamp.x, DesertCamp.z)).magnitude - 13f) / 9f));
+        private static float DesertFlat(float x, float z)
+        {
+            float camp = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(((new Vector2(x, z) - new Vector2(DesertCamp.x, DesertCamp.z)).magnitude - 13f) / 9f));
+            // The landing strip through the north rim, where the surf route comes down.
+            float dx = Mathf.Abs(x - DesertRouteX);
+            float landing = z > DMaxZ - 16f
+                ? (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((dx - (DesertLandingHalfWidth - 4f)) / 7f))) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((DMaxZ - 6f - z) / 10f)))
+                : 0f;
+            return Mathf.Max(camp, landing);
+        }
 
         /// <summary>Low dunes in long wavy ridges across the basin; terraced mesas rise all round the edge.</summary>
         private static float DesertHeight(float x, float z)
@@ -125,7 +134,25 @@ namespace HowToHunt.Editor
             var ring = new List<Vector3>();
             for (int i = 0; i < segments; i++) ring.Add(DesertRingPoint(i / (float)segments, 4f));
             for (int i = 0; i < segments; i++)
-                RockWall(walls, $"Rim {i}", ring[i], ring[(i + 1) % segments], GroundY, DesertY + 45f, rng, "Mesa", "MesaDark");
+            {
+                Vector3 a = ring[i], b = ring[(i + 1) % segments];
+                if ((a.z + b.z) * 0.5f < DMaxZ - 10f)
+                {
+                    RockWall(walls, $"Rim {i}", a, b, GroundY, DesertY + 45f, rng, "Mesa", "MesaDark");
+                    continue;
+                }
+                // The north side: cut exactly at the landing strip.
+                SplitAtOpeningX(a, b, DesertRouteX, DesertLandingHalfWidth, out _, out _, Pieces);
+                for (int k = 0; k < Pieces.Count; k += 2) RockWall(walls, $"Rim {i}.{k / 2}", Pieces[k], Pieces[k + 1], GroundY, DesertY + 45f, rng, "Mesa", "MesaDark");
+            }
+            // The landing strip's sides, from the rim out to the edge where the ramps end.
+            float ringZ = DMaxZ;
+            for (int k = 0; k < 60; k++) if (OutsideDesert(DesertRouteX, ringZ) < 4f) ringZ += 0.5f;
+            for (int s = -1; s <= 1; s += 2)
+            {
+                float x = DesertRouteX + s * (DesertLandingHalfWidth + 1f);
+                RockWall(walls, $"Landing Side {(s < 0 ? "W" : "E")}", new Vector3(x, 0f, ringZ), new Vector3(x, 0f, DMaxZ + DBand + 2f), GroundY, DesertY + 45f, rng, "Mesa", "MesaDark");
+            }
 
             BuildDesertCamp(desert, props, zones, signs);
 
@@ -221,7 +248,7 @@ namespace HowToHunt.Editor
 
             // Rosa's trading post: desert prices (x2), the best in the game so far.
             Station(camp, signs, CampStationKind.Sell, "Desert Trading Post", "DRY CREEK TRADING POST\n<size=55%>desert prices x2</size>",
-                c + new Vector3(8f, 0f, -2f), 90f, "npc.desert_trader", DesertExpectedSale, DesertPriceMultiplier);
+                c + new Vector3(8f, 0f, 297f), 90f, "npc.desert_trader", DesertExpectedSale, DesertPriceMultiplier);
             // Dusty sits on a log at the fire.
             Prop(camp, "log", c + new Vector3(-2.7f, 0f, 0.4f), 3f, rng, collide: false, yaw: 90f);
             NpcAbout(camp, "npc.prospector", c + new Vector3(-2.3f, 0f, 0f), 90f);
@@ -233,18 +260,7 @@ namespace HowToHunt.Editor
             Transform toForest = Marker(zones, "Forest Camp Arrival", ForestCamp + new Vector3(-4.5f, 0.1f, 5.5f), 0f);
             Transform toPlains = Marker(zones, "Plains Camp Arrival (desert)", CampCenter + new Vector3(0f, 0f, -4.5f), 0f);
             DesertPad(camp, zones, signs, "BACK TO THE PINES", c + new Vector3(-4f, 0f, -11f), toForest);
-            DesertPad(camp, zones, signs, "BACK TO THE PLAINS", c + new Vector3(4f, 0f, -11f), toPlains);
-
-            // The way in: a pad at Ash's camp that appears once the Old Bear has fallen (the forest boss flag).
-            Transform gate = Group(desert, "Desert Road (open)");
-            gate.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.ForestBossFlag, showWhenSet: true);
-            Vector3 forestPad = ForestCamp + new Vector3(-7f, 0f, 9f);
-            Visual(gate, "Pad Desert", forestPad + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
-            Zone(gate, "Teleport Desert", forestPad + new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, arrival);
-            Sign(gate, "TO THE RED DESERT\n<size=55%>step on the pad</size>", forestPad + new Vector3(0f, 2.4f, 0f), 270f, 0.9f);
-            Transform closed = Group(desert, "Desert Road (closed)");
-            closed.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.ForestBossFlag, showWhenSet: false);
-            Sign(closed, "THE DESERT ROAD\n<size=55%>Ash opens it once the Old Bear has fallen</size>", forestPad + new Vector3(0f, 2.4f, 0f), 270f, 0.9f);
+            DesertPad(camp, zones, signs, "BACK TO THE PLAINS", c + new Vector3(4f, 0f, 288f), toPlains);
 
             // The movement lab's test pad (the lab is the test zone: every gun, every map).
             Vector3 labPad = new Vector3(0f, 0.1f, 5.5f);

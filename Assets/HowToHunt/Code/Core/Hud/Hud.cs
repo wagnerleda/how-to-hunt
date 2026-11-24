@@ -11,6 +11,8 @@ namespace HowToHunt.Core
     public static class Hud
     {
         private static Canvas _canvas;
+        /// <summary>HUD text sizes are scaled up a little for the display font (UiFonts): it is narrower and rougher.</summary>
+        public const float TextScale = 1.12f;
 
         public static RectTransform Root
         {
@@ -46,7 +48,7 @@ namespace HowToHunt.Core
             rt.anchoredPosition = offset;
             rt.sizeDelta = new Vector2(900, size * 2.4f);
             TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
-            t.fontSize = size;
+            t.fontSize = size * TextScale; // the brush face reads smaller than the old plain one
             t.alignment = align;
             t.color = color;
             t.raycastTarget = false;

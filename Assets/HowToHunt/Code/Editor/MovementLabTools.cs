@@ -75,6 +75,9 @@ namespace HowToHunt.Editor
                 return new MoveCmd { Forward = 1f, Yaw = 270f, Buttons = past ? MoveButtons.Jump | MoveButtons.AutoHop : MoveButtons.None };
             }));
 
+            // The hard route to the desert (2026-11-24): proof it can be done (a run that reaches the landing).
+            report.AppendLine(Save("scripted_desert_surf", world, cfg, ToV(GrayboxSceneBuilder.DesertRouteStart), 180f, 64 * 15, DesertPilot));
+
             AssetDatabase.Refresh();
             Debug.Log("[MovementLab] Scripted demos regenerated:\n" + report);
             return report.ToString();
@@ -100,6 +103,37 @@ namespace HowToHunt.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, demo.Write());
             return $"{name}: {ticks} ticks, end {s.Position.X:0.0} {s.Position.Y:0.0} {s.Position.Z:0.0}, max speed {maxSpeed:0.0} m/s, ground={s.OnGround}";
+        }
+
+        /// <summary>
+        /// Surfs the hard desert route like a good player: on a ramp, look down the course (a little down the slope)
+        /// and hold strafe into the face; between ramps, air-strafe toward the face of the next ramp on the side you
+        /// come from (look along the velocity, strafe toward the target line).
+        /// </summary>
+        public static MoveCmd DesertPilot(int tick, MoveState s)
+        {
+            float z = s.Position.Z, x = s.Position.X;
+            if (z > GrayboxSceneBuilder.DesertRouteStart.z - 4.5f) return new MoveCmd { Forward = 1f, Yaw = 172f }; // walk off the ledge, a little east of the ridge
+            int n = GrayboxSceneBuilder.HardRampLength.Length, on = n - 1;
+            for (int i = 0; i < n; i++)
+            {
+                GrayboxSceneBuilder.HardRamp(i, out Vector3 start, out Vector3 end);
+                if (z > end.z) { on = i; break; }
+            }
+            GrayboxSceneBuilder.HardRamp(on, out Vector3 rs, out _);
+            float ridge = rs.x;
+            // Still north of this ramp's ridge start (it tilts back ~2 m): flying the gap toward it.
+            bool between = on > 0 && z > rs.z - 2.1f;
+            bool west = x < ridge;
+            if (!between)
+            {
+                // On the face: strafe into it (facing -z, Side -1 pushes +x), look 2 degrees down the slope.
+                return new MoveCmd { Side = west ? -1f : 1f, Yaw = west ? 182f : 178f };
+            }
+            // In the air: air-strafe toward the face on our side of the next ridge, a few metres off it.
+            float e = ridge + (west ? -3f : 3f) - x;
+            if (Math.Abs(e) < 0.8f) return new MoveCmd { Yaw = 180f };
+            return new MoveCmd { Side = e > 0f ? -1f : 1f, Yaw = Heading(s, 180f) };
         }
 
         /// <summary>Air-strafe autopilot: aim along the velocity and alternate strafe sides, auto-hopping.</summary>

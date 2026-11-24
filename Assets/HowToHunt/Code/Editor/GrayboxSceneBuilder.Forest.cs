@@ -80,7 +80,7 @@ namespace HowToHunt.Editor
 
             // Far below: a wooded valley floor (pines are added with the forest scatter) and cliff faces under the
             // edges of both maps, so nobody looks into the void. No collision: the hazard catches you long before.
-            GameObject floor = Visual(root, "Ravine Floor", new Vector3((RouteStartX + FMaxX) * 0.5f + 100f, RavineFloorY - 0.5f, RouteZ), new Vector3(FMaxX - RouteStartX + 500f, 1f, 900f), "Grass");
+            GameObject floor = Visual(root, "Ravine Floor", new Vector3((RouteStartX + FMaxX) * 0.5f + 100f, RavineFloorY - 0.5f, (FMinZ - FBand + RouteZ + 450f) * 0.5f), new Vector3(FMaxX - RouteStartX + 500f, 1f, RouteZ + 450f - (FMinZ - FBand)), "Grass");
             floor.layer = BackdropLayer; // drawn past r_drawdistance, out to the horizon
             float cliffBottom = RavineFloorY - 1f;
             // Just past each terrain's edge, tall enough to hide it (the forest bands rise up to ~15 m); low where
@@ -98,8 +98,8 @@ namespace HowToHunt.Editor
 
         private const float RavineFloorY = ForestY - 40f;
 
-        private static void CliffFace(Transform parent, string name, float x0, float x1, float z0, float z1, float bottom, float top) =>
-            Visual(parent, name, new Vector3((x0 + x1) * 0.5f, (bottom + top) * 0.5f, (z0 + z1) * 0.5f), new Vector3(x1 - x0, top - bottom, z1 - z0), "Rock");
+        private static void CliffFace(Transform parent, string name, float x0, float x1, float z0, float z1, float bottom, float top, string material = "Rock") =>
+            Visual(parent, name, new Vector3((x0 + x1) * 0.5f, (bottom + top) * 0.5f, (z0 + z1) * 0.5f), new Vector3(x1 - x0, top - bottom, z1 - z0), material);
 
 
 
@@ -129,7 +129,7 @@ namespace HowToHunt.Editor
             float landing = x < FMinX + 20f && dz < 16f
                 ? (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((dz - 9f) / 7f))) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((x - (FMinX + 6f)) / 12f)))
                 : 0f;
-            return Mathf.Max(camp, landing);
+            return Mathf.Max(Mathf.Max(camp, landing), DesertTrailFlat(x, z));
         }
 
         private static float ForestHeight(float x, float z)
@@ -291,9 +291,18 @@ namespace HowToHunt.Editor
             {
                 Vector3 a = ring[i], b = ring[(i + 1) % segments];
                 Vector3 mid = (a + b) * 0.5f;
-                if (mid.x >= FMinX)
+                if (mid.x >= FMinX && mid.z > FMinZ + 10f)
                 {
                     RockWall(walls, $"Wall {i}", a, b, ForestHeight, ForestY + 40f, rocks);
+                    continue;
+                }
+                if (mid.x >= FMinX)
+                {
+                    // The south side: cut at the trail to the hard surf route; the cut-out piece closes it until the
+                    // Old Bear has fallen (the forest boss flag).
+                    SplitAtOpeningX(a, b, DesertRouteX, DesertTrailHalfWidth, out Vector3 inA, out Vector3 inB, Pieces);
+                    for (int k = 0; k < Pieces.Count; k += 2) RockWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], ForestHeight, ForestY + 40f, rocks);
+                    if ((inB - inA).sqrMagnitude > 0.01f) RockWall(DesertGate(forest), $"Wall {i} (desert gate)", inA, inB, ForestHeight, ForestY + 40f, rocks);
                     continue;
                 }
                 // West side: the landing strip from the ravine is cut out exactly, so surfers arriving off-centre
@@ -301,6 +310,16 @@ namespace HowToHunt.Editor
                 SplitAtOpening(a, b, RouteZ, LandingHalfWidth, out _, out _, Pieces);
                 for (int k = 0; k < Pieces.Count; k += 2) RockWall(walls, $"Wall {i}.{k / 2}", Pieces[k], Pieces[k + 1], ForestHeight, ForestY + 40f, rocks);
             }
+            // The trail south to the hard surf route: rock walls on both sides from the ring to the ledge.
+            float trailRing = FMinZ;
+            for (int k = 0; k < 40; k++) if (OutsideForest(DesertRouteX, trailRing) < 3f) trailRing -= 0.5f;
+            for (int s = -1; s <= 1; s += 2)
+            {
+                float x = DesertRouteX + s * (DesertTrailHalfWidth + 1f);
+                RockWall(walls, $"Desert Trail {(s < 0 ? "W" : "E")}", new Vector3(x, 0f, trailRing), new Vector3(x, 0f, DesertLedgeZ + 1f), ForestHeight, ForestY + 40f, rocks);
+            }
+            _desertGate = null;
+
             // Sides of the landing strip, from the ravine edge to the ring (the ravine end itself stays open).
             float edge = RouteStartX + (RampLength + RampGap) * RampCount - RampGap - 3f;
             for (int s = -1; s <= 1; s += 2)
@@ -310,6 +329,19 @@ namespace HowToHunt.Editor
                 for (int k = 0; k < 40; k++) if (OutsideForest(ringX, z) < 3f) ringX -= 0.5f;
                 RockWall(walls, $"Landing Side {(s < 0 ? "S" : "N")}", new Vector3(edge + 1f, 0f, z), new Vector3(ringX, 0f, z), ForestHeight, ForestY + 40f, rocks);
             }
+        }
+
+        private static Transform _desertGate;
+
+        /// <summary>What closes the trail to the desert until the Old Bear falls (rocks across it and a sign).</summary>
+        private static Transform DesertGate(Transform forest)
+        {
+            if (_desertGate != null) return _desertGate;
+            _desertGate = Group(forest, "Desert Trail (closed)");
+            _desertGate.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.ForestBossFlag, showWhenSet: false);
+            Sign(_desertGate, "THE WAY SOUTH\n<size=55%>rockfall - Ash says it clears once the Old Bear has fallen</size>",
+                new Vector3(DesertRouteX, ForestY + 3.8f, FMinZ + 2f), 180f, 1.2f);
+            return _desertGate;
         }
 
         private static Vector3 ForestRingPoint(float t, float outward)
@@ -392,6 +424,7 @@ namespace HowToHunt.Editor
                     float px = x + Range(rng, -2f, 2f), pz = z + Range(rng, -2f, 2f);
                     if (OutsideForest(px, pz) < -1f + Range(rng, 0f, 3f)) continue;
                     if (px < FMinX + 4f && Mathf.Abs(pz - RouteZ) < 12f) continue;
+                    if (Mathf.Abs(px - DesertRouteX) < DesertTrailHalfWidth + 3f && pz < FMinZ + 6f) continue; // the trail south
                     pineLists[rng.Next(pines.Length)].Add(Instance(new Vector3(px, 0f, pz), Range(rng, 1.1f, 1.6f), rng));
                 }
             // Pines through the valley in loose stands; these block (an invisible trunk each).
@@ -508,6 +541,7 @@ namespace HowToHunt.Editor
             {
                 float angle = i / 9f * Mathf.PI * 2f + Range(rng, -0.12f, 0.12f);
                 if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 270f)) < 40f) continue; // the ravine and the Plains are that way
+                if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 180f)) < 35f) continue; // the canyon down to the desert
                 float dist = Range(rng, 170f, 220f);
                 var pos = center + new Vector3(Mathf.Sin(angle) * dist, -4f, Mathf.Cos(angle) * dist);
                 Mesh m = Mountain(rng, Range(rng, 70f, 120f), Range(rng, 60f, 100f), 100 + i);

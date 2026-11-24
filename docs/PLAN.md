@@ -113,6 +113,12 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 3 | The Red Desert, first version: map, Dry Creek camp (Rosa x2 prices, Dusty), jackrabbit, lizard, scorpion, rattlesnake, coyote, four quests; opened by the Old Bear (lab test pad) | "start the third biome, the desert, with scorpions and snakes" |
 | 4 | The Wildeast across the game where it stays readable (titles, buttons, names, signs), punctuation drawn from its own strokes; license to buy before release | "integrate the font everywhere, readability first" |
 
+## Phase 6.6: the font everywhere, the hard way down to the desert (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | The Wildeast is the default font of every text (TMP Settings, IMGUI console and mask editor); HUD text a little larger | "replace every text in the game with the font" |
+| 2 | The desert moved under the forest; a hard surf route (five narrow zigzag ramps, 128 m down) from the forest's south rim replaces the pad; a pilot demo proves it can be done | "a much harder surf course to reach the desert" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

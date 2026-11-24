@@ -56,7 +56,8 @@ namespace HowToHunt.Editor
         /// The dialogue look-and-feel asset (Resources/UI/DialogueTheme): created with the defaults if missing, never
         /// overwritten afterwards, so tuning it in the Inspector sticks.
         /// </summary>
-        public const string DisplayFontSource = Root + "/Art/Fonts/TheWildeast/TheWildeast-HowToHunt.ttf";
+        public const string DisplayFontSource = ResourcesDir + "/Fonts & Materials/" + UiFonts.SourceName + ".ttf";
+        private const string PlainFontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
         public const string DisplayFontPath = ResourcesDir + "/Fonts & Materials/" + UiFonts.DisplayName + ".asset";
 
         /// <summary>
@@ -65,11 +66,21 @@ namespace HowToHunt.Editor
         /// (&lt;font="Wildeast SDF"&gt;) both find it. Every glyph the font has is baked in; anything else falls back
         /// to the default font. Rebuilt each time (it is generated).
         /// </summary>
-        public static void EnsureDisplayFont()
+        public static void EnsureDisplayFont() => EnsureDisplayFont(false);
+
+        /// <summary>rebuild: bake it again after the .ttf changed (a new asset id: rebuild the scene afterwards).</summary>
+        public static void EnsureDisplayFont(bool rebuild)
         {
             var source = AssetDatabase.LoadAssetAtPath<Font>(DisplayFontSource);
             if (source == null) { Debug.LogWarning($"[HowToHunt] Missing display font {DisplayFontSource}"); return; }
             EnsureFolder(ResourcesDir + "/Fonts & Materials");
+            var fallback = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(PlainFontPath);
+            TMPro.TMP_FontAsset existing = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(DisplayFontPath);
+            if (existing != null && !rebuild)
+            {
+                MakeDefaultFont(existing, fallback); // kept as is, so scenes and prefabs keep pointing at it
+                return;
+            }
             AssetDatabase.DeleteAsset(DisplayFontPath);
             TMPro.TMP_FontAsset font = TMPro.TMP_FontAsset.CreateFontAsset(source, 90, 9, UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA, 1024, 1024,
                 TMPro.AtlasPopulationMode.Dynamic, true);
@@ -78,7 +89,7 @@ namespace HowToHunt.Editor
             for (char c = ' '; c < (char)0x2100; c++) chars.Append(c);
             font.TryAddCharacters(chars.ToString(), out _);
             font.atlasPopulationMode = TMPro.AtlasPopulationMode.Static;
-            var fallback = TMPro.TMP_Settings.defaultFontAsset;
+            // Anything the brush doesn't draw (accents, symbols) falls back to the plain face.
             if (fallback != null) font.fallbackFontAssetTable = new List<TMPro.TMP_FontAsset> { fallback };
             AssetDatabase.CreateAsset(font, DisplayFontPath);
             foreach (Texture2D atlas in font.atlasTextures)
@@ -89,6 +100,24 @@ namespace HowToHunt.Editor
             font.material.name = UiFonts.DisplayName + " Material";
             AssetDatabase.AddObjectToAsset(font.material, font);
             EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssets();
+            MakeDefaultFont(font, fallback);
+        }
+
+        /// <summary>Every text in the game (owner, 2026-11-24): the display font is TextMesh Pro's default.</summary>
+        private static void MakeDefaultFont(TMPro.TMP_FontAsset font, TMPro.TMP_FontAsset fallback)
+        {
+            var settings = new SerializedObject(TMPro.TMP_Settings.instance);
+            settings.FindProperty("m_defaultFontAsset").objectReferenceValue = font;
+            SerializedProperty fallbacks = settings.FindProperty("m_fallbackFontAssets");
+            fallbacks.ClearArray();
+            if (fallback != null)
+            {
+                fallbacks.InsertArrayElementAtIndex(0);
+                fallbacks.GetArrayElementAtIndex(0).objectReferenceValue = fallback;
+            }
+            settings.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(TMPro.TMP_Settings.instance);
             AssetDatabase.SaveAssets();
         }
 

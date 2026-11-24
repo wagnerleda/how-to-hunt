@@ -83,6 +83,7 @@ namespace HowToHunt.Editor
             BuildEastRoute(level, zones, signs);
             BuildPineForest(level, zones, signs);
             BuildRedDesert(level, zones, signs);
+            BuildDesertRoute(level, zones, signs);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
