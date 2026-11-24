@@ -46,6 +46,11 @@ namespace HowToHunt.Player
         private static Quaternion _shotRotation = Quaternion.identity;
         private static float _shotFov = 30f;
         private float _shotWeight;
+        // Where the shot is right now: it glides to a new pose (another gun on the counter) instead of cutting.
+        private Vector3 _shotNowPosition;
+        private Quaternion _shotNowRotation = Quaternion.identity;
+        private float _shotNowFov;
+        private const float ShotGlideRate = 5f;
         private const float ShotBlendRate = 7f;
 
         /// <summary>A framed shot is on (or still blending out): the first-person gun hides.</summary>
@@ -188,10 +193,16 @@ namespace HowToHunt.Player
             _shotWeight = UiFeel.Calm ? (_shot ? 1f : 0f) : Mathf.MoveTowards(_shotWeight, _shot ? 1f : 0f, dt * ShotBlendRate * 0.5f);
             if (_shotWeight > 0.001f)
             {
+                // Entering the shot: start from its pose; already in it: glide to the new pose.
+                float g = UiFeel.Calm || _shotNowFov <= 0f ? 1f : 1f - Mathf.Exp(-ShotGlideRate * dt);
+                _shotNowPosition = Vector3.Lerp(_shotNowPosition, _shotPosition, g);
+                _shotNowRotation = Quaternion.Slerp(_shotNowRotation, _shotRotation, g);
+                _shotNowFov = Mathf.Lerp(_shotNowFov, _shotFov, g);
                 float w = _shotWeight * _shotWeight * (3f - 2f * _shotWeight);
-                transform.SetPositionAndRotation(Vector3.Lerp(transform.position, _shotPosition, w), Quaternion.Slerp(transform.rotation, _shotRotation, w));
-                _camera.fieldOfView = Mathf.Lerp(vfov, _shotFov, w);
+                transform.SetPositionAndRotation(Vector3.Lerp(transform.position, _shotNowPosition, w), Quaternion.Slerp(transform.rotation, _shotNowRotation, w));
+                _camera.fieldOfView = Mathf.Lerp(vfov, _shotNowFov, w);
             }
+            else _shotNowFov = 0f; // the next shot starts from its own pose
 
             // Click to recapture the mouse after alt-tab or closing the console.
             if (!Game.UiHasFocus && Cursor.lockState != CursorLockMode.Locked &&

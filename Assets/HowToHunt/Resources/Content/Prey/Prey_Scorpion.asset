@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
   _key: prey.scorpion
   _displayName: Red Scorpion
-  _description: 'Doesn''t run: it comes at you and stings (10 damage) when you step within 4 m. Slow; back off or net it (Ironwood Net). Sells alive to the curious.'
+  _description: 'Doesn''t run: it comes at you and stings (10 damage, then poison: 3 a second for 5 s) when you step within 4 m. Slow; back off or net it (Ironwood Net). Sells alive to the curious.'
   Allowed: 3
   MaxHealth: 14
   CaptureDifficulty: 3
@@ -52,6 +52,8 @@ MonoBehaviour:
   AttackCooldown: 1.2
   AttackDamage: 10
   AttackPush: 3
+  PoisonDamagePerSecond: 3
+  PoisonSeconds: 5
   ChargeSpeed: 3.4
   ProvokeSeconds: 6
   RegenPerSecond: 0

@@ -29,6 +29,7 @@ namespace HowToHunt.Editor
             Save("Scorpion", Scorpion());
             Save("Rattlesnake", Rattlesnake());
             Save("Coyote", Coyote());
+            Save("CoralSnake", CoralSnake());
             SaveMesh(Saguaro(0));
             SaveMesh(Saguaro(1));
             SaveMesh(BarrelCactus());
@@ -123,6 +124,26 @@ namespace HowToHunt.Editor
             for (int s = -1; s <= 1; s += 2) b.Block(new Vector3(s * 0.035f, 0.185f, 0.43f), new Vector3(0.01f, 0.01f, 0.01f), dark);
             b.Block(new Vector3(0.02f, 0.09f, -0.55f), new Vector3(0.035f, 0.1f, 0.035f), rattle, top: 0.5f, pitch: 20f); // the rattle
             return b.Mesh("Creature_Rattlesnake");
+        }
+
+        /// <summary>A thin snake in red, yellow and black bands, its head a little raised.</summary>
+        private static Mesh CoralSnake()
+        {
+            var b = new Builder();
+            Color red = C(0.85f, 0.2f, 0.12f), yellow = C(0.95f, 0.85f, 0.3f), black = C(0.08f, 0.07f, 0.06f);
+            Color[] bands = { red, yellow, black, yellow };
+            const int n = 14;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)(n - 1);
+                float z = Mathf.Lerp(-0.4f, 0.24f, t);
+                float x = Mathf.Sin(t * Mathf.PI * 2.6f) * 0.07f;
+                b.Block(new Vector3(x, 0.03f, z), new Vector3(0.045f, 0.04f, 0.05f), bands[i % bands.Length]);
+            }
+            b.Block(new Vector3(0f, 0.06f, 0.28f), new Vector3(0.035f, 0.06f, 0.035f), red, pitch: 20f);       // raised neck
+            b.Block(new Vector3(0f, 0.1f, 0.32f), new Vector3(0.05f, 0.035f, 0.07f), black, front: 0.6f);     // head
+            for (int s = -1; s <= 1; s += 2) b.Block(new Vector3(s * 0.022f, 0.115f, 0.34f), new Vector3(0.008f, 0.008f, 0.008f), yellow);
+            return b.Mesh("Creature_CoralSnake");
         }
 
         private static Mesh Coyote()

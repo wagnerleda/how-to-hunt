@@ -11,7 +11,11 @@ HowToHunt.Core         Unity             GameRoot bootstrap, IFeatureModule + Mo
                                          ContentDefinition, SimBrush/SimWorld, IPlatformServices, OfflinePlatform
 HowToHunt.Platform     Unity + Steamworks.NET   SteamPlatform, SteamLobbyService (room codes)
 HowToHunt.Net          Unity + Fish-Net  NetSession (host / join by code / local connect), transports
-HowToHunt.Player       feature           PlayerMotor (predicted), input, camera, spawns, movement cvars
+HowToHunt.Player       feature           PlayerMotor (predicted), input, camera (and framed shots), spawns, health (downed, revive, poison)
+HowToHunt.Hunting      feature           tools and guns, prey world (host AI, strikes, venom), viewmodels, attachments, hit feedback
+HowToHunt.Economy      feature           ledger and saves, stations, shop and gunsmith panels, quests, world items, world gates
+HowToHunt.Npcs         feature           camp characters (stall or activity poses), dialogue, speech bubbles, quest HUD
+HowToHunt.Avatar       feature           the stick figure, masks, the main menu's sunset scene (MenuVista, RestingHunter)
 HowToHunt.DevTools     feature           DebugOverlay, net_graph
 HowToHunt.UI           feature           Menus (uGUI since ADR 0015: SessionMenu, MenuItem, MenuBackdrop, MenuTheme)
 HowToHunt.Bosses       feature           Boss bar and announcements (bosses are aggressive prey, ADR 0014)

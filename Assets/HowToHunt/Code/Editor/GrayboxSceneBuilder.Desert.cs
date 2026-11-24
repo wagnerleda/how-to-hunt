@@ -26,6 +26,7 @@ namespace HowToHunt.Editor
         private static readonly Vector3[] LizardRocks = { new Vector3(430f, 0f, -261f), new Vector3(490f, 0f, -221f), new Vector3(405f, 0f, -311f) };
         private static readonly Vector3[] ScorpionFlats = { new Vector3(455f, 0f, -276f), new Vector3(500f, 0f, -326f), new Vector3(420f, 0f, -286f) };
         private static readonly Vector3[] SnakeRocks = { new Vector3(475f, 0f, -261f), new Vector3(398f, 0f, -273f), new Vector3(470f, 0f, -326f) };
+        private static readonly Vector3[] CoralScrub = { new Vector3(432f, 0f, -240f), new Vector3(485f, 0f, -300f), new Vector3(415f, 0f, -270f) };
         private static readonly Vector3[] CoyoteDens = { new Vector3(505f, 0f, -256f), new Vector3(450f, 0f, -326f) };
 
         private static float OutsideDesert(float x, float z)
@@ -184,6 +185,13 @@ namespace HowToHunt.Editor
                 Visual(props, $"Scorpion Flat {i + 1}", c + new Vector3(0f, 0.02f, 0f), new Vector3(9f, 0.04f, 7f), "Adobe", Range(rng, 0f, 90f));
                 Spawner(desert, $"Scorpions {i + 1}", "prey.scorpion", c + new Vector3(0f, 0.2f, 0f), 2, 5f, 45f);
             }
+            // Coral snakes in the scrub between the dunes (venomous: owner, 2026-11-24).
+            for (int i = 0; i < CoralScrub.Length; i++)
+            {
+                Vector3 c = OnGround(CoralScrub[i]);
+                for (int k = 0; k < 4; k++) Instanced(props, "Scrub", CreatureModels.PropMesh("Prop_DeadBush"), c + Ring(rng, 1f, 4f), Range(rng, 1.2f, 1.8f), rng);
+                Spawner(desert, $"Coral Snakes {i + 1}", "prey.coral_snake", c + new Vector3(0f, 0.2f, 0f), 2, 5f, 50f);
+            }
             for (int i = 0; i < JackrabbitRuns.Length; i++)
                 Spawner(desert, $"Jackrabbits {i + 1}", "prey.jackrabbit", OnGround(JackrabbitRuns[i]) + new Vector3(0f, 0.2f, 0f), 3, 14f, 30f);
             for (int i = 0; i < CoyoteDens.Length; i++)
@@ -285,7 +293,7 @@ namespace HowToHunt.Editor
                 if (OutsideDesert(p.x, p.z) > -clearance - 4f || DesertFlat(p.x, p.z) > 0.05f) continue;
                 if ((p - new Vector3(DesertCamp.x, 0f, DesertCamp.z)).magnitude < 20f + clearance) continue;
                 bool blocked = false;
-                foreach (Vector3[] set in new[] { JackrabbitRuns, LizardRocks, ScorpionFlats, SnakeRocks, CoyoteDens })
+                foreach (Vector3[] set in new[] { JackrabbitRuns, LizardRocks, ScorpionFlats, SnakeRocks, CoyoteDens, CoralScrub })
                     foreach (Vector3 q in set) if ((p - q).sqrMagnitude < (8f + clearance) * (8f + clearance)) blocked = true;
                 if (!blocked) return p;
             }
@@ -359,6 +367,8 @@ namespace HowToHunt.Editor
             {
                 float angle = i / 16f * Mathf.PI * 2f + Range(rng, -0.1f, 0.1f);
                 float dist = Range(rng, 170f, 240f);
+                // None to the north: that is where the surf route comes down the canyon (they stood in its way).
+                if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, 0f)) < 70f) continue;
                 Vector3 at = center + new Vector3(Mathf.Sin(angle) * dist, 0f, Mathf.Cos(angle) * dist);
                 float h = Range(rng, 30f, 60f), w = Range(rng, 40f, 90f);
                 for (int t = 0; t < 2; t++)
@@ -369,6 +379,13 @@ namespace HowToHunt.Editor
                     m.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
             }
+            // The plain the far mesas stand on (they used to hang over the void past the terrain's edge), stopping at
+            // the north rim so the canyon stays open.
+            float north = DMaxZ + DBand + 3f;
+            GameObject plain = Visual(sky, "Far Plain", new Vector3(center.x, DesertY - 1.5f, (north + center.z - 320f) * 0.5f),
+                new Vector3(700f, 1f, north - (center.z - 320f)), "Adobe");
+            plain.layer = BackdropLayer;
+            plain.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var cloudMat = AssetDatabase.LoadAssetAtPath<Material>(GeneratedAssets.ResourcesDir + "/FX/M_Cloud.mat");
             Mesh cloud = AssetDatabase.LoadAssetAtPath<Mesh>(GeneratedAssets.MeshesDir + "/Cloud.asset");
             for (int i = 0; i < 5; i++)

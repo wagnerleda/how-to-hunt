@@ -92,7 +92,7 @@ namespace HowToHunt.Editor
             });
 
             Asset<PreyDefinition>("Prey/Prey_Scorpion", "prey.scorpion", "Red Scorpion",
-                "Doesn't run: it comes at you and stings (10 damage) when you step within 4 m. Slow; back off or net it (Ironwood Net). Sells alive to the curious.", p =>
+                "Doesn't run: it comes at you and stings (10 damage, then poison: 3 a second for 5 s) when you step within 4 m. Slow; back off or net it (Ironwood Net). Sells alive to the curious.", p =>
             {
                 p.Allowed = TakedownMethods.Either;
                 p.MaxHealth = 14f;
@@ -126,6 +126,8 @@ namespace HowToHunt.Editor
                 p.AttackCooldown = 1.2f;
                 p.AttackDamage = 10f;
                 p.AttackPush = 3f;
+                p.PoisonDamagePerSecond = 3f; // owner, 2026-11-24: scorpions are venomous
+                p.PoisonSeconds = 5f;
                 p.ChargeSpeed = 3.4f;    // slower than a walk-back: easy to keep clear of
                 p.ProvokeSeconds = 6f;
                 p.Visual = AssetDatabase.LoadAssetAtPath<GameObject>(CreatureModels.PrefabPath("Scorpion"));
@@ -139,7 +141,7 @@ namespace HowToHunt.Editor
             });
 
             Asset<PreyDefinition>("Prey/Prey_Rattlesnake", "prey.rattlesnake", "Rattlesnake",
-                "Lies still in the shade of rocks. Come within 3.5 m and it rattles, then strikes fast (18 damage). Kill only.", p =>
+                "Lies still in the shade of rocks. Come within 3.5 m and it rattles, then strikes fast (14 damage, then venom: 4 a second for 6 s). Kill only.", p =>
             {
                 p.Allowed = TakedownMethods.Kill;
                 p.MaxHealth = 20f;
@@ -171,8 +173,10 @@ namespace HowToHunt.Editor
                 p.AttackRange = 1.6f;    // a long strike
                 p.AttackWindup = 0.5f;   // the rattle: the cue to jump back
                 p.AttackCooldown = 1.4f;
-                p.AttackDamage = 18f;
+                p.AttackDamage = 14f;   // less on the strike, the venom does the rest
                 p.AttackPush = 4f;
+                p.PoisonDamagePerSecond = 4f;
+                p.PoisonSeconds = 6f;
                 p.ChargeSpeed = 3f;
                 p.ProvokeSeconds = 5f;
                 p.Visual = AssetDatabase.LoadAssetAtPath<GameObject>(CreatureModels.PrefabPath("Rattlesnake"));
@@ -181,6 +185,56 @@ namespace HowToHunt.Editor
                 p.BloodColor = new Color(0.66f, 0.06f, 0.05f);
                 p.GibColor = new Color(0.62f, 0.5f, 0.32f);
                 p.GibCount = 5;
+                p.StackSize = 1;
+                p.Voice = PreyVoice.Squeak;
+            });
+
+            // The venomous one (owner, 2026-11-24: "add poisonous snakes"): small, bright, hidden in the dunes' scrub.
+            Asset<PreyDefinition>("Prey/Prey_CoralSnake", "prey.coral_snake", "Coral Snake",
+                "Small and bright: red, yellow and black bands. Its bite is light (6) but its venom is the worst in the desert: 6 a second for 8 s. Strikes within 2.5 m. Kill only.", p =>
+            {
+                p.Allowed = TakedownMethods.Kill;
+                p.MaxHealth = 10f;
+                p.CaptureDifficulty = 99f;
+                p.MinKillTier = 1;
+                p.OverkillRatio = 3f;
+                p.Hitboxes = new List<HitboxShape>
+                {
+                    new HitboxShape { A = new Vector3(0f, 0.04f, -0.35f), B = new Vector3(0f, 0.04f, 0.25f), Radius = 0.05f },
+                    new HitboxShape { A = new Vector3(0f, 0.1f, 0.28f), B = new Vector3(0f, 0.11f, 0.34f), Radius = 0.045f, WeakPoint = true },
+                };
+                p.BaseValue = 26;
+                p.TrophiesOnKill = 3;
+                p.Movement = PreyMovement.Ground;
+                p.WalkSpeed = 0.7f;
+                p.FleeSpeed = 3f;
+                p.StaminaSeconds = 3f;
+                p.TiredSpeed = 2.2f;
+                p.FleeRadius = 2f;
+                p.SightRange = 7f;
+                p.HearingRange = 12f;
+                p.Wariness = 0.5f;
+                p.CalmDownSeconds = 2f;
+                p.StunSeconds = 0.15f;
+                p.HalfExtents = new Vector3(0.08f, 0.06f, 0.35f);
+                p.Aggression = PreyAggression.Always;
+                p.AggroRange = 2.5f;
+                p.LeashRadius = 5f;
+                p.AttackRange = 1.2f;
+                p.AttackWindup = 0.4f;   // a quick strike: keep your distance
+                p.AttackCooldown = 1.6f;
+                p.AttackDamage = 6f;
+                p.AttackPush = 2f;
+                p.ChargeSpeed = 3.2f;
+                p.ProvokeSeconds = 5f;
+                p.PoisonDamagePerSecond = 6f;
+                p.PoisonSeconds = 8f;
+                p.Visual = AssetDatabase.LoadAssetAtPath<GameObject>(CreatureModels.PrefabPath("CoralSnake"));
+                p.VisualScale = 1f;
+                p.Noun = "a coral snake";
+                p.BloodColor = new Color(0.66f, 0.06f, 0.05f);
+                p.GibColor = new Color(0.85f, 0.2f, 0.12f);
+                p.GibCount = 4;
                 p.StackSize = 1;
                 p.Voice = PreyVoice.Squeak;
             });
@@ -268,6 +322,12 @@ namespace HowToHunt.Editor
                 "Rattlers by the well again. Three of them, dead.",
                 "Hear the rattle, jump back, then strike.",
                 "The well's safe again. Thank you.");
+            PreyDefinition coral = AssetDatabase.LoadAssetAtPath<PreyDefinition>(ContentDir + "/Prey/Prey_CoralSnake.asset");
+            Quest("bright_bands", "Bright Bands", 24, dusty, ears, QuestObjective.Kill, coral, 2, 360,
+                "Kill 2 coral snakes",
+                "Red touches yellow, kills a fellow. Two coral snakes nest by my tent. Mind the venom.",
+                "If you're bitten, back off and wait it out. It passes.",
+                "Gone? Then I sleep tonight. Thank you, friend.");
             Quest("coyote_trouble", "Coyote Trouble", 23, dusty, ears, QuestObjective.TakeDown, coyote, 2, 380,
                 "Take down 2 coyotes",
                 "Two coyotes keep raiding my camp. They run, but hurt one and it bites back.",

@@ -2,7 +2,7 @@
 
 Co-op incremental first-person hunting game (Unity 6, URP, Windows). Hunt prey by catching or killing it, sell it, upgrade your gear, unlock new biomes through bunny-hop and surf traversal courses. 1–8 players over Steam peer-to-peer, PvP allowed.
 
-Status: **M2 (co-op core)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](docs/adr), [docs/DESIGN.md](docs/DESIGN.md).
+Status (2026-11-24): **M4 in progress**: three maps (Plains, Pine Forest with the Old Bear boss, Red Desert), quests, camp characters, shops, gunsmith and attachments, poison. **New here? Start with [docs/HANDOVER.md](docs/HANDOVER.md)**, then [CLAUDE.md](CLAUDE.md) (conventions and commands), [ARCHITECTURE.md](ARCHITECTURE.md), [docs/DESIGN.md](docs/DESIGN.md), [docs/PLAN.md](docs/PLAN.md) and [docs/adr](docs/adr).
 
 ## Run it
 
@@ -13,7 +13,7 @@ Status: **M2 (co-op core)**. See [ARCHITECTURE.md](ARCHITECTURE.md), [docs/adr](
 
 Controls: WASD, mouse, Space or mouse wheel to jump, Ctrl to crouch, Shift to walk, Esc for the menu (invite friends, leave).
 
-Movement lab: step on the purple pads in the plaza (BHOP, GAPS, SURF). Useful console: `sv_cheats 1`, `noclip`, `getpos`, `setpos x y z`, `record name` / `stop` / `playdemo name`, `cl_showspeed 2`, `net_graph 2`, `find sv_`.
+Movement lab (the test zone): step on the purple pads in the plaza (BHOP, GAPS, SURF, DESERT); the full Armory (every gun) stands next to the plaza. Useful console: `sv_cheats 1`, `noclip`, `getpos`, `setpos x y z`, `record name` / `stop` / `playdemo name`, `cl_showspeed 2`, `net_graph 2`, `find sv_`.
 
 Quests faster (host, `sv_cheats 1`): `quest_complete` finishes the objectives of the quests you have accepted (hand them in to whoever gave them), `econ_give <coins>` gives coins (sales quests only count real sales), `setpos 392 -50 203` teleports to the forest camp.
 
@@ -40,7 +40,7 @@ Produces `Builds/Windows/HowToHunt.exe` (version `VERSION` + commit count) and r
 | `Assets/HowToHunt/Code/Core` | Unity bootstrap, feature modules, console UI, content base, level brushes |
 | `Assets/HowToHunt/Code/Platform`, `Net` | Steam services and the network session (Fish-Net) |
 | `Assets/HowToHunt/Code/Features/*` | One assembly per feature |
-| `Assets/HowToHunt/Code/Editor` | Generated assets, scene builder, build script, import conventions |
+| `Assets/HowToHunt/Code/Editor` | Generated assets, content generators (`GeneratedContent*`), scene builder (`GrayboxSceneBuilder*`, one file per map), procedural models, build script, import conventions |
 | `Art/Source` | Blender sources (outside `Assets/`) |
 | `tools/` | Build scripts |
 | `docs/` | ADRs, design decisions, content and asset guides, release notes |

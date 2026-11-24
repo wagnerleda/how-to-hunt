@@ -23,6 +23,7 @@ namespace HowToHunt.Player
         public static readonly BoolCvar Pvp = new BoolCvar("sv_pvp", true, "Players can hurt each other (friendly fire follows it). The host's choice.", CvarFlags.Replicated);
         public static readonly FloatCvar DownedSeconds = new FloatCvar("sv_downed_time", 30f, "Seconds a downed player has before bleeding out.", Sv, 3f, 120f);
         public static readonly FloatCvar DownedAloneSeconds = new FloatCvar("sv_downed_time_alone", 3f, "Seconds a downed player waits when nobody is left standing to revive them (playing alone): just long enough to see it.", Sv, 0.5f, 120f);
+        public static readonly FloatCvar PoisonTick = new FloatCvar("sv_poison_tick", 1f, "Seconds between two poison hits (each does the venom's damage per second times this).", Sv, 0.1f, 5f);
         public static readonly FloatCvar ReviveSeconds = new FloatCvar("sv_revive_time", 3f, "Seconds a teammate holds Interact to revive.", Sv, 0.5f, 15f);
         public static readonly FloatCvar ReviveHealth = new FloatCvar("sv_revive_health", 30f, "Health after a revive.", Sv, 1f, MaxHealth);
         public static readonly FloatCvar ReviveRange = new FloatCvar("sv_revive_range", 2.2f, "How close a reviver must stay, metres.", Sv, 1f, 6f);
@@ -32,6 +33,7 @@ namespace HowToHunt.Player
             console.Register(Pvp);
             console.Register(DownedSeconds);
             console.Register(DownedAloneSeconds);
+            console.Register(PoisonTick);
             console.Register(ReviveSeconds);
             console.Register(ReviveHealth);
             console.Register(ReviveRange);
@@ -41,6 +43,7 @@ namespace HowToHunt.Player
         private readonly SyncVar<bool> _downed = new SyncVar<bool>();
         private readonly SyncVar<float> _revive = new SyncVar<float>();       // 0..1 while someone revives
         private readonly SyncVar<float> _bleedLeft = new SyncVar<float>();    // seconds left when downed (host's count)
+        private readonly SyncVar<float> _poisonLeft = new SyncVar<float>();   // seconds of venom left (host's count)
 
         private static readonly List<PlayerHealth> AllList = new List<PlayerHealth>(8);
         public static IReadOnlyList<PlayerHealth> All => AllList;
@@ -59,6 +62,11 @@ namespace HowToHunt.Player
         public float Health => _health.Value;
         public bool Downed => _downed.Value;
         public float ReviveProgress => _revive.Value;
+        /// <summary>Venom in the blood (a snake bite, a scorpion sting): health drains until it wears off.</summary>
+        public bool Poisoned => PoisonLeft > 0f;
+        /// <summary>Seconds of venom left, counted locally from the host's figure.</summary>
+        public float PoisonLeft => Mathf.Max(0f, _poisonLeft.Value - (Time.time - _poisonSyncedAt));
+        private float _poisonSyncedAt, _poisonDps, _poisonUntil, _nextPoisonTick;
 
         /// <summary>Seconds left before bleeding out, counted locally from the host's figure.</summary>
         public float BleedLeft => Mathf.Max(0f, _bleedLeft.Value - (Time.time - _bleedSyncedAt));
@@ -74,6 +82,7 @@ namespace HowToHunt.Player
         {
             Motor = GetComponent<PlayerMotor>();
             _bleedLeft.OnChange += (_, __, ___) => _bleedSyncedAt = Time.time;
+            _poisonLeft.OnChange += (_, __, ___) => _poisonSyncedAt = Time.time;
         }
 
         public override void OnStartClient()
@@ -116,11 +125,32 @@ namespace HowToHunt.Player
                 return;
             }
             _health.Value = 0f;
+            HostCurePoison();
             _downed.Value = true;
             _revive.Value = 0f;
             _bleedUntil = Time.time + DownedSeconds.Value;
             _bleedLeft.Value = DownedSeconds.Value;
             HostDowned?.Invoke(this, attacker);
+        }
+
+        /// <summary>
+        /// Host: venom (owner, 2026-11-24). Drains dps every second for seconds; a new dose refreshes the time and keeps
+        /// the stronger venom, it doesn't stack. It can put you down. Cured by going down, a revive or a respawn.
+        /// </summary>
+        public void HostPoison(float dps, float seconds)
+        {
+            if (!IsServerStarted || _downed.Value || dps <= 0f || seconds <= 0f) return;
+            bool fresh = Time.time >= _poisonUntil;
+            _poisonDps = fresh ? dps : Mathf.Max(_poisonDps, dps);
+            _poisonUntil = Mathf.Max(_poisonUntil, Time.time + seconds);
+            if (fresh) _nextPoisonTick = Time.time + PoisonTick.Value;
+            _poisonLeft.Value = _poisonUntil - Time.time;
+        }
+
+        private void HostCurePoison()
+        {
+            _poisonUntil = 0f;
+            if (_poisonLeft.Value != 0f) _poisonLeft.Value = 0f;
         }
 
         /// <summary>Host: back to full (a fresh spawn).</summary>
@@ -130,11 +160,13 @@ namespace HowToHunt.Player
             _health.Value = MaxHealth;
             _downed.Value = false;
             _revive.Value = 0f;
+            HostCurePoison();
         }
 
         private void Update()
         {
             if (IsOwner) UpdateOwner();
+            if (IsServerStarted && !_downed.Value && _poisonUntil > 0f) HostPoisonTick();
             if (!IsServerStarted || !_downed.Value) return;
 
             // Revive: any standing teammate close by who is holding Interact on this player.
@@ -173,6 +205,18 @@ namespace HowToHunt.Player
                 if (RespawnPoint != null) Motor.ServerTeleport(RespawnPoint(this));
                 HostRestore();
             }
+        }
+
+        private void HostPoisonTick()
+        {
+            float now = Time.time;
+            if (now >= _nextPoisonTick)
+            {
+                float tick = PoisonTick.Value;
+                _nextPoisonTick = now + tick;
+                HostDamage(_poisonDps * tick, -1); // may put you down (that cures it)
+            }
+            if (now >= _poisonUntil) HostCurePoison();
         }
 
         /// <summary>Another hunter on their feet, who could come and revive this one (host and clients).</summary>

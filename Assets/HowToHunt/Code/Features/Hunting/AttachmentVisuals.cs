@@ -54,7 +54,11 @@ namespace HowToHunt.Hunting
                 GameObject v = Object.Instantiate(a.Visual, container, false);
                 v.transform.localPosition = anchor.Position;
                 v.transform.localRotation = Quaternion.Euler(anchor.Euler);
-                foreach (Renderer r in v.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                foreach (Renderer r in v.GetComponentsInChildren<Renderer>())
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.receiveShadows = false; // no shadow acne on guns (see ViewmodelController)
+                }
             }
         }
 

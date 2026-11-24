@@ -1,5 +1,7 @@
 # CLAUDE.md — How to Hunt conventions
 
+New to the project? Read docs/HANDOVER.md first (state of the game, where things are, daily loop, open issues).
+
 ## Commands (Git Bash, from the repo root)
 - Open editor: `unity open "$PWD"`; wait: `unity status --until-ready --project-path "$PWD"`
 - Recompile + diagnostics: `unity recompile --project-path "$PWD" --format json`

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: HowToHunt.Hunting::HowToHunt.Hunting.PreyDefinition
   _key: prey.rattlesnake
   _displayName: Rattlesnake
-  _description: Lies still in the shade of rocks. Come within 3.5 m and it rattles, then strikes fast (18 damage). Kill only.
+  _description: 'Lies still in the shade of rocks. Come within 3.5 m and it rattles, then strikes fast (14 damage, then venom: 4 a second for 6 s). Kill only.'
   Allowed: 2
   MaxHealth: 20
   CaptureDifficulty: 99
@@ -50,8 +50,10 @@ MonoBehaviour:
   AttackRange: 1.6
   AttackWindup: 0.5
   AttackCooldown: 1.4
-  AttackDamage: 18
+  AttackDamage: 14
   AttackPush: 4
+  PoisonDamagePerSecond: 4
+  PoisonSeconds: 6
   ChargeSpeed: 3
   ProvokeSeconds: 5
   RegenPerSecond: 0

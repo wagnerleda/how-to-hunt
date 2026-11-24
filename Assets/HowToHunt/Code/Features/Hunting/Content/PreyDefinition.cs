@@ -64,6 +64,10 @@ namespace HowToHunt.Hunting
         public float AttackDamage = 15f;
         [Tooltip("A strike throws the hunter back this fast (m/s).")]
         public float AttackPush = 7f;
+        [Tooltip("Venom (0 = none): each strike that lands also poisons the hunter, this much damage per second...")]
+        public float PoisonDamagePerSecond;
+        [Tooltip("...for this long (a new bite refreshes it; it doesn't stack).")]
+        public float PoisonSeconds;
         public float ChargeSpeed = 7f;
         [Tooltip("WhenHurt: how long it keeps charging after a hit (s).")]
         public float ProvokeSeconds = 8f;
@@ -191,6 +195,7 @@ namespace HowToHunt.Hunting
             {
                 if (Movement != PreyMovement.Ground) errors.Add("Only ground prey can be aggressive.");
                 if (AttackRange <= 0f || AttackDamage <= 0f || ChargeSpeed <= 0f) errors.Add("An aggressive prey needs AttackRange, AttackDamage and ChargeSpeed > 0.");
+            if ((PoisonDamagePerSecond > 0f) != (PoisonSeconds > 0f)) errors.Add("Venom needs both PoisonDamagePerSecond and PoisonSeconds (or neither).");
                 if (LeashRadius <= AttackRange) errors.Add("LeashRadius must be larger than AttackRange.");
                 if (AttackWindup < 0.25f) errors.Add("AttackWindup under 0.25 s can't be dodged.");
             }

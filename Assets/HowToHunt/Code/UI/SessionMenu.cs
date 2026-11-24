@@ -672,6 +672,7 @@ namespace HowToHunt.UI
             float dt = Time.unscaledDeltaTime;
             bool calm = UiFeel.Calm;
             bool show = Visible && MenuPanels.Open == null;
+            if (_canvasRt == null || _backdrop == null) return; // torn down (leaving play mode, quitting)
             Vector2 canvasSize = _canvasRt.rect.size;
 
             _backdrop.Update(!show ? MenuBackdrop.Mode.Off : InSession ? MenuBackdrop.Mode.Pause : MenuBackdrop.Mode.Main, theme, dt, canvasSize);

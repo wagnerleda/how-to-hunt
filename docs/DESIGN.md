@@ -17,6 +17,8 @@ Upgrades cost coins only in v1.
 ## Players get hurt
 100 HP. At 0 HP: downed for 30 s. Teammate revive: 3 s hold, back at 30 % HP. Bleed out: respawn at camp, drop 10 % of unsold catch. No permadeath. Nobody left standing to revive you (alone on the map, or the whole party down): back at camp after 3 s instead of 30 (`sv_downed_time_alone`).
 
+**Poison** (2026-11-24): venomous bites and stings leave venom in the blood: health drains every second (`sv_poison_tick`) for a few seconds; a new dose refreshes the time and keeps the stronger venom (it doesn't stack). It can put you down; going down, being revived or respawning cures it. While poisoned the health bar turns green, a label counts the seconds down and the screen tints green. Venomous: the rattlesnake (4/s for 6 s), the coral snake (6/s for 8 s, the worst), the red scorpion (3/s for 5 s).
+
 ## PvP
 Host toggles PvP per party (on by default); friendly fire follows the toggle; dying to a player costs the same as dying to prey; no loot stealing. The host has a built-in advantage (friends-only trust model, ADR 0005).
 
@@ -77,8 +79,9 @@ A basin of low dunes ringed by striped red mesas, 128 m below the forest. **The 
 |---|---|---|---|---|---|
 | Jackrabbit | 12 | either (Ironwood Net) | 16 | hears you from 60 m, outruns a sprint for 4 s | Long Ears: take down 4 (Rosa, 260) |
 | Desert Lizard | 5 | either (any net), stacks 3 | 8 | basks on rock piles, short dashes | - |
-| Red Scorpion | 14 | either (Ironwood Net), stacks 2 | 22 | doesn't flee: comes at you within 4 m and stings (10) after the tail rears | Sting Operation: catch 2 alive (Rosa, 340) |
-| Rattlesnake | 20 | kill only | 30 | waits in the shade of rock piles; within 3.5 m it rattles, then strikes 1.6 m (18) | Rattled: kill 3 (Rosa, 420) |
+| Red Scorpion | 14 | either (Ironwood Net), stacks 2 | 22 | doesn't flee: comes at you within 4 m and stings (10 + venom 3/s for 5 s) after the tail rears | Sting Operation: catch 2 alive (Rosa, 340) |
+| Rattlesnake | 20 | kill only | 30 | waits in the shade of rock piles; within 3.5 m it rattles, then strikes 1.6 m (14 + venom 4/s for 6 s) | Rattled: kill 3 (Rosa, 420) |
+| Coral Snake | 10 | kill only | 26 | small, bright bands, in the scrub between dunes; strikes within 2.5 m (6 + venom 6/s for 8 s) | Bright Bands: kill 2 (Dusty, 360) |
 | Coyote | 40 | either | 48 | in pairs, wary (34 m), hurt one and it snaps back for 7 s (12) | Coyote Trouble: take down 2 (Dusty, 380) |
 
 A desert boss comes later (IDEAS).

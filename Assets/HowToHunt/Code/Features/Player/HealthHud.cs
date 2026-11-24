@@ -15,9 +15,11 @@ namespace HowToHunt.Player
         private const float BarWidth = 220f, BarHeight = 10f, ReviveWidth = 260f;
         private static readonly Color Good = new Color(0.55f, 0.9f, 0.45f, 0.95f), Hurt = new Color(1f, 0.45f, 0.3f, 0.95f);
         private static readonly Color Text = new Color(1f, 0.96f, 0.86f, 0.95f);
+        private static readonly Color Venom = new Color(0.55f, 0.95f, 0.2f, 0.95f);
 
-        private Image _back, _fill, _reviveBack, _reviveFill;
-        private TextMeshProUGUI _number, _banner;
+        private Image _back, _fill, _reviveBack, _reviveFill, _venomTint;
+        private TextMeshProUGUI _number, _banner, _venom;
+        private int _shownVenom = -1;
         private int _shownHealth = -1, _shownSeconds = -1;
         private string _shownBanner;
 
@@ -36,8 +38,36 @@ namespace HowToHunt.Player
             _reviveFill = Hud.Rect("Fill", new Vector2(0f, 0.5f), Vector2.zero, new Vector2(0f, 8f), Good);
             _reviveFill.rectTransform.SetParent(_reviveBack.rectTransform, false);
             _reviveFill.rectTransform.pivot = new Vector2(0f, 0.5f);
-            foreach (Graphic g in new Graphic[] { _back, _fill, _reviveBack, _reviveFill, _number, _banner }) g.raycastTarget = false;
+            // Poisoned: the bar turns venom green, a label counts down and the screen edges pulse green.
+            _venom = Hud.Text("Poisoned", new Vector2(0f, 0f), new Vector2(40f + BarWidth + 16f, 26f), 22f, TextAlignmentOptions.BottomLeft, Venom);
+            _venom.rectTransform.pivot = new Vector2(0f, 0f);
+            _venom.rectTransform.sizeDelta = new Vector2(320f, 30f);
+            _venomTint = Hud.Rect("Venom Tint", new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.35f, 0.9f, 0.1f, 0f));
+            _venomTint.rectTransform.anchorMin = Vector2.zero;
+            _venomTint.rectTransform.anchorMax = Vector2.one;
+            _venomTint.rectTransform.offsetMin = _venomTint.rectTransform.offsetMax = Vector2.zero;
+            _venomTint.rectTransform.SetAsFirstSibling();
+            _venom.gameObject.SetActive(false);
+            _venomTint.gameObject.SetActive(false);
+            foreach (Graphic g in new Graphic[] { _back, _fill, _reviveBack, _reviveFill, _number, _banner, _venom, _venomTint }) g.raycastTarget = false;
             Show(false);
+        }
+
+        /// <summary>The venom label and the green pulse at the screen's edges while poisoned (no pulse with reduce motion).</summary>
+        private void ShowVenom(float left)
+        {
+            bool on = left > 0f;
+            if (_venom.gameObject.activeSelf != on) _venom.gameObject.SetActive(on);
+            if (_venomTint.gameObject.activeSelf != on) _venomTint.gameObject.SetActive(on);
+            if (!on) { _shownVenom = -1; return; }
+            int seconds = Mathf.CeilToInt(left);
+            if (seconds != _shownVenom)
+            {
+                _shownVenom = seconds;
+                _venom.SetText("POISONED {0} s", seconds);
+            }
+            float pulse = UiFeel.Calm ? 0.07f : 0.05f + 0.06f * (0.5f + 0.5f * Mathf.Sin(Time.time * 4f));
+            _venomTint.color = new Color(0.35f, 0.9f, 0.1f, pulse);
         }
 
         private void Show(bool on)
@@ -46,6 +76,7 @@ namespace HowToHunt.Player
             if (_number.gameObject.activeSelf != on) _number.gameObject.SetActive(on);
             if (!on)
             {
+                ShowVenom(0f);
                 SetBanner(null);
                 if (_reviveBack.gameObject.activeSelf) _reviveBack.gameObject.SetActive(false);
             }
@@ -63,8 +94,11 @@ namespace HowToHunt.Player
                 _number.SetText("{0}", hp);
                 float k = me.Health / PlayerHealth.MaxHealth;
                 _fill.rectTransform.sizeDelta = new Vector2(BarWidth * k, BarHeight);
-                _fill.color = k > 0.35f ? Good : Hurt;
+                _shownVenom = -1; // the colour below decides
             }
+            ShowVenom(me.PoisonLeft);
+            float health = me.Health / PlayerHealth.MaxHealth;
+            _fill.color = me.Poisoned ? Venom : health > 0.35f ? Good : Hurt;
 
             float revive = 0f;
             if (me.Downed)

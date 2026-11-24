@@ -223,6 +223,7 @@ namespace HowToHunt.Npcs
 
         private void Segment(Transform t, Vector3 from, Vector3 to)
         {
+            if (t == null) return; // the figure is being torn down (leaving play mode)
             Vector3 a = _figure.TransformPoint(from), b = _figure.TransformPoint(to), ab = b - a;
             t.position = (a + b) * 0.5f;
             t.rotation = ab.sqrMagnitude > 1e-8f ? Quaternion.FromToRotation(Vector3.up, ab) : Quaternion.identity;

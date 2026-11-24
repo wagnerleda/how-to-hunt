@@ -119,6 +119,18 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 1 | The Wildeast is the default font of every text (TMP Settings, IMGUI console and mask editor); HUD text a little larger | "replace every text in the game with the font" |
 | 2 | The desert moved under the forest; a hard surf route (five narrow zigzag ramps, 128 m down) from the forest's south rim replaces the pad; a pilot demo proves it can be done | "a much harder surf course to reach the desert" |
 
+## Phase 6.7: fixes after the 6.6 build, venom, handover (done 2026-11-24, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | The desert's far mesas no longer stand across the surf route (they did, north of the desert) and stand on a far plain instead of hanging over the void | "big rocks in the middle of the surf ramp", "flying objects in the desert" |
+| 2 | Fall zones under the hard route split per ramp and per gap (the gap's under the next ramp's base): no more checkpoint while you can still land; checked against the pilot run (never closer than 8.9 m) | "sent back to the checkpoint while not really fallen" |
+| 3 | Ledges before the surf ramps lifted 5 cm off the trail (they were level with the terrain and flickered) | "graphics bugs on the platforms before the ramps" |
+| 4 | Poison on health; the rattlesnake and the scorpion are venomous; a new venomous coral snake and its quest | "poisonous snakes, a poison system, poisonous scorpions" |
+| 5 | Gunsmith counter: guns slide off and on the felt, the camera glides to the new framing | "smoother transition between guns" |
+| 6 | Guns in hand no longer receive shadows (shadow acne made shimmering diagonal stripes) | "a noise effect on the guns" |
+| 7 | Plains freezes: measured in a development build (ADR 0013 follow-up): smooth while standing (4.4 ms worst), 30-40 ms stalls on camera moves, the render thread waiting on the main thread for a cause the new hitch probe in `perf_bench` doesn't see yet. **Not fixed**: next step is a Profiler capture (ADR 0013) | "still freezes in the Plains" |
+| 8 | docs/HANDOVER.md, README, ARCHITECTURE brought up to date for a new developer | "update the docs so someone can take over" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

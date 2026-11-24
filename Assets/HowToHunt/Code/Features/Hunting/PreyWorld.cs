@@ -341,6 +341,7 @@ namespace HowToHunt.Hunting
                     : PreyBrain.StrikeReaches(in p.State, in b, feet, HuntingCvars.StrikeReachSlack.Value, HuntingCvars.StrikeHeightSlack.Value);
                 if (!reaches) continue;
                 health.HostDamage(damage, -1);
+                if (p.Def.PoisonDamagePerSecond > 0f) health.HostPoison(p.Def.PoisonDamagePerSecond, p.Def.PoisonSeconds); // venomous bites and stings
                 Vector3 away = (feet - p.State.Position).ToUnity();
                 away.y = 0f;
                 away = away.sqrMagnitude > 1e-4f ? away.normalized : Quaternion.Euler(0f, p.State.Yaw, 0f) * Vector3.forward;

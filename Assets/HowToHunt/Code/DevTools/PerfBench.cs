@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Unity.Profiling.LowLevel.Unsafe;
 using HowToHunt.Core;
 using HowToHunt.Foundation;
 using Unity.Profiling;
@@ -67,6 +69,21 @@ namespace HowToHunt.DevTools
         private float _worstTotal;
         private SimTerrain[] _terrains;
         private ProfilerRecorder _main, _batches, _setPass, _tris, _shadows;
+        // Hitch probe (2026-11-24): on a frame over ProbeMs, log which of these took the time.
+        private const float ProbeMs = 30f;
+        private static readonly string[] ProbeNames =
+        {
+            "GC.Collect", "Shader.CreateGPUProgram", "Mesh.UploadMeshData", "Texture.AwakeFromLoad", "Loading.AwakeFromLoad",
+            "Instantiate", "GameObject.Activate", "GameObject.Deactivate", "Destroy", "Physics.Processing", "Physics.Simulate",
+            "Update.ScriptRunBehaviourUpdate", "PreLateUpdate.ScriptRunBehaviourLateUpdate", "FixedUpdate.ScriptRunBehaviourFixedUpdate",
+            "PostLateUpdate.FinishFrameRendering", "Gfx.WaitForPresentOnGfxThread", "Gfx.WaitForGfxCommandsFromMainThread",
+            "Canvas.SendWillRenderCanvases", "Canvas.BuildBatch", "TextMeshPro.GenerateText", "AudioManager.Update",
+            "Animators.Update", "ParticleSystem.Update", "CullScriptable", "Shadows.RenderShadowmap", "RenderLoop.ScheduleDraw",
+            "Inl_UniversalRenderPipeline.RenderSingleCameraInternal", "Loading.ReadObject", "AssetBundle.LoadAsset", "Resources.Load",
+            "AsyncUploadManager.ScheduleAsyncRead", "AsyncUploadManager.AsyncResourceUpload", "Mesh.CreateVBO", "Gfx.UploadTextureData",
+        };
+        private readonly List<ProfilerRecorder> _probes = new List<ProfilerRecorder>();
+        private readonly List<string> _probeLabels = new List<string>();
 
         public static void Register(ConsoleSystem console)
         {
@@ -102,6 +119,7 @@ namespace HowToHunt.DevTools
             _setPass = ProfilerRecorder.StartNew(ProfilerCategory.Render, "SetPass Calls Count", 1);
             _tris = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Triangles Count", 1);
             _shadows = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Shadow Casters Count", 1);
+            StartProbes();
             Report($"[perf] bench start: {(only >= 0 ? 1 : Tour.Length)} stops x {passes} passes, {StopSeconds.Value:0.#} s each, {Screen.width}x{Screen.height}, r_drawdistance {RenderDistance.DrawDistance.Value:0}, quality '{QualitySettings.names[QualitySettings.GetQualityLevel()]}', {SystemInfo.graphicsDeviceName}");
             StartStop(FirstStop);
         }
@@ -135,6 +153,7 @@ namespace HowToHunt.DevTools
                 _allocSum = 0;
                 _gcStart = AllocationMeter.Collections;
             }
+            if (settled && Time.unscaledDeltaTime * 1000f > ProbeMs) ReportHitch(s.Name, Time.unscaledDeltaTime * 1000f);
             if (settled && _frames < MaxFrames)
             {
                 _frameMs[_frames++] = Time.unscaledDeltaTime * 1000f;
@@ -190,9 +209,41 @@ namespace HowToHunt.DevTools
             _setPass.Dispose();
             _tris.Dispose();
             _shadows.Dispose();
+            foreach (ProfilerRecorder r in _probes) r.Dispose();
+            _probes.Clear();
+            _probeLabels.Clear();
             _running = null;
             Destroy(this);
             if (_quit) Application.Quit();
+        }
+
+        /// <summary>Records every probe marker this player knows (the rest are skipped).</summary>
+        private void StartProbes()
+        {
+            var handles = new List<ProfilerRecorderHandle>();
+            ProfilerRecorderHandle.GetAvailable(handles);
+            var wanted = new HashSet<string>(ProbeNames);
+            foreach (ProfilerRecorderHandle h in handles)
+            {
+                ProfilerRecorderDescription d = ProfilerRecorderHandle.GetDescription(h);
+                if (d.UnitType != ProfilerMarkerDataUnit.TimeNanoseconds || !wanted.Contains(d.Name)) continue;
+                _probes.Add(ProfilerRecorder.StartNew(d.Category, d.Name, 1));
+                _probeLabels.Add(d.Name);
+            }
+        }
+
+        /// <summary>A hitch: the frame's time and the probe markers that took more than a millisecond of it.</summary>
+        private void ReportHitch(string stop, float ms)
+        {
+            var line = new System.Text.StringBuilder();
+            line.Append(FormattableString.Invariant($"[perf] hitch {ms:0.0} ms at {stop}:"));
+            for (int i = 0; i < _probes.Count; i++)
+            {
+                double t = _probes[i].Valid ? _probes[i].LastValue * 1e-6 : 0.0;
+                if (t >= 1.0) line.Append(FormattableString.Invariant($" {_probeLabels[i]} {t:0.0}"));
+            }
+            line.Append(FormattableString.Invariant($"  (gc so far {AllocationMeter.Collections})"));
+            Report(line.ToString());
         }
 
         private float Ground(float x, float z)

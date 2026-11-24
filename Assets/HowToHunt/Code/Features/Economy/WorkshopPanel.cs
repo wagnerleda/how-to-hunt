@@ -37,6 +37,8 @@ namespace HowToHunt.Economy
         // The shot: the camera this far from the gun, looking down a little; the gun fills this share of the width.
         private const float ShotDistance = 1.9f, ShotPitch = 36f, ShotMinFov = 18f, ShotMaxFov = 45f, GunScreenShare = 0.32f, ShotMinDistance = 1.2f;
         private const float LieHeight = 0.025f, SwayYaw = 7f;
+        // Changing guns: the old one slides off the felt to the left as the new one slides in from the right.
+        private const float SwapSeconds = 0.45f, SlideIn = 1.1f, SlideOut = 1.4f;
 
         private static readonly Color Glass = new Color(0.06f, 0.07f, 0.08f, 0.74f);
         private static readonly Color Box = new Color(0.06f, 0.07f, 0.08f, 0.66f);
@@ -68,6 +70,9 @@ namespace HowToHunt.Economy
         private ToolDefinition _modelTool;
         private string _modelKey;
         private float _gunLength;
+        private GameObject _leaving;
+        private Vector3 _leavingFrom, _pivotHome;
+        private float _swapAt = -10f;
 
         private CampStation _station;
         private bool _open, _closeRequested;
@@ -270,6 +275,9 @@ namespace HowToHunt.Economy
             w._slotFor = null;
             if (w._model != null) Destroy(w._model); // laid out fresh on this counter
             w._model = null;
+            if (w._leaving != null) Destroy(w._leaving);
+            w._leaving = null;
+            w._swapAt = -10f;
             w._modelKey = null;
             w._title.SetText($"{station.Label.ToUpperInvariant()}  /  CUSTOMIZE");
             w.BuildTabs();
@@ -291,6 +299,7 @@ namespace HowToHunt.Economy
             _root.gameObject.SetActive(false);
             PlayerCamera.EndShot();
             if (_pivot != null) _pivot.gameObject.SetActive(false);
+            if (_leaving != null) { Destroy(_leaving); _leaving = null; }
             Game.PopUiFocus(this);
             PlayerCamera.LockCursor();
             Sfx.Play2D("Kenney/close_001", 0.35f);
@@ -353,7 +362,20 @@ namespace HowToHunt.Economy
             foreach (AttachmentDefinition a in fitted) key += "|" + a.Key;
             if (key == _modelKey && _model != null) return;
             _modelKey = key;
-            if (_model != null && _modelTool != _tool) { Destroy(_model); _model = null; }
+            if (_model != null && _modelTool != _tool)
+            {
+                // The gun you had slides away (the one before it, if still going, just goes).
+                if (_leaving != null) Destroy(_leaving);
+                _leaving = UiFeel.Calm ? null : _model;
+                if (_leaving != null)
+                {
+                    _leaving.transform.SetParent(null, true);
+                    _leavingFrom = _leaving.transform.position;
+                    _swapAt = Time.unscaledTime;
+                }
+                else Destroy(_model);
+                _model = null;
+            }
             _modelTool = _tool;
             EnsurePivot();
             if (_tool == null || _tool.Viewmodel == null)
@@ -368,11 +390,16 @@ namespace HowToHunt.Economy
                 _model = Instantiate(_tool.Viewmodel, _pivot, false);
                 IconRenderer.HideParts(_model, "Hand");
                 foreach (Animator an in _model.GetComponentsInChildren<Animator>()) an.enabled = false;
-                foreach (Renderer r in _model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                foreach (Renderer r in _model.GetComponentsInChildren<Renderer>())
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; // it shadows the felt...
+                    r.receiveShadows = false;                                          // ...but takes none (acne)
+                }
                 // Lay it on the felt: the model's middle on the pivot, its lowest side on the mat.
                 Bounds b = Bounds(_model);
                 _model.transform.position += _pivot.position - b.center;
                 _pivot.position = _station.CounterPoint + Vector3.up * (b.extents.y + LieHeight);
+                _pivotHome = _pivot.position;
                 _gunLength = Mathf.Max(b.size.x, b.size.z); // lying flat: its length is across the counter
                 FrameShot(_gunLength);
             }
@@ -423,6 +450,19 @@ namespace HowToHunt.Economy
             // The lamp: above and to the left of the camera, pointing at the gun.
             Vector3 lampAt = gun - camFwd * 1.1f + Vector3.up * 0.9f - camRight * 0.5f;
             _lamp.transform.SetPositionAndRotation(lampAt, Quaternion.LookRotation(gun - lampAt));
+        }
+
+        /// <summary>The swap: the new gun eases in from the right along the felt, the old one eases out to the left.</summary>
+        private void Slide()
+        {
+            if (_station == null) return;
+            float k = UiFeel.Calm ? 1f : Mathf.Clamp01((Time.unscaledTime - _swapAt) / SwapSeconds);
+            float e = k * k * (3f - 2f * k);
+            Vector3 right = _station.transform.right;
+            if (_model != null) _pivot.position = _pivotHome + right * ((1f - e) * SlideIn);
+            if (_leaving == null) return;
+            if (k >= 1f) { Destroy(_leaving); _leaving = null; return; }
+            _leaving.transform.position = _leavingFrom - right * (e * SlideOut) + Vector3.down * (e * 0.04f);
         }
 
         /// <summary>Lying on its side on the counter: muzzle to your left, grip toward you, turned by yaw degrees.</summary>
@@ -640,6 +680,7 @@ namespace HowToHunt.Economy
             // The panels fade in while the camera glides down onto the counter.
             float age = Time.unscaledTime - _openedAt;
             _group.alpha = UiFeel.Calm ? 1f : Mathf.Clamp01((age - 0.15f) / 0.3f);
+            Slide();
             if (_model == null || _tool == null) return;
             // It turns a little on the felt so it reads as 3D (still with reduce motion).
             _pivot.rotation = Lying(UiFeel.Calm ? 0f : SwayYaw * Mathf.Sin(Time.unscaledTime * 0.4f));

@@ -58,7 +58,8 @@ namespace HowToHunt.Editor
             var rng = new System.Random(4401);
 
             // The ledge at the end of the forest trail, and the checkpoint a fall brings you back to.
-            Box(root, "Canyon Ledge", new Vector3(DesertRouteX, ForestY - 10f, DesertLedgeZ + 4f), new Vector3(2f * DesertTrailHalfWidth + 2f, 20f, 8f), "Rock");
+            // Its top sits 5 cm above the trail's ground: level with it, the two flickered (z-fighting).
+            Box(root, "Canyon Ledge", new Vector3(DesertRouteX, ForestY - 10f + LedgeLift, DesertLedgeZ + 4f), new Vector3(2f * DesertTrailHalfWidth + 2f, 20f, 8f), "Rock");
             ZoneAt(zones, "Desert Route Start", new Vector3(DesertRouteX, ForestY + 1f, DesertLedgeZ + 4f), new Vector3(10f, 2f, 6f), ZoneKind.Checkpoint, 180f);
             Sign(signs, "TO THE RED DESERT\n<size=55%>the hard way down: five narrow ramps, each to the side of the last</size>",
                 new Vector3(DesertRouteX, ForestY + 3.6f, DesertLedgeZ + 7.5f), 180f, 1.3f);
@@ -72,10 +73,15 @@ namespace HowToHunt.Editor
                 float cos = Mathf.Cos(HardRampPitch * Mathf.Deg2Rad);
                 MeshBrush(root, $"Hard Ramp {i + 1}", GeneratedAssets.SurfPrismMesh, new Vector3(mid.x, mid.y - HardRampHeight * cos, mid.z),
                     new Vector3(HardRampWidth[i], HardRampHeight, HardRampLength[i]), 0f, "SurfRamp", SurfaceFlags.Surf, -HardRampPitch);
-                // Under this ramp and the gap after it: a fall below the ramp's base is a fall (back to the ledge).
-                float baseY = end.y - HardRampHeight - 3f;
-                float zTop = start.z + 4f, zBottom = i + 1 < HardRampLength.Length ? end.z - HardRampGap[i] : end.z - 2f;
-                ZoneAt(zones, $"Canyon Fall {i + 1}", new Vector3(DesertRouteX, baseY - 30f, (zTop + zBottom) * 0.5f), new Vector3(110f, 60f, zTop - zBottom), ZoneKind.Hazard);
+                // A fall is only a fall once you are below anything you could still land on: under the ramp, below its
+                // lowest base; over the gap after it, below the next ramp's base (riding low, you can still make it).
+                float zTop = i == 0 ? DesertLedgeZ - 1f : start.z;
+                FallZone(zones, $"Canyon Fall {i + 1}", zTop, end.z, end.y - HardRampHeight - 3f);
+                if (i + 1 < HardRampLength.Length)
+                {
+                    HardRamp(i + 1, out Vector3 next, out _);
+                    FallZone(zones, $"Canyon Fall {i + 1}-{i + 2}", end.z, next.z, next.y - HardRampHeight - 3f);
+                }
                 lowest = Mathf.Min(lowest, end.y - HardRampHeight);
             }
 
@@ -110,6 +116,12 @@ namespace HowToHunt.Editor
             ZoneAt(zones, "Desert Landing", new Vector3(DesertRouteX, DesertY + 1f, desertNorth - 14f), new Vector3(20f, 2f, 14f), ZoneKind.Checkpoint, 180f);
             Sign(signs, "THE RED DESERT\n<size=55%>you made it - Dry Creek camp is to the south-west</size>", new Vector3(DesertRouteX + 10f, DesertY + 3.6f, desertNorth - 20f), 0f, 1.3f);
         }
+
+        private const float LedgeLift = 0.05f;
+
+        /// <summary>A hazard box from z0 (north) to z1 (south), its top at topY, wide enough for any line.</summary>
+        private static void FallZone(Transform zones, string name, float z0, float z1, float topY) =>
+            ZoneAt(zones, name, new Vector3(DesertRouteX, topY - 30f, (z0 + z1) * 0.5f), new Vector3(120f, 60f, Mathf.Abs(z0 - z1)), ZoneKind.Hazard);
 
         /// <summary>The trail across the forest's south band to the ledge is flat at the forest floor.</summary>
         private static float DesertTrailFlat(float x, float z)

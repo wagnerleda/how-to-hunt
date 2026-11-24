@@ -46,3 +46,21 @@ Causes found:
 - Grass far away is visibly sparser before the fog takes it; `r_scatter_fade 1` restores full density for screenshots.
 - Re-measure after map or render changes: `HowToHunt.exe -screen-fullscreen 0 -nocfg +host local +delay 10 perf_bench 2 quit`
   (results in the log as `[perf]` lines, budgets flagged as OVER BUDGET).
+
+## Follow-up (2026-11-24, owner: "still freezes in the Plains")
+Development build, 1080p, RX 7800 XT, `perf_bench 2` (vsync on, -nocfg), after the third map, rock ridges and camp
+characters:
+- Averages are fine everywhere: ~4.2 ms (240 fps, the screen's rate); standing still in the Plains, worst frame 4.4 ms.
+- Stalls of 30-40 ms come back during camera moves (fly-plains once per pass; ravine and forest several times), and
+  once on the first pass at camp. `perf_bench` now logs a **hitch probe** on every frame over 30 ms: the time each of a
+  set of engine markers took. Every stall shows the render thread waiting on the main thread
+  (`Gfx.WaitForGfxCommandsFromMainThread` 21-31 ms) while none of the probed main-thread markers (GC, uploads,
+  instantiation, scripts, canvases, text, physics, culling, shadows) took over 1 ms: the cause is somewhere not probed.
+  Next step: a Profiler capture of a development build during `perf_bench 1 fly-ravine` (or `fly-plains`) to see the
+  main thread on the stalled frame.
+- Managed allocations are not zero any more: ~210 B/frame steady, up to ~1.2 KB/frame while hunting areas stream in
+  (a GC every 20-60 s). Find them with the Profiler's GC Alloc column (Deep Profile off), most likely HUD text or the
+  new UI.
+- Draw calls are over budget in the Plains (1,000-2,600): scatter chunks plus the boundary rock ridges; SetPass
+  210-450. The parked fix is GPU-driven instancing (IDEAS).
+

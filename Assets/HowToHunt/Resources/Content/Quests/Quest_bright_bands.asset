@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbafa48ccb6c52d4fb43e0e8edc3e783, type: 3}
+  m_Name: Quest_bright_bands
+  m_EditorClassIdentifier: HowToHunt.Economy::HowToHunt.Economy.QuestDefinition
+  _key: quest.bright_bands
+  _displayName: Bright Bands
+  _description: Kill 2 coral snakes
+  Giver: {fileID: 11400000, guid: 05ac378e0d9d9ab4c833c70a78799b4f, type: 2}
+  Requires: {fileID: 11400000, guid: e5fea3b4d902bef48a2b73f0343eb47a, type: 2}
+  Objective: 1
+  Prey: {fileID: 11400000, guid: c1dc01299872e7c4daba41382359c72a, type: 2}
+  Count: 2
+  RewardCoins: 360
+  Unlocks: 
+  Offer: Red touches yellow, kills a fellow. Two coral snakes nest by my tent. Mind the venom.
+  Task: Kill 2 coral snakes
+  Waiting: If you're bitten, back off and wait it out. It passes.
+  Done: Gone? Then I sleep tonight. Thank you, friend.
+  Order: 24

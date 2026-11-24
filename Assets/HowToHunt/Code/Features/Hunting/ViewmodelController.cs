@@ -119,7 +119,12 @@ namespace HowToHunt.Hunting
                 model.transform.localPosition = new Vector3(0.04f, -0.12f, 0.12f);
                 model.transform.localRotation = Quaternion.Euler(-10f, 235f, -12f); // held by the scruff, side-on
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
+                {
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    // Owner, 2026-11-24 ("noise on the guns"): a gun this close to the camera caught the sun's shadow
+                    // map at its coarse resolution and showed shimmering diagonal stripes (shadow acne). It is lit, not shadowed.
+                    r.receiveShadows = false;
+                }
                 _preyModels[prey] = model;
             }
             model.SetActive(true);
@@ -181,7 +186,12 @@ namespace HowToHunt.Hunting
             {
                 model = Instantiate(tool.Viewmodel, _holder, false); // tool + gloved hand, posed in Blender
                 foreach (Renderer r in model.GetComponentsInChildren<Renderer>())
+                {
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    // Owner, 2026-11-24 ("noise on the guns"): a gun this close to the camera caught the sun's shadow
+                    // map at its coarse resolution and showed shimmering diagonal stripes (shadow acne). It is lit, not shadowed.
+                    r.receiveShadows = false;
+                }
                 _models[tool] = model;
                 _rigs[tool] = new GunRig(model);
             }

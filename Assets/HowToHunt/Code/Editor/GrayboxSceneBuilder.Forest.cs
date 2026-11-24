@@ -45,7 +45,7 @@ namespace HowToHunt.Editor
             Transform root = Group(level, "Surf Route East");
 
             // The trail out of the clearing ends on a rock ledge over the ravine; step off its north edge onto ramp 1.
-            Box(root, "Cliff Ledge", new Vector3(140.5f, LedgeTop - 10f, ClearingZ), new Vector3(21f, 20f, 6f), "Rock");
+            Box(root, "Cliff Ledge", new Vector3(140.5f, LedgeTop - 10f + LedgeLift, ClearingZ), new Vector3(21f, 20f, 6f), "Rock"); // a hair above the trail: no z-fighting
             // The trail between rock walls you can see (no invisible walls: owner, 2026-11-24). The ledge itself is
             // open on every side: step off north onto ramp 1; a fall into the ravine brings you back to the ledge.
             Transform walls = Group(root, "Trail Walls (collision)");

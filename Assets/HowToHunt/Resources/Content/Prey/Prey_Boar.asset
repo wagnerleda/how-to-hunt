@@ -56,6 +56,8 @@ MonoBehaviour:
   AttackCooldown: 1.6
   AttackDamage: 15
   AttackPush: 8
+  PoisonDamagePerSecond: 0
+  PoisonSeconds: 0
   ChargeSpeed: 7.4
   ProvokeSeconds: 9
   RegenPerSecond: 0
