@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf21d22d9410bc4cac84a51b3f63620, type: 3}
+  m_Name: DialogueTheme
+  m_EditorClassIdentifier: HowToHunt.Npcs::HowToHunt.Npcs.DialogueTheme
+  CharsPerSecond: 48
+  HurryMultiplier: 5
+  PauseComma: 0.09
+  PauseSentence: 0.28
+  PauseEllipsis: 0.45
+  FontSize: 26
+  MaxWidth: 540
+  Padding: {x: 24, y: 16}
+  HeadHeight: 1.05
+  TailHeight: 22
+  ScreenMargin: 18
+  PopInSeconds: 0.32
+  PopInEase: 1
+  Squash: 0.14
+  PopOutSeconds: 0.16
+  NextBobHz: 2.2
+  VoiceEveryChars: 2
+  VoiceVolume: 0.35
+  VoicePitchJitter: 0.07
+  MarkerHeight: 1.55
+  MarkerBob: 0.08
+  MarkerBobHz: 1.3
+  MarkerRange: 9
+  BarkRadius: 7
+  BarkCooldown: 25
+  BarkSeconds: 3.2
+  ChoiceFill: {r: 0.99, g: 0.96, b: 0.9, a: 0.96}
+  ChoiceText: {r: 0.2, g: 0.15, b: 0.12, a: 1}
+  ChoiceSelected: {r: 0.98, g: 0.76, b: 0.36, a: 1}
+  ChoiceDisabled: {r: 0.75, g: 0.72, b: 0.68, a: 0.75}
+  ChoiceStagger: 0.05
+  Styles:
+  - Kind: 0
+    Fill: {r: 1, g: 1, b: 1, a: 1}
+    Outline: {r: 0.16, g: 0.12, b: 0.1, a: 1}
+    Text: {r: 0.16, g: 0.12, b: 0.1, a: 1}
+    Radius: 22
+    OutlineWidth: 3
+    DashedOutline: 0
+    Tail: 0
+    TextScale: 1
+    Italic: 0
+    Bold: 0
+    Shake: 0
+    SpeedScale: 1
+  - Kind: 1
+    Fill: {r: 1, g: 0.95, b: 0.82, a: 1}
+    Outline: {r: 0.78, g: 0.22, b: 0.12, a: 1}
+    Text: {r: 0.55, g: 0.1, b: 0.05, a: 1}
+    Radius: 8
+    OutlineWidth: 5
+    DashedOutline: 0
+    Tail: 0
+    TextScale: 1.15
+    Italic: 0
+    Bold: 1
+    Shake: 2.2
+    SpeedScale: 1.3
+  - Kind: 2
+    Fill: {r: 1, g: 1, b: 1, a: 0.78}
+    Outline: {r: 0.45, g: 0.42, b: 0.4, a: 1}
+    Text: {r: 0.4, g: 0.37, b: 0.35, a: 1}
+    Radius: 26
+    OutlineWidth: 2
+    DashedOutline: 1
+    Tail: 0
+    TextScale: 0.88
+    Italic: 1
+    Bold: 0
+    Shake: 0
+    SpeedScale: 0.75
+  - Kind: 3
+    Fill: {r: 0.94, g: 0.96, b: 1, a: 1}
+    Outline: {r: 0.45, g: 0.5, b: 0.62, a: 1}
+    Text: {r: 0.27, g: 0.3, b: 0.4, a: 1}
+    Radius: 40
+    OutlineWidth: 3
+    DashedOutline: 0
+    Tail: 1
+    TextScale: 1
+    Italic: 1
+    Bold: 0
+    Shake: 0
+    SpeedScale: 1
+  - Kind: 4
+    Fill: {r: 0.12, g: 0.1, b: 0.09, a: 0.9}
+    Outline: {r: 0.95, g: 0.75, b: 0.35, a: 1}
+    Text: {r: 0.98, g: 0.93, b: 0.84, a: 1}
+    Radius: 6
+    OutlineWidth: 2
+    DashedOutline: 0
+    Tail: 2
+    TextScale: 1
+    Italic: 1
+    Bold: 0
+    Shake: 0
+    SpeedScale: 1

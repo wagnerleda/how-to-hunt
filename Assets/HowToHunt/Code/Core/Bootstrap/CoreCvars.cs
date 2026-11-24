@@ -25,6 +25,7 @@ namespace HowToHunt.Core
             console.Register(ScatterRenderer.Density);
             console.Register(ScatterRenderer.FadeStart);
             RenderQuality.Register(console);
+            UiFeel.Register(console);
 
             Volume.Changed += _ => UnityEngine.AudioListener.volume = Volume.Value;
             FpsMax.Changed += _ => ApplyFrameRate();

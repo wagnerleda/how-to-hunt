@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HowToHunt.Core;
 using HowToHunt.Economy;
 using HowToHunt.Player;
@@ -8,42 +9,38 @@ using UnityEngine.InputSystem;
 namespace HowToHunt.Npcs
 {
     /// <summary>
-    /// Talking to a camp character: their name and role, what they say (typed out), and numbered choices (keys 1-4
-    /// or the mouse). They offer their stall's business (sell, browse, attachments), their quest (offer, how it's
-    /// going, turn it in), and goodbye. Esc or walking away ends it.
+    /// Talking to a camp character. What they say appears in a speech bubble over their head (SpeechBubble), typed
+    /// out; a long line comes in pages (a blank line in the text starts a new one). Interact, Enter, Space, a click or
+    /// gamepad A hurries the typing, then moves on; once they have said their piece, your replies appear (ChoiceList).
+    /// They offer their stall's business (sell, browse, attachments), their quest (offer, how it's going, turn it in),
+    /// and goodbye. Escape, gamepad B or walking away ends it. Lines come from NpcDefinition and QuestDefinition and
+    /// may use the bubble markup (BubbleText: [shout], &lt;shake&gt;...).
     /// </summary>
     public sealed class DialogueBox : MonoBehaviour
     {
         private enum Act : byte { None, Bye, Back, Sell, Shop, Workshop, AskWork, Accept, TurnIn, AskProgress }
-
-        private struct Choice
-        {
-            public string Label;
-            public Act Act;
-            public bool Enabled;
-        }
-
-        private const float PanelW = 780f, PanelH = 236f, CharsPerSecond = 70f;
 
         private static DialogueBox _instance;
         /// <summary>The character the local player is talking to (null: nobody).</summary>
         public static Npc TalkingTo => _instance != null ? _instance._npc : null;
 
         private Npc _npc;
-        private string _text = string.Empty;
-        private float _shownChars;
-        private readonly Choice[] _choices = new Choice[5];
+        private readonly List<string> _pages = new List<string>(4);
+        private int _page;
+        private SpeechBubble _bubble;
+        private ChoiceList _list;
+        private readonly string[] _labels = new string[ChoiceList.MaxChoices];
+        private readonly Act[] _acts = new Act[ChoiceList.MaxChoices];
+        private readonly bool[] _enabled = new bool[ChoiceList.MaxChoices];
         private int _choiceCount;
         private QuestDefinition _quest;
-        private GUIStyle _name, _role, _body, _button, _hint;
-        private Texture2D _white;
-
-        private ImGuiHost _gui;
+        private int _openedFrame;
+        private System.Action<int> _onPick;
 
         private void Awake()
         {
             _instance = this;
-            _gui = ImGuiHost.Attach(gameObject, DrawGui);
+            _onPick = i => Choose(_acts[i]);
         }
 
         private void OnDestroy()
@@ -60,42 +57,77 @@ namespace HowToHunt.Npcs
 
         private void Begin(Npc npc)
         {
+            if (_list == null) _list = GetComponent<ChoiceList>();
             _npc = npc;
-            _gui.Show(true);
+            _openedFrame = Time.frameCount;
             Game.PushUiFocus(this);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+            UiFeel.Open();
             var greetings = npc.Definition.Greetings;
             Root(greetings.Count > 0 ? greetings[Random.Range(0, greetings.Count)] : "...");
         }
 
         private void End()
         {
+            if (_bubble != null) _bubble.Hide();
+            _bubble = null;
+            if (_list != null && _list.Open) _list.Hide();
+            if (_npc != null) UiFeel.Back();
             _npc = null;
-            _gui.Show(false);
             Game.PopUiFocus(this);
             PlayerCamera.LockCursor();
         }
 
-        // --- pages --------------------------------------------------------------------------------------------
+        // --- what they say ----------------------------------------------------------------------------------
 
+        /// <summary>A new line from the character: split into pages, the first one shown; replies wait for the last.</summary>
         private void Say(string text)
         {
-            _text = text ?? string.Empty;
-            _shownChars = 0f;
+            _pages.Clear();
             _choiceCount = 0;
+            text ??= string.Empty;
+            int start = 0;
+            while (start <= text.Length)
+            {
+                int cut = text.IndexOf("\n\n", start, System.StringComparison.Ordinal);
+                string page = (cut < 0 ? text.Substring(start) : text.Substring(start, cut - start)).Trim();
+                if (page.Length > 0) _pages.Add(page);
+                if (cut < 0) break;
+                start = cut + 2;
+            }
+            if (_pages.Count == 0) _pages.Add("...");
+            if (_list != null && _list.Open) _list.Hide();
+            ShowPage(0);
+        }
+
+        private void ShowPage(int index)
+        {
+            _page = index;
+            if (_bubble != null) _bubble.Hide();
+            NpcDefinition def = _npc.Definition;
+            string body = BubbleText.ParseStyle(_pages[index], BubbleStyle.Say, out BubbleStyle style);
+            // Name plate on the first page: who is talking.
+            string line = index == 0 ? $"<size=70%><b>{def.DisplayName}</b>, {def.Role}</size>\n{body}" : body;
+            _bubble = SpeechBubble.Show(_npc.transform, line, style, def.VoicePitch, NpcVoices.For(def));
+            _bubble.ShowNext = true;
         }
 
         private void Add(string label, Act act, bool enabled = true)
         {
-            if (_choiceCount < _choices.Length) _choices[_choiceCount++] = new Choice { Label = label, Act = act, Enabled = enabled };
+            if (_choiceCount >= ChoiceList.MaxChoices) return;
+            _labels[_choiceCount] = label;
+            _acts[_choiceCount] = act;
+            _enabled[_choiceCount] = enabled;
+            _choiceCount++;
         }
 
         private void Root(string line)
         {
-            Say(line);
             EconomyProfile me = EconomyNet.Local;
             _quest = EconomyNet.QuestFrom(_npc.Definition, me, out QuestState state);
+            if (_quest == null && !string.IsNullOrEmpty(_npc.Definition.Idle) && Random.value < 0.5f) line = _npc.Definition.Idle;
+            Say(line);
             if (_quest != null)
             {
                 if (state == QuestState.Ready) Add($"It's done: {_quest.Task}.", Act.TurnIn);
@@ -114,7 +146,6 @@ namespace HowToHunt.Npcs
                     case CampStationKind.Workshop: Add("Let's look at my guns.", Act.Workshop); break;
                 }
             }
-            if (_quest == null && !string.IsNullOrEmpty(_npc.Definition.Idle) && _text == line && Random.value < 0.5f) _text = _npc.Definition.Idle;
             Add("Goodbye.", Act.Bye);
         }
 
@@ -143,7 +174,7 @@ namespace HowToHunt.Npcs
                     break;
                 }
                 case Act.AskWork:
-                    Say($"{_quest.Offer}\n\n<b>{_quest.DisplayName}</b>: {_quest.Task}.  Reward: {((BigDouble)_quest.RewardCoins).ToShortString()} coins.");
+                    Say($"{_quest.Offer}\n\n<b>{_quest.DisplayName}</b>: {_quest.Task}.\nReward: <color=#b8741a><b>{((BigDouble)_quest.RewardCoins).ToShortString()} coins</b></color>.");
                     Add("I'll do it.", Act.Accept);
                     Add("Not now.", Act.Back);
                     break;
@@ -153,7 +184,7 @@ namespace HowToHunt.Npcs
                     Add("Goodbye.", Act.Bye);
                     break;
                 case Act.AskProgress:
-                    Say($"{_quest.Waiting}\n\n{_quest.Task}: {EconomyNet.ProgressOf(EconomyNet.Local, _quest)} / {_quest.Count}.");
+                    Say($"{_quest.Waiting}\n\n{_quest.Task}: <b>{EconomyNet.ProgressOf(EconomyNet.Local, _quest)} / {_quest.Count}</b>.");
                     Add("Back.", Act.Back);
                     Add("Goodbye.", Act.Bye);
                     break;
@@ -170,61 +201,28 @@ namespace HowToHunt.Npcs
         private void Update()
         {
             if (_npc == null) return;
-            _shownChars = Mathf.Min(_text.Length, _shownChars + Time.unscaledDeltaTime * CharsPerSecond);
-            Keyboard kb = Keyboard.current;
             PlayerMotor me = PlayerMotor.Local;
             if (me == null || (me.transform.position - _npc.transform.position).sqrMagnitude > (_npc.TalkRange + 1.5f) * (_npc.TalkRange + 1.5f)) { End(); return; }
-            if (kb == null) return;
-            if (kb.escapeKey.wasPressedThisFrame) { End(); return; }
-            if (kb.spaceKey.wasPressedThisFrame) _shownChars = _text.Length;
-            for (int i = 0; i < _choiceCount && i < 4; i++)
+            if (UiInput.Back) { End(); return; }
+            if (_list != null && _list.Open) return; // the replies take the input
+            if (Time.frameCount == _openedFrame || _bubble == null) return;
+
+            Mouse mouse = Mouse.current;
+            bool advance = UiInput.Confirm || (mouse != null && mouse.leftButton.wasPressedThisFrame);
+            bool last = _page >= _pages.Count - 1;
+            _bubble.ShowNext = !last || _choiceCount == 0;
+            if (_bubble.Typing)
             {
-                Key k = Key.Digit1 + i;
-                if (kb[k].wasPressedThisFrame && _choices[i].Enabled) { Choose(_choices[i].Act); return; }
+                if (advance) _bubble.Hurry();
+                return;
             }
-        }
-
-        private void DrawGui()
-        {
-            if (_npc == null) return;
-            EnsureStyles();
-            float scale = Mathf.Max(1f, Screen.height / 720f);
-            Matrix4x4 previous = GUI.matrix;
-            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            float w = Screen.width / scale, h = Screen.height / scale;
-            var panel = new Rect(Mathf.Round((w - PanelW) * 0.5f), h - PanelH - 24f, PanelW, PanelH);
-            GUI.color = new Color(0.1f, 0.09f, 0.08f, 0.92f);
-            GUI.DrawTexture(panel, _white);
-            GUI.color = new Color(0.95f, 0.75f, 0.35f, 1f);
-            GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), _white);
-            GUI.color = Color.white;
-
-            GUI.Label(new Rect(panel.x + 22f, panel.y + 12f, 400f, 30f), _npc.Definition.DisplayName, _name);
-            GUI.Label(new Rect(panel.x + 22f, panel.y + 40f, 400f, 20f), _npc.Definition.Role, _role);
-            string shown = _text.Length <= (int)_shownChars ? _text : _text.Substring(0, (int)_shownChars);
-            GUI.Label(new Rect(panel.x + 22f, panel.y + 64f, panel.width - 44f, 90f), shown, _body);
-
-            float y = panel.y + PanelH - 22f - _choiceCount * 30f;
-            float x = panel.x + panel.width - 22f - 360f;
-            for (int i = 0; i < _choiceCount; i++)
+            if (!last)
             {
-                GUI.enabled = _choices[i].Enabled;
-                if (GUI.Button(new Rect(x, y + i * 30f, 360f, 26f), $"{i + 1}.  {_choices[i].Label}", _button)) { GUI.enabled = true; Choose(_choices[i].Act); break; }
-                GUI.enabled = true;
+                if (advance) { UiFeel.Play(UiFeel.HoverSound, 0.5f); ShowPage(_page + 1); }
+                return;
             }
-            GUI.Label(new Rect(panel.x + 22f, panel.yMax - 26f, 300f, 20f), "1-4 choose, Space skip, Esc leave", _hint);
-            GUI.matrix = previous;
-        }
-
-        private void EnsureStyles()
-        {
-            if (_white != null) return;
-            _white = Texture2D.whiteTexture;
-            _name = new GUIStyle(GUI.skin.label) { fontSize = 22, fontStyle = FontStyle.Bold, normal = { textColor = new Color(1f, 0.92f, 0.75f) } };
-            _role = new GUIStyle(GUI.skin.label) { fontSize = 13, normal = { textColor = new Color(0.85f, 0.7f, 0.45f) } };
-            _body = new GUIStyle(GUI.skin.label) { fontSize = 17, wordWrap = true, richText = true, normal = { textColor = new Color(0.96f, 0.93f, 0.88f) } };
-            _button = new GUIStyle(GUI.skin.button) { fontSize = 15, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(12, 8, 2, 2) };
-            _hint = new GUIStyle(GUI.skin.label) { fontSize = 12, normal = { textColor = new Color(0.7f, 0.66f, 0.6f) } };
+            if (_choiceCount > 0) _list.Show(_labels, _enabled, _choiceCount, _onPick);
+            else if (advance) End();
         }
     }
 }

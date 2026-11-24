@@ -244,6 +244,25 @@ namespace HowToHunt.Core
             });
         }
 
+        /// <summary>
+        /// One syllable of a talking character (Animal Crossing style babble): a short vowel-ish tone with a soft
+        /// attack, pitched per character by the player of the clip.
+        /// </summary>
+        public static AudioClip Blip()
+        {
+            float phase = 0f;
+            const float len = 0.065f;
+            return Make("voice_blip", len, (t, i) =>
+            {
+                float u = t / len;
+                float f = Mathf.Lerp(310f, 250f, u);
+                phase += 2f * Mathf.PI * f / Rate;
+                float voice = Mathf.Sin(phase) + 0.45f * Mathf.Sin(2f * phase) + 0.25f * Mathf.Sin(3f * phase);
+                float env = Mathf.Min(1f, t * 220f) * Mathf.Pow(1f - u, 1.6f);
+                return voice * 0.32f * env;
+            });
+        }
+
         /// <summary>A big animal's roar: a low growl that swells and falls, with a rough throat.</summary>
         public static AudioClip Roar()
         {

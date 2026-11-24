@@ -22,6 +22,12 @@ namespace HowToHunt.Economy
         [Tooltip("The stall they run: its action is offered in the conversation (sell, browse, attachments).")]
         public CampStationKind Station;
         public bool HasStation = true;
+        [Tooltip("Their voice while they talk: pitch of the blips (1 = middle; lower = deeper).")]
+        [Range(0.5f, 2f)] public float VoicePitch = 1f;
+        [Tooltip("Optional: their own voice sample (one syllable). Empty: the shared synthesized blip.")]
+        public AudioClip VoiceClip;
+        [Tooltip("Short lines they call out when you walk past (no conversation). Bubble markup works: [shout] Hey!")]
+        [TextArea] public List<string> Barks = new List<string>();
         [Tooltip("Their mask, as a cl_mask string (empty: a mask is made from the key).")]
         [TextArea] public string Mask = "";
 

@@ -21,6 +21,7 @@ namespace HowToHunt.Npcs
 
         public void Initialize()
         {
+            Game.Root.gameObject.AddComponent<ChoiceList>();
             Game.Root.gameObject.AddComponent<DialogueBox>();
             Game.Root.gameObject.AddComponent<QuestHud>();
             EconomyHud.TalkAt = station =>
