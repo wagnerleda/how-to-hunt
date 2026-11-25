@@ -290,7 +290,7 @@ namespace HowToHunt.Economy
             Game.PushUiFocus(w);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            Sfx.Play2D("Kenney/open_001", 0.4f);
+            Sfx.Play2D("open_001", 0.4f);
         }
 
         private void Close()
@@ -302,7 +302,7 @@ namespace HowToHunt.Economy
             if (_leaving != null) { Destroy(_leaving); _leaving = null; }
             Game.PopUiFocus(this);
             PlayerCamera.LockCursor();
-            Sfx.Play2D("Kenney/close_001", 0.35f);
+            Sfx.Play2D("close_001", 0.35f);
         }
 
         private void BuildTabs()
@@ -321,7 +321,7 @@ namespace HowToHunt.Economy
                 tab.Image = Panel($"Tab {tool.Key}", new Vector2(0.5f, 1f), new Vector2(-110f + col * 214f, -62f - rowIndex * 54f), new Vector2(204f, 46f), Box);
                 Glassy(tab.Image, 12);
                 tab.Image.raycastTarget = true;
-                tab.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _tool = tool; _selected = null; Sfx.Play2D("Kenney/click_001", 0.4f); Refresh(); });
+                tab.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _tool = tool; _selected = null; Sfx.Play2D("click_001", 0.4f); Refresh(); });
                 tab.Label = UiFonts.Use(Child(tab.Image.rectTransform, "Label", Vector2.zero, new Vector2(196f, 46f), 20f, Color.white, TextAlignmentOptions.Center));
                 UpgradeDefinition unlock = Loadouts.Local.Owns(tool) ? null : GunUnlock(tool);
                 tab.Label.SetText(unlock == null ? tool.DisplayName : $"{tool.DisplayName}  <color=#F2C66F>{unlock.CostCoins:0}c</color>");
@@ -342,7 +342,7 @@ namespace HowToHunt.Economy
             if (_tool == null || !_tool.TryAnchor(slot, out _)) return;
             _slot = slot;
             _selected = null;
-            Sfx.Play2D("Kenney/click_001", 0.35f, 1.1f);
+            Sfx.Play2D("click_001", 0.35f, 1.1f);
             Refresh();
         }
 
@@ -540,7 +540,7 @@ namespace HowToHunt.Economy
                 row.Image = Panel($"Row {a.Key}", new Vector2(0.5f, 0.5f), new Vector2(ListX, ListTop - _rows.Count * RowStep), new Vector2(RowWidth, RowHeight), a == _selected ? BoxSelected : Box);
                 Round(row.Image, 12);
                 row.Image.raycastTarget = true;
-                row.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _selected = _selected == captured ? null : captured; Sfx.Play2D("Kenney/click_001", 0.35f, 1.2f); Refresh(); });
+                row.Image.gameObject.AddComponent<Button>().onClick.AddListener(() => { _selected = _selected == captured ? null : captured; Sfx.Play2D("click_001", 0.35f, 1.2f); Refresh(); });
                 row.Name = Child(row.Image.rectTransform, "Name", new Vector2(-70f, 16f), new Vector2(390f, 30f), 22f, Color.white, TextAlignmentOptions.Left);
                 row.Name.SetText(a.DisplayName);
                 row.Name.fontStyle = FontStyles.Bold;
@@ -640,7 +640,7 @@ namespace HowToHunt.Economy
                 EconomyRefusal gunWhy = EconomyNet.CanBuy(p, buyGun);
                 if (gunWhy != EconomyRefusal.None) { HuntFeedback.Message(EconomyHud.RefusalLine(gunWhy), warning: true); return; }
                 EconomyNet.RequestBuy(buyGun);
-                Sfx.Play2D("Kenney/click_001", 0.45f);
+                Sfx.Play2D("click_001", 0.45f);
                 return;
             }
             if (_selected == null) return;
@@ -653,7 +653,7 @@ namespace HowToHunt.Economy
                 if (why != EconomyRefusal.None) { HuntFeedback.Message(EconomyHud.RefusalLine(why), warning: true); return; }
                 EconomyNet.RequestBuyAttachment(_selected.Id.Value, _tool.Id.Value);
             }
-            Sfx.Play2D("Kenney/click_001", 0.45f);
+            Sfx.Play2D("click_001", 0.45f);
         }
 
         // --- per frame ---------------------------------------------------------------------------------------------

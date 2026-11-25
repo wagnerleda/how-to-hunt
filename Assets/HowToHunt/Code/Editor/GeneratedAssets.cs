@@ -34,6 +34,7 @@ namespace HowToHunt.Editor
         {
             EnsurePlatformSettings();
             ViewmodelRenderSetup.Ensure();
+            SoundLibraryBuilder.Build();
             Palette.EnsureMaterials();
             EnsureMeshes();
             EnsureFxMaterials();

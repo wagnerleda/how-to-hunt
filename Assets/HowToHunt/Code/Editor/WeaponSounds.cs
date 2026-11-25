@@ -9,14 +9,14 @@ namespace HowToHunt.Editor
 {
     /// <summary>
     /// Links a weapon's sounds by convention, so new audio only needs dropping in the right folder:
-    /// <c>Assets/HowToHunt/Art/Weapons/&lt;tool name&gt;/</c> (the tool key without "tool.", e.g. revolver, scout),
+    /// <c>Assets/Audio/SFX/Weapons/&lt;tool name&gt;/</c> (the tool key without "tool.", e.g. revolver, scout),
     /// files named by what they are: <c>fire*</c> (several = picked at random), <c>reload*</c>, <c>dry*</c> (empty
-    /// click), <c>equip*</c>, <c>inspect*</c>. The model in the same folder is fitted by hand once (orientation, grip,
+    /// click), <c>equip*</c>, <c>inspect*</c>. The model, in the same-named folder under Art/Weapons, is fitted by hand once (orientation, grip,
     /// sights), then kept as the tool's viewmodel. See docs/ASSETS.md, "Weapon drop-in".
     /// </summary>
     public static class WeaponSounds
     {
-        public const string Root = GeneratedAssets.Root + "/Art/Weapons/";
+        public const string Root = SoundLibraryBuilder.WeaponsRoot;
 
         /// <summary>Folders named differently from the tool key (the owner's drop-ins).</summary>
         private static readonly System.Collections.Generic.Dictionary<string, string> Folders = new System.Collections.Generic.Dictionary<string, string>
@@ -28,12 +28,12 @@ namespace HowToHunt.Editor
 
         public static string FolderFor(ToolDefinition tool) => Root + (Folders.TryGetValue(tool.Key, out string f) ? f : tool.Key.Substring(tool.Key.IndexOf('.') + 1));
 
-        private const string TrimmedRoot = GeneratedAssets.Root + "/Audio/WeaponsTrimmed/";
+        private const string TrimmedRoot = SoundLibraryBuilder.WeaponsRoot + "_Trimmed/";
         private const float SilenceLevel = 0.03f;   // amplitude below which the start counts as silence
         private const float PreRoll = 0.004f;       // seconds kept before the first sound (no click)
 
         /// <summary>
-        /// A copy of the clip without its leading silence (16-bit WAV under Audio/WeaponsTrimmed), or the clip itself if
+        /// A copy of the clip without its leading silence (16-bit WAV under Assets/Audio/SFX/Weapons/_Trimmed), or the clip itself if
         /// it already starts at once. Generated: rebuilt with the content.
         /// </summary>
         private static AudioClip Trimmed(AudioClip clip, string outDir)

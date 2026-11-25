@@ -30,8 +30,8 @@ namespace HowToHunt.Hunting
         /// <summary>A ground slam lands: a heavy thud.</summary>
         public static void PlaySlam(Vector3 at)
         {
-            Sfx.PlayAt("Kenney/impactPunch_heavy", at, 1f, Random.Range(0.5f, 0.6f));
-            Sfx.PlayAt("Kenney/impactSoft_heavy", at, 1f, Random.Range(0.6f, 0.7f));
+            Sfx.PlayAt("impactPunch_heavy", at, 1f, Random.Range(0.5f, 0.6f));
+            Sfx.PlayAt("impactSoft_heavy", at, 1f, Random.Range(0.6f, 0.7f));
         }
 
         /// <summary>A hit (killed = lower and louder, the last cry).</summary>

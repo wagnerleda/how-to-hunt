@@ -261,7 +261,7 @@ namespace HowToHunt.Hunting
                 f._emit.startColor = Color.Lerp(new Color(0.55f, 0.5f, 0.42f), new Color(0.32f, 0.29f, 0.25f), Random.value);
                 f._dust.Emit(f._emit, 1);
             }
-            Sfx.PlayAt("Kenney/impactPunch_heavy", point, 1f, Random.Range(0.45f, 0.6f));
+            Sfx.PlayAt("impactPunch_heavy", point, 1f, Random.Range(0.45f, 0.6f));
             Camera cam = Camera.main;
             if (cam != null)
             {
@@ -290,7 +290,7 @@ namespace HowToHunt.Hunting
             m.SetPositionAndRotation(point + normal * 0.012f, Quaternion.LookRotation(-normal) * Quaternion.Euler(0f, 0f, Random.value * 360f));
             m.localScale = Vector3.one * Random.Range(0.06f, 0.09f);
             m.gameObject.SetActive(true);
-            Sfx.PlayAt("Kenney/impactGeneric_light", point, 0.35f, Random.Range(1.1f, 1.4f));
+            Sfx.PlayAt("impactGeneric_light", point, 0.35f, Random.Range(1.1f, 1.4f));
         }
     }
 }

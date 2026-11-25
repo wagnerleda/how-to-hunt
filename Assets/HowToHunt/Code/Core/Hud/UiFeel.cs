@@ -13,9 +13,9 @@ namespace HowToHunt.Core
         public static readonly FloatCvar Volume = new FloatCvar("snd_ui", 0.6f, "Menu and dialogue sound volume (0..1).", CvarFlags.Archive, 0f, 1f);
         public static readonly BoolCvar ReduceMotion = new BoolCvar("ui_reduce_motion", false, "Reduce animations: no shake, flashes, particles or bounces in menus and dialogue (fades only).", CvarFlags.Archive);
 
-        // Sound slots (Resources/Audio/<family>): hover, confirm, back, open, error.
-        public const string HoverSound = "Kenney/tick_001", ConfirmSound = "Kenney/confirmation_001", BackSound = "Kenney/drop_001";
-        public const string OpenSound = "Kenney/maximize_004", ErrorSound = "Kenney/error_004", ToggleSound = "Kenney/toggle_001";
+        // Sound slots (Assets/Audio/SFX, by file name): hover, confirm, back, open, error.
+        public const string HoverSound = "tick_001", ConfirmSound = "confirmation_001", BackSound = "drop_001";
+        public const string OpenSound = "maximize_004", ErrorSound = "error_004", ToggleSound = "toggle_001";
 
         internal static void Register(ConsoleSystem console)
         {

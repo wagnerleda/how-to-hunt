@@ -186,7 +186,7 @@ namespace HowToHunt.Hunting
                 if (KeyBindings.WasPressedThisFrame(GameAction.Fire))
                 {
                     if (tool.DryFireSound != null) Sfx.Play2D(tool.DryFireSound, 0.6f);
-                    else Sfx.Play2D("Kenney/click_001", 0.5f, 1.4f);
+                    else Sfx.Play2D("click_001", 0.5f, 1.4f);
                 }
                 StartReload(tool);
                 return;
@@ -214,7 +214,7 @@ namespace HowToHunt.Hunting
                 _ammo[_reloadTool] = -1; // full
                 _reloadTool = -1;
                 _reloadUntil = -1f;
-                if (reloaded == null || reloaded.ReloadSound == null) Sfx.Play2D("Kenney/close_001", 0.4f, 1.15f); // a recorded reload has its own end
+                if (reloaded == null || reloaded.ReloadSound == null) Sfx.Play2D("close_001", 0.4f, 1.15f); // a recorded reload has its own end
 
             }
             LocalReload = _reloadTool >= 0 ? ReloadProgress() : -1f;
@@ -246,7 +246,7 @@ namespace HowToHunt.Hunting
             _reloadUntil = Time.time + setup.ReloadSeconds * (LocalReloadTactical ? setup.Handling.TacticalReload : 1f);
             LocalAiming = false;
             if (tool.ReloadSound != null) Sfx.Play2D(tool.ReloadSound, 0.6f);
-            else Sfx.Play2D("Kenney/open_001", 0.4f, 1.1f);
+            else Sfx.Play2D("open_001", 0.4f, 1.1f);
             LocalReloadStarted?.Invoke(tool);
             CmdReload((byte)_equipped);
         }

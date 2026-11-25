@@ -4,15 +4,18 @@ using UnityEngine;
 namespace HowToHunt.Core
 {
     /// <summary>
-    /// One-shot sounds from Resources/Audio (Kenney CC0 packs). Pooled 2D and 3D sources; clips cached by family.
-    /// A family ("Kenney/footstep_grass") picks a random variant among footstep_grass_000.._009, footstep_grass1..9,
-    /// or the single clip of that exact name.
+    /// One-shot sounds from Assets/Audio/SFX, found through the generated <see cref="SoundLibrary"/> by file name.
+    /// Pooled 2D and 3D sources; clips cached by family. A family ("footstep_grass") picks a random variant among
+    /// footstep_grass_000.._009, footstep_grass_0..9, footstep_grass0..9, or the single clip of that exact name.
+    /// A folder in front ("UI/tick_001") is ignored: names are unique across the SFX folder.
     /// </summary>
     public static class Sfx
     {
         private const int Pool2D = 8;
         private const int Pool3D = 24;
+        private const int MaxVariants = 10;
         private static readonly Dictionary<string, AudioClip[]> Families = new Dictionary<string, AudioClip[]>();
+        private static Dictionary<string, AudioClip> _clips;
         private static AudioSource[] _sources2D;
         private static AudioSource[] _sources3D;
         private static int _next2D, _next3D;
@@ -42,24 +45,50 @@ namespace HowToHunt.Core
             return s;
         }
 
+        /// <summary>The clip with exactly this file name (no extension), or null.</summary>
+        public static AudioClip Clip(string name)
+        {
+            if (_clips == null)
+            {
+                _clips = new Dictionary<string, AudioClip>();
+                SoundLibrary lib = Resources.Load<SoundLibrary>(SoundLibrary.ResourcePath);
+                if (lib == null) Debug.LogWarning("[Sfx] No SoundLibrary in Resources (rebuild generated assets).");
+                else
+                    foreach (SoundLibrary.Entry e in lib.Entries)
+                        if (e.Clip != null && !string.IsNullOrEmpty(e.Key)) _clips[e.Key] = e.Clip;
+            }
+            int slash = name.LastIndexOf('/');
+            if (slash >= 0) name = name.Substring(slash + 1);
+            return _clips.TryGetValue(name, out AudioClip clip) ? clip : null;
+        }
+
+        /// <summary>Every variant of a family (see the class summary); empty if none. Cached.</summary>
+        public static AudioClip[] Family(string family)
+        {
+            if (Families.TryGetValue(family, out AudioClip[] clips)) return clips;
+            var list = new List<AudioClip>();
+            AudioClip single = Clip(family);
+            if (single != null) list.Add(single);
+            for (int i = 0; i < MaxVariants; i++)
+            {
+                Add(list, Clip($"{family}_{i:000}"));
+                Add(list, Clip($"{family}_{i}"));
+                Add(list, Clip($"{family}{i}"));
+            }
+            clips = list.ToArray();
+            Families[family] = clips;
+            if (clips.Length == 0) Debug.LogWarning($"[Sfx] No clips for '{family}'.");
+            return clips;
+        }
+
+        private static void Add(List<AudioClip> list, AudioClip clip)
+        {
+            if (clip != null && !list.Contains(clip)) list.Add(clip);
+        }
+
         public static AudioClip Pick(string family)
         {
-            if (!Families.TryGetValue(family, out AudioClip[] clips))
-            {
-                var list = new List<AudioClip>();
-                AudioClip single = Resources.Load<AudioClip>("Audio/" + family);
-                if (single != null) list.Add(single);
-                for (int i = 0; i < 10; i++)
-                {
-                    AudioClip a = Resources.Load<AudioClip>($"Audio/{family}_{i:000}");
-                    if (a != null) list.Add(a);
-                    AudioClip b = Resources.Load<AudioClip>($"Audio/{family}{i}");
-                    if (b != null) list.Add(b);
-                }
-                clips = list.ToArray();
-                Families[family] = clips;
-                if (clips.Length == 0) Debug.LogWarning($"[Sfx] No clips for '{family}'.");
-            }
+            AudioClip[] clips = Family(family);
             return clips.Length == 0 ? null : clips[Random.Range(0, clips.Length)];
         }
 

@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bbcdf1f4ae30084ab4d4025fade052d, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: HowToHunt.Core::HowToHunt.Core.SoundLibrary
+  Entries:
+  - Key: beltHandle1
+    Clip: {fileID: 8300000, guid: b0292d6504f966d4bb1dc4c2d3c8bcb4, type: 3}
+  - Key: chop
+    Clip: {fileID: 8300000, guid: 3ac0bc853fbee284a93b6cd674334fd2, type: 3}
+  - Key: cloth1
+    Clip: {fileID: 8300000, guid: 8b2dc371b397188429d0fc8751bc4c56, type: 3}
+  - Key: cloth2
+    Clip: {fileID: 8300000, guid: c027368854263fb419b10a5990b89328, type: 3}
+  - Key: cloth3
+    Clip: {fileID: 8300000, guid: 72752f15f1f092c41abf91db083efc93, type: 3}
+  - Key: cloth4
+    Clip: {fileID: 8300000, guid: b36c39172209ead42b6a26d7a955bc66, type: 3}
+  - Key: drawKnife1
+    Clip: {fileID: 8300000, guid: 1c9ad97952eb9a8408857e05e91a760b, type: 3}
+  - Key: drawKnife2
+    Clip: {fileID: 8300000, guid: 889a5e365f6572d498aa792dc905bfae, type: 3}
+  - Key: dropLeather
+    Clip: {fileID: 8300000, guid: 9c19f83267edd6f4dba2aec7025027ff, type: 3}
+  - Key: handleCoins
+    Clip: {fileID: 8300000, guid: b874a1c025d5c124aa4040b69c78e3d8, type: 3}
+  - Key: handleCoins2
+    Clip: {fileID: 8300000, guid: 89c4c74271c56b641a6e01a38e566815, type: 3}
+  - Key: handleSmallLeather
+    Clip: {fileID: 8300000, guid: f2752a4308b05144b81ba5803e480715, type: 3}
+  - Key: knifeSlice
+    Clip: {fileID: 8300000, guid: 11c630227a554b0409e1ae2ad89d86c0, type: 3}
+  - Key: knifeSlice2
+    Clip: {fileID: 8300000, guid: 2e7065ff995d25645ba39026ae58ae34, type: 3}
+  - Key: pluck_001
+    Clip: {fileID: 8300000, guid: 0300d6f98eb41594eb82e4db4e482dc4, type: 3}
+  - Key: footstep_grass_000
+    Clip: {fileID: 8300000, guid: 5c8148ce6161f1a43a455ae00618c1e7, type: 3}
+  - Key: footstep_grass_001
+    Clip: {fileID: 8300000, guid: ec0577e994becb34396a2c5a8b1d6a03, type: 3}
+  - Key: footstep_grass_002
+    Clip: {fileID: 8300000, guid: 7d25fc383b18ed74fbda68cd290f8440, type: 3}
+  - Key: footstep_grass_003
+    Clip: {fileID: 8300000, guid: 43b8f72ca6af75f40b4a6c49635bf8b2, type: 3}
+  - Key: footstep_grass_004
+    Clip: {fileID: 8300000, guid: ca15bab5f2e04f347826adb08a0aa4ff, type: 3}
+  - Key: footstep_wood_000
+    Clip: {fileID: 8300000, guid: e556b18b5ce85964ca7a5f9043c57826, type: 3}
+  - Key: footstep_wood_001
+    Clip: {fileID: 8300000, guid: 01c914308e94a234997b6851a3411fb5, type: 3}
+  - Key: footstep_wood_002
+    Clip: {fileID: 8300000, guid: 4fd57a8b9b628d4409a032e8f53c210d, type: 3}
+  - Key: impactGeneric_light_000
+    Clip: {fileID: 8300000, guid: 6470b54202253c34da734719eb55dbb1, type: 3}
+  - Key: impactGeneric_light_001
+    Clip: {fileID: 8300000, guid: 4dd4dafb9e4a0f0459b2f69246f3ff9b, type: 3}
+  - Key: impactPunch_heavy_000
+    Clip: {fileID: 8300000, guid: 4630ade389724294ba5580ce8e8f22ec, type: 3}
+  - Key: impactPunch_heavy_001
+    Clip: {fileID: 8300000, guid: 331367a63a60f284bb547b61d6bf4939, type: 3}
+  - Key: impactPunch_medium_000
+    Clip: {fileID: 8300000, guid: eaf6f2abb58e8c341810eb82bf5f9ed6, type: 3}
+  - Key: impactPunch_medium_001
+    Clip: {fileID: 8300000, guid: b7772e50ecf42604d812594e040baca6, type: 3}
+  - Key: impactPunch_medium_002
+    Clip: {fileID: 8300000, guid: f58755e707925d942b7615fc12b292ec, type: 3}
+  - Key: impactSoft_heavy_000
+    Clip: {fileID: 8300000, guid: 7f29e3a1051e0f3459f8e76b8f2477a5, type: 3}
+  - Key: impactSoft_heavy_001
+    Clip: {fileID: 8300000, guid: 2ff85703fce5aa042b554f994af05e2a, type: 3}
+  - Key: impactSoft_medium_000
+    Clip: {fileID: 8300000, guid: 94130d7d668f4674b87bf508690a05cc, type: 3}
+  - Key: impactSoft_medium_001
+    Clip: {fileID: 8300000, guid: 6a55d066ab285d548bd0f58124a5683d, type: 3}
+  - Key: impactWood_light_000
+    Clip: {fileID: 8300000, guid: 9d9892e36ab4e154282cf569cbb846f2, type: 3}
+  - Key: bong_001
+    Clip: {fileID: 8300000, guid: cfe32b1b225907f49a11e299e2ae0ebc, type: 3}
+  - Key: click_001
+    Clip: {fileID: 8300000, guid: 99936d56086a54645bd501264f9b5a33, type: 3}
+  - Key: click_002
+    Clip: {fileID: 8300000, guid: 01349870103bc9844bfab23f73b7d778, type: 3}
+  - Key: close_001
+    Clip: {fileID: 8300000, guid: 2bb0455073cc33148b44fefd386b6f95, type: 3}
+  - Key: confirmation_001
+    Clip: {fileID: 8300000, guid: 0a0172431e7ae9941af88f8d881ee9ad, type: 3}
+  - Key: confirmation_002
+    Clip: {fileID: 8300000, guid: 115900485595f0b46b5fcda3866d4c6e, type: 3}
+  - Key: drop_001
+    Clip: {fileID: 8300000, guid: a0f42175bddb7014db4cbe6dad975443, type: 3}
+  - Key: error_004
+    Clip: {fileID: 8300000, guid: 9555c66ccb83b6f4f855ab26ec7872d8, type: 3}
+  - Key: error_006
+    Clip: {fileID: 8300000, guid: 889bb2dc30ac2e447b0f900764a5fbb3, type: 3}
+  - Key: maximize_004
+    Clip: {fileID: 8300000, guid: e9f05d547fc533445b0b9524780cbc35, type: 3}
+  - Key: open_001
+    Clip: {fileID: 8300000, guid: 29c45ec258fef5442840adefab3167d3, type: 3}
+  - Key: select_001
+    Clip: {fileID: 8300000, guid: c9f33845e20fa9346a8679115526e3bb, type: 3}
+  - Key: select_002
+    Clip: {fileID: 8300000, guid: e6a72b20deeaf8a44b92d5e66b3a2635, type: 3}
+  - Key: tick_001
+    Clip: {fileID: 8300000, guid: 51718e7e5ed02294aba9cd3652584940, type: 3}
+  - Key: toggle_001
+    Clip: {fileID: 8300000, guid: 0e995d43229eed24d94abbf4e55eef3d, type: 3}
+  - Key: pl_damage_1
+    Clip: {fileID: 8300000, guid: 30f1a1266efbe70489c35028651c701c, type: 3}
+  - Key: pl_damage_2
+    Clip: {fileID: 8300000, guid: 2ae82b0aa95879045853c2b80ed0bb45, type: 3}
+  - Key: pl_damage_3
+    Clip: {fileID: 8300000, guid: 81a640971d2de7f4a9b22de4e92639a0, type: 3}
+  - Key: pl_damage_4
+    Clip: {fileID: 8300000, guid: 377e2cc347a0ff8449a6a824e4ab791b, type: 3}
+  - Key: rare_pl_damage_1
+    Clip: {fileID: 8300000, guid: 5eb37585c9176d8458f47c37c93750ce, type: 3}
+  - Key: rare_pl_damage_2
+    Clip: {fileID: 8300000, guid: a5bc5fc4098ff4346b969ce482bec1ee, type: 3}
+  - Key: rare_pl_damage_3
+    Clip: {fileID: 8300000, guid: c29f94c7ca5811541b3d9a6a04785893, type: 3}
+  - Key: rare_pl_damage_4
+    Clip: {fileID: 8300000, guid: 9b1641c767685524d84f34295863e32c, type: 3}
+  - Key: rare_pl_damage_5
+    Clip: {fileID: 8300000, guid: 7bda3606914bac94e8d51e90d7638075, type: 3}

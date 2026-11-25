@@ -130,7 +130,7 @@ namespace HowToHunt.Hunting
             }
             model.SetActive(true);
             _shown = model;
-            Sfx.Play2D("Kenney/handleSmallLeather", 0.25f, Random.Range(0.95f, 1.05f));
+            Sfx.Play2D("handleSmallLeather", 0.25f, Random.Range(0.95f, 1.05f));
         }
 
         private void OnThrow() => _throwTime = Time.time;
@@ -203,7 +203,7 @@ namespace HowToHunt.Hunting
             _rig = _rigs.TryGetValue(tool, out GunRig rig) && !rig.Empty ? rig : null;
             if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Shing, 0.22f, Random.Range(0.97f, 1.04f));
             else if (tool.EquipSound != null) Sfx.Play2D(tool.EquipSound, 0.5f);
-            else Sfx.Play2D("Kenney/cloth", 0.25f, Random.Range(0.95f, 1.05f));
+            else Sfx.Play2D("cloth", 0.25f, Random.Range(0.95f, 1.05f));
         }
 
         private void OnUse(PlayerTools user, ToolDefinition tool, Vector3 origin, Vector3 dir)
@@ -222,7 +222,7 @@ namespace HowToHunt.Hunting
                 _rig?.Shot();
             }
             if (tool.Archetype != ToolArchetype.Firearm) StartSweep();
-            if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("Kenney/cloth", 0.35f, Random.Range(1.05f, 1.2f));
+            if (tool.Archetype == ToolArchetype.Net) Sfx.Play2D("cloth", 0.35f, Random.Range(1.05f, 1.2f));
             else if (tool.Archetype == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Swish, 0.28f, Random.Range(0.9f, 1.12f));
         }
 

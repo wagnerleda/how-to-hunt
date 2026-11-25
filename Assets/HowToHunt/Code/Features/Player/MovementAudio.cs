@@ -29,7 +29,7 @@ namespace HowToHunt.Player
         {
             _grass = Load("footstep_grass_00", 5);
             _wood = Load("footstep_wood_00", 3);
-            _cloth = new[] { Resources.Load<AudioClip>("Audio/Kenney/cloth1"), Resources.Load<AudioClip>("Audio/Kenney/cloth2"), Resources.Load<AudioClip>("Audio/Kenney/cloth3"), Resources.Load<AudioClip>("Audio/Kenney/cloth4") };
+            _cloth = Load("cloth", 4, 1);
             _thud = Load("impactSoft_medium_00", 2);
             _splash = ProceduralSounds.Splash();
             _chime = ProceduralSounds.Chime();
@@ -144,10 +144,10 @@ namespace HowToHunt.Player
             return 0f;
         }
 
-        private static AudioClip[] Load(string prefix, int count)
+        private static AudioClip[] Load(string prefix, int count, int first = 0)
         {
             var clips = new AudioClip[count];
-            for (int i = 0; i < count; i++) clips[i] = Resources.Load<AudioClip>($"Audio/Kenney/{prefix}{i}");
+            for (int i = 0; i < count; i++) clips[i] = Sfx.Clip($"{prefix}{first + i}");
             return clips;
         }
 

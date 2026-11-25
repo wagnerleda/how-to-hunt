@@ -154,7 +154,7 @@ namespace HowToHunt.Hunting
             {
                 case TakedownOutcome.Captured:
                     _instance.Sparkle(point);
-                    Sfx.PlayAt("Kenney/cloth", point, 0.6f);
+                    Sfx.PlayAt("cloth", point, 0.6f);
                     break;
                 case TakedownOutcome.Damaged:
                     _instance.Gore(prey, point, direction, 0.35f);
@@ -165,7 +165,7 @@ namespace HowToHunt.Hunting
                     bool ruined = quality == CarcassQuality.Ruined;
                     _instance.Gore(prey, point, direction, ruined ? 3f : 1f);
                     PreySounds.PlayHit(prey, point, killed: true);
-                    Sfx.PlayAt(ruined ? "Kenney/impactPunch_heavy" : "Kenney/impactSoft_heavy", point, ruined ? 0.9f : 0.6f, Random.Range(0.85f, 1f));
+                    Sfx.PlayAt(ruined ? "impactPunch_heavy" : "impactSoft_heavy", point, ruined ? 0.9f : 0.6f, Random.Range(0.85f, 1f));
                     break;
             }
         }

@@ -56,7 +56,7 @@ namespace HowToHunt.Hunting
         {
             if (_instance == null) return;
             _instance.ShowToast(text, warning ? Warning : Neutral);
-            if (warning) Sfx.Play2D("Kenney/error_004", 0.35f);
+            if (warning) Sfx.Play2D("error_004", 0.35f);
         }
 
         /// <summary>A line in the feed on the right ("+7 coins", "Sold 3 butterflies").</summary>
@@ -88,24 +88,24 @@ namespace HowToHunt.Hunting
                 case TakedownOutcome.Captured:
                     f.ShowToast("Caught!", Good);
                     HitFeedback.Marker(new Color(0.55f, 1f, 0.5f), 0.3f);
-                    Sfx.Play2D("Kenney/cloth", 0.7f, Random.Range(0.95f, 1.08f));
-                    Sfx.Play2D("Kenney/pluck_001", 0.35f, 1.2f);
+                    Sfx.Play2D("cloth", 0.7f, Random.Range(0.95f, 1.08f));
+                    Sfx.Play2D("pluck_001", 0.35f, 1.2f);
                     f.PlayChime();
                     break;
                 case TakedownOutcome.Killed:
                     f.ShowToast(quality == CarcassQuality.Ruined ? "Ruined (overkill)" : "Killed!", quality == CarcassQuality.Ruined ? Warning : Neutral);
                     HitFeedback.Confirm(point, damage, weak, true, -1, default, 0f, 0f);
                     if (tool == ToolArchetype.Blade) { Sfx.Play2D(KnifeSounds.Hit, 0.5f, Random.Range(0.9f, 1.05f)); Sfx.Play2D(KnifeSounds.Shing, 0.18f, Random.Range(1.05f, 1.15f)); }
-                    else Sfx.Play2D("Kenney/impactPunch_heavy", 0.45f, Random.Range(0.9f, 1.05f));
+                    else Sfx.Play2D("impactPunch_heavy", 0.45f, Random.Range(0.9f, 1.05f));
                     break;
                 case TakedownOutcome.Damaged:
                     HitFeedback.Confirm(point, damage, weak, false, -1, default, 0f, 0f);
                     if (tool == ToolArchetype.Blade) Sfx.Play2D(KnifeSounds.Hit, 0.4f, Random.Range(1f, 1.15f));
-                    else Sfx.Play2D("Kenney/impactSoft_medium", 0.3f, Random.Range(1f, 1.15f));
+                    else Sfx.Play2D("impactSoft_medium", 0.3f, Random.Range(1f, 1.15f));
                     break;
                 case TakedownOutcome.Rejected:
                     Message(RejectLine(reason, prey, tool), warning: true);
-                    Sfx.Play2D(tool == ToolArchetype.Net ? "Kenney/impactSoft_heavy" : "Kenney/impactGeneric_light", 0.35f);
+                    Sfx.Play2D(tool == ToolArchetype.Net ? "impactSoft_heavy" : "impactGeneric_light", 0.35f);
                     break;
             }
         }

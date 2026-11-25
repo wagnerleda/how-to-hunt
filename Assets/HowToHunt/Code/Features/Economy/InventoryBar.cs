@@ -234,12 +234,12 @@ namespace HowToHunt.Economy
             {
                 EconomyNet.RequestThrow(_selected, ct.position, ct.forward, power);
                 PlayerTools.NotifyThrow();
-                Sfx.Play2D("Kenney/cloth", 0.3f + 0.2f * power, Random.Range(1.1f, 1.25f));
+                Sfx.Play2D("cloth", 0.3f + 0.2f * power, Random.Range(1.1f, 1.25f));
             }
             else
             {
                 EconomyNet.RequestDrop(_selected, ct.position, ct.forward);
-                Sfx.Play2D("Kenney/cloth", 0.3f, 0.9f);
+                Sfx.Play2D("cloth", 0.3f, 0.9f);
             }
         }
 

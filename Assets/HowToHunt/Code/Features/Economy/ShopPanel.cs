@@ -102,7 +102,7 @@ namespace HowToHunt.Economy
             Place(_reclaim.rectTransform, _panel, new Vector2(0f, 0f), new Vector2(44f, 28f), new Vector2(330f, 46f), Vector2.zero);
             Rounded(_reclaim, 14);
             _reclaim.raycastTarget = true;
-            _reclaim.gameObject.AddComponent<Button>().onClick.AddListener(() => { Sfx.Play2D("Kenney/click_001", 0.4f); EconomyNet.RequestReclaimTools(); });
+            _reclaim.gameObject.AddComponent<Button>().onClick.AddListener(() => { Sfx.Play2D("click_001", 0.4f); EconomyNet.RequestReclaimTools(); });
             UiFonts.Use(Text("Label", _reclaim.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(330f, 46f), 22f, Color.white, TextAlignmentOptions.Center))
                 .SetText("Recover lost tools (free)");
             Text("Hint", _panel, new Vector2(1f, 0f), new Vector2(-44f, 36f), new Vector2(500f, 28f), 18f, Dim, TextAlignmentOptions.BottomRight)
@@ -188,7 +188,7 @@ namespace HowToHunt.Economy
             Game.PushUiFocus(s);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            Sfx.Play2D("Kenney/open_001", 0.4f);
+            Sfx.Play2D("open_001", 0.4f);
         }
 
         private void Close()
@@ -197,7 +197,7 @@ namespace HowToHunt.Economy
             _panel.gameObject.SetActive(false);
             Game.PopUiFocus(this);
             PlayerCamera.LockCursor();
-            Sfx.Play2D("Kenney/close_001", 0.35f);
+            Sfx.Play2D("close_001", 0.35f);
         }
 
         /// <summary>Sorts what this stall sells into columns and lays them out (once per kind of stall).</summary>
@@ -316,7 +316,7 @@ namespace HowToHunt.Economy
                 HuntFeedback.Message(EconomyHud.RefusalLine(why), warning: true);
                 return;
             }
-            Sfx.Play2D("Kenney/click_001", 0.4f);
+            Sfx.Play2D("click_001", 0.4f);
             EconomyNet.RequestBuy(u);
         }
 

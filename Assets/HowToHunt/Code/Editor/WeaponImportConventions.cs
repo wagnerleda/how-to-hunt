@@ -36,7 +36,7 @@ namespace HowToHunt.Editor
         /// <summary>Weapon sounds load decompressed: short, played often, and readable when the content build trims them.</summary>
         private void OnPreprocessAudio()
         {
-            if (!assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) && !assetPath.StartsWith(GeneratedAssets.Root + "/Audio/WeaponsTrimmed/", System.StringComparison.Ordinal)) return;
+            if (!assetPath.StartsWith(SoundLibraryBuilder.WeaponsRoot, System.StringComparison.Ordinal)) return;
             var importer = (AudioImporter)assetImporter;
             AudioImporterSampleSettings s = importer.defaultSampleSettings;
             s.loadType = AudioClipLoadType.DecompressOnLoad;

@@ -32,7 +32,8 @@ namespace HowToHunt.Player
         public static readonly FloatCvar ThornDamage = new FloatCvar("sv_thorn_damage", 4f, "Damage from brushing a cactus (once per sv_thorn_interval while touching). 0 = harmless.", Sv, 0f, 50f);
         public static readonly FloatCvar ThornInterval = new FloatCvar("sv_thorn_interval", 1f, "Seconds between two cactus pricks while you keep touching it.", Sv, 0.1f, 10f);
         public static readonly FloatCvar ThornReach = new FloatCvar("sv_thorn_reach", 0.12f, "How close counts as touching a cactus, metres past its trunk.", Sv, 0f, 1f);
-        public static readonly FloatCvar ThornPush = new FloatCvar("sv_thorn_push", 2.5f, "Speed a prick shoves you back from the cactus, m/s.", Sv, 0f, 20f);
+        public static readonly FloatCvar ThornPush = new FloatCvar("sv_thorn_push", 4.5f, "Speed a prick shoves you back from the cactus, m/s (your speed into it is cancelled first).", Sv, 0f, 20f);
+        public static readonly FloatCvar ThornLift = new FloatCvar("sv_thorn_lift", 4f, "Upward hop of a cactus prick, m/s: off the ground, so friction doesn't eat the shove.", Sv, 0f, 20f);
 
         public static void Register(ConsoleSystem console)
         {
@@ -47,6 +48,7 @@ namespace HowToHunt.Player
             console.Register(ThornInterval);
             console.Register(ThornReach);
             console.Register(ThornPush);
+            console.Register(ThornLift);
         }
 
         private readonly SyncVar<float> _health = new SyncVar<float>(MaxHealth);
@@ -67,6 +69,9 @@ namespace HowToHunt.Player
         public static event Action<PlayerHealth, int> HostRevived;
         /// <summary>Host: where a bled-out player comes back (camp). Set by the player module.</summary>
         public static Func<PlayerHealth, Vector3> RespawnPoint;
+        /// <summary>This machine's own hunter lost health (how much): the hurt tilt and cry. Fires once per drop.</summary>
+        public static event Action<float> LocalHurt;
+        private int _hurtFrame = -1;
 
         public PlayerMotor Motor { get; private set; }
         public float Health => _health.Value;
@@ -93,6 +98,15 @@ namespace HowToHunt.Player
             Motor = GetComponent<PlayerMotor>();
             _bleedLeft.OnChange += (_, __, ___) => _bleedSyncedAt = Time.time;
             _poisonLeft.OnChange += (_, __, ___) => _poisonSyncedAt = Time.time;
+            _health.OnChange += OnHealthChanged;
+        }
+
+        private void OnHealthChanged(float previous, float next, bool asServer)
+        {
+            // A host gets this as server and as client: once per frame is enough.
+            if (next >= previous || !IsOwner || _hurtFrame == Time.frameCount) return;
+            _hurtFrame = Time.frameCount;
+            LocalHurt?.Invoke(previous - next);
         }
 
         public override void OnStartClient()
@@ -234,7 +248,7 @@ namespace HowToHunt.Player
             Vector3 away = center - thorn;
             away.y = 0f;
             away = away.sqrMagnitude > 1e-4f ? away.normalized : transform.forward;
-            Motor.HostPush(away * ThornPush.Value);
+            Motor.HostKnock(away, ThornPush.Value, ThornLift.Value);
         }
 
         private void HostPoisonTick()

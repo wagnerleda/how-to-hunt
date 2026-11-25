@@ -265,6 +265,23 @@ namespace HowToHunt.Player
             if (velocity.y > 3.5f) _state.OnGround = false; // lifted off the ground
         }
 
+        /// <summary>
+        /// Host: shoved away along a horizontal direction (a cactus prick). Speed toward the thing is cancelled first,
+        /// so running into it still bounces you off; the lift takes you off the ground so friction doesn't swallow it.
+        /// </summary>
+        public void HostKnock(Vector3 away, float speed, float lift)
+        {
+            if (!IsServerStarted) return;
+            System.Numerics.Vector3 dir = away.ToSim();
+            System.Numerics.Vector3 v = _state.Velocity;
+            float into = v.X * dir.X + v.Z * dir.Z;
+            if (into < 0f) { v.X -= dir.X * into; v.Z -= dir.Z * into; }
+            v.X += dir.X * speed;
+            v.Z += dir.Z * speed;
+            if (lift > 0f) { v.Y = System.Math.Max(v.Y, lift); _state.OnGround = false; }
+            _state.Velocity = v;
+        }
+
         /// <summary>Cheat: toggle noclip. Validated on the host (sv_cheats).</summary>
         [ServerRpc]
         public void CmdToggleNoclip()
@@ -329,12 +346,32 @@ namespace HowToHunt.Player
             return result;
         }
 
+        /// <summary>How far above a spawn point the hull is dropped from, to land on the real ground under it.</summary>
+        private const float SpawnProbeUp = 1.5f;
+        private const float SpawnProbeDown = 0.5f;
+
         private void PlaceAt(Vector3 feet)
         {
             _state.Ducked = false;
-            _state.Position = (feet + new Vector3(0f, MovementCvars.Config.HullHalfExtents.Y, 0f)).ToSim();
+            _state.Position = SpawnCenter(feet).ToSim();
             _state.Velocity = System.Numerics.Vector3.Zero;
             _state.OnGround = false;
+        }
+
+        /// <summary>
+        /// Hull centre for a spawn at these feet, standing on whatever is really under it: a checkpoint's box can sit
+        /// a few centimetres under bumpy terrain, and a hull started inside the ground can't move (owner, 2026-11-25:
+        /// stuck after failing a surf until crouching). Deterministic: host and owner run the same trace.
+        /// </summary>
+        private static Vector3 SpawnCenter(Vector3 feet)
+        {
+            System.Numerics.Vector3 half = MovementCvars.Config.HullHalfExtents;
+            var center = new System.Numerics.Vector3(feet.x, feet.y + half.Y, feet.z);
+            System.Numerics.Vector3 from = center + new System.Numerics.Vector3(0f, SpawnProbeUp, 0f);
+            System.Numerics.Vector3 to = center - new System.Numerics.Vector3(0f, SpawnProbeDown, 0f);
+            HowToHunt.Sim.Collision.TraceResult tr = SimWorld.Current.TraceBox(from, to, half);
+            if (tr.StartSolid || !tr.Hit) return center.ToUnity();
+            return tr.EndPosition.ToUnity();
         }
 
         /// <summary>Host only: replace the whole movement state (demo playback).</summary>

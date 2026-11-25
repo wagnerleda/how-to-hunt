@@ -17,6 +17,8 @@ namespace HowToHunt.Player
         public static readonly FloatCvar SpeedFov = new FloatCvar("cl_speedfov", 6f, "Extra FOV at very high speed, degrees (0 = off).", CvarFlags.Archive, 0f, 20f);
         public static readonly FloatCvar ViewBob = new FloatCvar("cl_viewbob", 1f, "Head bob while walking and running on the ground (How to Fish), strength (0 = off).", CvarFlags.Archive, 0f, 2f);
         public static readonly FloatCvar FallTilt = new FloatCvar("cl_falltilt", 0.25f, "Camera pitch per m/s of vertical speed (How to Fish: 0.25; 0 = off).", CvarFlags.Archive, 0f, 1f);
+        public static readonly FloatCvar HurtTilt = new FloatCvar("cl_hurt_tilt", 4f, "Camera tilt when you get hurt, degrees (0 = off; off with ui_reduce_motion).", CvarFlags.Archive, 0f, 15f);
+        public static readonly FloatCvar HurtTime = new FloatCvar("cl_hurt_time", 0.45f, "How long the hurt tilt lasts, seconds.", CvarFlags.Archive, 0.1f, 2f);
 
         // How to Fish's head bob: up to 3 strides a second at 7 m/s, a sideways sway and a dip per step, smoothed.
         private const float BobMaxSpeed = 7f, BobStridesPerSecond = 3f, BobSide = 0.022f, BobDip = 0.03f, BobSmooth = 0.08f, FallTiltSmooth = 0.08f;
@@ -80,6 +82,9 @@ namespace HowToHunt.Player
             console.Register(SpeedFov);
             console.Register(ViewBob);
             console.Register(FallTilt);
+            console.Register(HurtTilt);
+            console.Register(HurtTime);
+            HurtSounds.Register(console);
             RenderDistance.Register(console);
         }
 
@@ -97,6 +102,7 @@ namespace HowToHunt.Player
                 Instance._camera = cam;
                 PlayerMotor.MoveFeedback += Instance.OnMoveFeedback;
                 PlayerMotor.ZoneFeedback += Instance.OnZoneFeedback;
+                PlayerHealth.LocalHurt += Instance.OnHurt;
             }
             Instance._target = motor;
             Instance._eyeHeight = -1f;
@@ -111,6 +117,7 @@ namespace HowToHunt.Player
         {
             PlayerMotor.MoveFeedback -= OnMoveFeedback;
             PlayerMotor.ZoneFeedback -= OnZoneFeedback;
+            PlayerHealth.LocalHurt -= OnHurt;
             if (Instance == this) Instance = null;
         }
 
@@ -126,6 +133,27 @@ namespace HowToHunt.Player
             if (motor != _target || (events & MoveEvents.Landed) == 0) return;
             float strength = Mathf.Clamp01((landSpeed - 2f) / 12f);
             _kickVelocity -= strength * 2.2f * LandKick.Value;
+        }
+
+        // Hurt tilt (Minecraft's hurt cam): 1 when hit, down to 0 over cl_hurt_time; alternates sides.
+        private float _hurt;
+        private float _hurtSide = 1f;
+
+        private void OnHurt(float amount)
+        {
+            HurtSounds.Play(amount);
+            if (HurtTilt.Value <= 0f || UiFeel.Calm) return;
+            _hurt = 1f;
+            _hurtSide = -_hurtSide;
+        }
+
+        /// <summary>Roll for the hurt tilt: a quick lean that eases back (sin of t^4 * pi, t going 1 to 0).</summary>
+        private float HurtRoll(float dt)
+        {
+            if (_hurt <= 0f) return 0f;
+            _hurt = Mathf.Max(0f, _hurt - dt / HurtTime.Value);
+            float t = _hurt * _hurt;
+            return Mathf.Sin(t * t * Mathf.PI) * HurtTilt.Value * _hurtSide;
         }
 
         private void OnZoneFeedback(PlayerMotor motor, PlayerMotor.ZoneEvent e)
@@ -185,7 +213,7 @@ namespace HowToHunt.Player
 
             Vector3 center = _visual.position;
             float feetY = center.y - cfg.Hull(s.Ducked).Y;
-            Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll);
+            Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll + HurtRoll(dt));
             transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z) + view * _bob, view);
             _recoil = Mathf.MoveTowards(_recoil, 0f, dt * (6f + _recoil * 8f));
 

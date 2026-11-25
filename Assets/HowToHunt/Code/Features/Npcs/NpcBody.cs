@@ -170,7 +170,7 @@ namespace HowToHunt.Npcs
             // 0..0.55 lift slowly, 0.55..0.7 swing down fast, 0.7..1 rest on the block.
             float up = phase < 0.55f ? Ease(phase / 0.55f) : phase < 0.7f ? 1f - Ease((phase - 0.55f) / 0.15f) : 0f;
             if (!talking && _lastChopPhase < 0.7f && phase >= 0.7f && (PlayerMotor.Local == null || (PlayerMotor.Local.transform.position - transform.position).sqrMagnitude < 900f))
-                Sfx.PlayAt("Kenney/impactWood_light", transform.position + transform.forward * ChopReach, 0.7f, Random.Range(0.6f, 0.75f));
+                Sfx.PlayAt("impactWood_light", transform.position + transform.forward * ChopReach, 0.7f, Random.Range(0.6f, 0.75f));
             _lastChopPhase = phase;
             // Both hands near the end of the handle; the head of the axe arcs from behind the head to the block.
             float angle = Mathf.Lerp(-12f, 170f, up); // 0 = pointing forward-down at the block, up = back over the head

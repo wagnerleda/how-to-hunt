@@ -63,14 +63,14 @@ namespace HowToHunt.Economy
                     if (e == EconomyEvent.Caught)
                     {
                         HuntFeedback.Feed($"+ {name} · {BigDouble.Deserialize(msg.EventCoins).ToShortString()}c");
-                        Sfx.Play2D("Kenney/handleSmallLeather", 0.35f, Random.Range(0.95f, 1.05f));
+                        Sfx.Play2D("handleSmallLeather", 0.35f, Random.Range(0.95f, 1.05f));
                     }
                     else if (e == EconomyEvent.Killed)
                         HuntFeedback.Feed($"{name} down · pick it up", item.Quality != CarcassQuality.Ruined);
                     else if (e == EconomyEvent.PickedUp)
                     {
                         HuntFeedback.Feed($"+ {name}");
-                        Sfx.Play2D("Kenney/handleSmallLeather", 0.4f, Random.Range(0.9f, 1.05f));
+                        Sfx.Play2D("handleSmallLeather", 0.4f, Random.Range(0.9f, 1.05f));
                     }
                     else
                         HuntFeedback.Message("Inventory full", warning: true);
@@ -79,21 +79,21 @@ namespace HowToHunt.Economy
                 case EconomyEvent.Sold:
                     HuntFeedback.Feed($"Sold {msg.EventCount} · {BigDouble.Deserialize(msg.EventCoins).ToShortString()}c");
                     HuntFeedback.Message($"+{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
-                    Sfx.Play2D("Kenney/handleCoins", 0.6f);
+                    Sfx.Play2D("handleCoins", 0.6f);
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
                 case EconomyEvent.QuestAccepted:
                 {
                     QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(msg.EventContent));
                     if (q != null) HuntFeedback.Message($"New quest: {q.DisplayName}");
-                    Sfx.Play2D("Kenney/confirmation_001", 0.5f);
+                    Sfx.Play2D("confirmation_001", 0.5f);
                     break;
                 }
                 case EconomyEvent.QuestDone:
                 {
                     QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(msg.EventContent));
                     if (q != null) HuntFeedback.Message($"Quest done: {q.DisplayName}  +{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins");
-                    Sfx.Play2D("Kenney/handleCoins", 0.6f);
+                    Sfx.Play2D("handleCoins", 0.6f);
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
                 }
@@ -102,7 +102,7 @@ namespace HowToHunt.Economy
                     PreyDefinition boss = ContentRegistry.Get<PreyDefinition>(new Foundation.ContentId(msg.EventContent));
                     string title = boss != null && !string.IsNullOrEmpty(boss.BossTitle) ? boss.BossTitle : "The boss";
                     HuntFeedback.Message($"{title} is down! Your share: +{BigDouble.Deserialize(msg.EventCoins).ToShortString()} coins, +{msg.EventCount} trophies");
-                    Sfx.Play2D("Kenney/handleCoins", 0.8f);
+                    Sfx.Play2D("handleCoins", 0.8f);
                     if (Camera.main != null) CashBurst.Play(Camera.main.transform.position, BigDouble.Deserialize(msg.EventCoins).ToDouble());
                     break;
                 }
@@ -110,20 +110,20 @@ namespace HowToHunt.Economy
                 {
                     AttachmentDefinition a = ContentRegistry.Get<AttachmentDefinition>(new Foundation.ContentId(msg.EventContent));
                     if (a != null) HuntFeedback.Feed($"Bought {a.DisplayName}");
-                    Sfx.Play2D("Kenney/confirmation_001", 0.5f);
-                    Sfx.Play2D("Kenney/handleCoins", 0.4f, 0.9f);
+                    Sfx.Play2D("confirmation_001", 0.5f);
+                    Sfx.Play2D("handleCoins", 0.4f, 0.9f);
                     break;
                 }
                 case EconomyEvent.AttachmentFitted:
-                    Sfx.Play2D("Kenney/click_001", 0.5f, 0.8f);
+                    Sfx.Play2D("click_001", 0.5f, 0.8f);
                     break;
                 case EconomyEvent.Bought:
                 {
                     UpgradeDefinition u = ContentRegistry.Get<UpgradeDefinition>(new Foundation.ContentId(msg.EventContent));
                     if (u == null) break;
                     HuntFeedback.Feed($"Bought {u.DisplayName}");
-                    Sfx.Play2D("Kenney/confirmation_001", 0.5f);
-                    Sfx.Play2D("Kenney/handleCoins", 0.4f, 0.9f);
+                    Sfx.Play2D("confirmation_001", 0.5f);
+                    Sfx.Play2D("handleCoins", 0.4f, 0.9f);
                     if (u.Effect == UpgradeEffect.UnlockTool && u.Tool != null)
                         HuntFeedback.Message($"{u.Tool.DisplayName} unlocked: it's in your inventory bar.");
                     if (u.Effect == UpgradeEffect.InventorySlots) HuntFeedback.Message($"+{u.Value:0} inventory slots.");
@@ -132,7 +132,7 @@ namespace HowToHunt.Economy
                 }
                 case EconomyEvent.ToolsReturned:
                     HuntFeedback.Message(msg.EventCount == 1 ? "The outfitter hands you a replacement tool." : $"The outfitter hands you {msg.EventCount} replacement tools.");
-                    Sfx.Play2D("Kenney/handleSmallLeather", 0.4f);
+                    Sfx.Play2D("handleSmallLeather", 0.4f);
                     break;
                 case EconomyEvent.Refused:
                     HuntFeedback.Message(RefusalLine((EconomyRefusal)msg.Refusal), warning: true);
