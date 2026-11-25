@@ -53,6 +53,17 @@ body that returns a string). That is how most verification here is done (telepor
   (`SimTerrain`). Only `SimBrush` collides; renderers are decoration. Boundaries are visible rock ridges
   (`RockWall`), never invisible walls (owner rule).
 - **Zones** (`Core/World/Zone.cs`): axis-aligned triggers: Teleport, Checkpoint, Hazard (back to the last checkpoint).
+- **Area streaming** (`Core/World/StreamedArea.cs`): each map and surf route root (Plains, Pine Forest, Red Desert, both
+  routes) stops drawing everything under it, horizon included, past `r_area_distance` (160 m) from its bounds. Visual
+  only (`forceRenderingOff`, scatter `Hidden`, lights): collision, prey and zones stay for players elsewhere. New maps:
+  add their root to `GrayboxSceneBuilder.StreamAreas`.
+- **Thorns** (`Core/World/ThornField.cs`): cactus boxes baked by the desert builder; the host pricks players who touch
+  them (`PlayerHealth.HostThorns`).
+- **Held models** are on the `Viewmodel` layer, drawn by a RenderObjects pass right after SSAO
+  (`Editor/ViewmodelRenderSetup.cs`, run by `GeneratedAssets.RebuildAll`): the half-resolution AO's noise showed as
+  grain on the gun in hand. Anything new parented to the viewmodel needs that layer (`ViewmodelController`).
+- **Props** (`GrayboxSceneBuilder.Prop`): always rest on the lowest ground under their footprint; the y you pass is
+  ignored (use `lift` to raise one on purpose).
 - **Prey** (`Sim/Hunting/PreyBrain.cs`, `Features/Hunting/PreyWorld.cs`): host-run AI (senses, flee, stamina,
   aggression: None/WhenHurt/Always, strikes, slam, pounce, enrage), sent to clients compactly (ADR 0011, 0014).
   Venom: `PreyDefinition.PoisonDamagePerSecond/PoisonSeconds`, applied in `PreyWorld.HostStrike` through

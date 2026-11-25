@@ -204,9 +204,12 @@ namespace HowToHunt.Editor
             Color wood = C(0.55f, 0.45f, 0.33f), dark = C(0.42f, 0.33f, 0.24f);
             for (int i = 0; i < 7; i++)
             {
-                Vector3 dir = Quaternion.Euler(-35f - (i % 3) * 12f, i * 51f, 0f) * Vector3.forward;
-                b.Block(dir * 0.3f + new Vector3(0f, 0.18f, 0f), new Vector3(0.05f, 0.05f, 0.65f), i % 2 == 0 ? wood : dark, front: 0.4f);
+                // Branches leaning out from one root at the ground (each block turned along its own branch).
+                float pitch = -35f - (i % 3) * 12f, yaw = i * 51f;
+                Vector3 dir = Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
+                b.Block(dir * 0.3f, new Vector3(0.05f, 0.05f, 0.65f), i % 2 == 0 ? wood : dark, front: 0.4f, pitch: pitch, yaw: yaw);
             }
+            b.Block(new Vector3(0f, 0.04f, 0f), new Vector3(0.1f, 0.1f, 0.1f), dark); // the root
             return b.Mesh("Prop_DeadBush");
         }
 
@@ -362,7 +365,7 @@ namespace HowToHunt.Editor
             /// A box centred at <paramref name="center"/>. <paramref name="front"/> scales its +Z end (taper toward the
             /// head), <paramref name="top"/> its top face; <paramref name="pitch"/> tilts it about X (degrees).
             /// </summary>
-            public void Block(Vector3 center, Vector3 size, Color color, float front = 1f, float top = 1f, float pitch = 0f)
+            public void Block(Vector3 center, Vector3 size, Color color, float front = 1f, float top = 1f, float pitch = 0f, float yaw = 0f)
             {
                 Vector3 h = size * 0.5f;
                 var c = new Vector3[8];
@@ -371,7 +374,7 @@ namespace HowToHunt.Editor
                     float x = (i & 1) == 0 ? -h.x : h.x, y = (i & 2) == 0 ? -h.y : h.y, z = (i & 4) == 0 ? -h.z : h.z;
                     float k = (z > 0f ? front : 1f) * (y > 0f ? top : 1f);
                     var p = new Vector3(x * k, y * (z > 0f ? Mathf.Lerp(1f, front, 0.5f) : 1f), z);
-                    c[i] = center + Quaternion.Euler(pitch, 0f, 0f) * p;
+                    c[i] = center + Quaternion.Euler(pitch, yaw, 0f) * p;
                 }
                 Quad(c[0], c[2], c[6], c[4], color, center); // left  (-x)
                 Quad(c[1], c[5], c[7], c[3], color, center); // right (+x)

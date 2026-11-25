@@ -126,6 +126,7 @@ namespace HowToHunt.Hunting
                     r.receiveShadows = false;
                 }
                 _preyModels[prey] = model;
+                SetViewmodelLayer(model);
             }
             model.SetActive(true);
             _shown = model;
@@ -194,6 +195,7 @@ namespace HowToHunt.Hunting
                 }
                 _models[tool] = model;
                 _rigs[tool] = new GunRig(model);
+                SetViewmodelLayer(model);
             }
             model.SetActive(true);
             _shown = model;
@@ -252,6 +254,7 @@ namespace HowToHunt.Hunting
             {
                 _fittedVersion = Loadouts.Local.FittedVersion;
                 AttachmentVisuals.Apply(_shown, _tool, Loadouts.Local.Fitted(_tool));
+                SetViewmodelLayer(_shown); // fitted attachments too
             }
             bool visible = cam != null && _shown != null && PlayerMotor.Local != null && PlayerMotor.Local.State.Mode != MoveMode.Noclip && !ScopeOverlay.Showing && !PlayerCamera.Framed;
             if (_holder.gameObject.activeSelf != visible) _holder.gameObject.SetActive(visible);
@@ -425,6 +428,23 @@ namespace HowToHunt.Hunting
             _chargeOrb.transform.position = eye + (muzzle - eye) * ChargeOrbNearer;
             _chargeOrb.Energy = c;
             _chargeOrb.Size = ChargeOrbNearer * (ChargeOrbMin + (ChargeOrbFull - ChargeOrbMin) * c) / Mathf.Max(1f, PlayerCamera.Zoom);
+        }
+
+        /// <summary>
+        /// Held models go on the Viewmodel layer: the renderer draws it after ambient occlusion (owner, 2026-11-25: the
+        /// half-resolution SSAO's noise showed as grain, like TV snow, on whatever was in your hands). Only when the
+        /// project has the layer; once per model or fitting, not per frame.
+        /// </summary>
+        public const string ViewmodelLayerName = "Viewmodel";
+        private static readonly List<Transform> LayerScratch = new List<Transform>();
+
+        private static void SetViewmodelLayer(GameObject model)
+        {
+            int layer = LayerMask.NameToLayer(ViewmodelLayerName);
+            if (layer < 0 || model == null) return;
+            model.GetComponentsInChildren(true, LayerScratch);
+            for (int i = 0; i < LayerScratch.Count; i++) LayerScratch[i].gameObject.layer = layer;
+            LayerScratch.Clear();
         }
 
         private LineRenderer MakeLine(string name, Material m, float width)

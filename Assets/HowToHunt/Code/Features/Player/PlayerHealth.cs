@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using HowToHunt.Core;
 using HowToHunt.Foundation;
+using HowToHunt.Sim.Movement;
 using UnityEngine;
 
 namespace HowToHunt.Player
@@ -27,6 +29,10 @@ namespace HowToHunt.Player
         public static readonly FloatCvar ReviveSeconds = new FloatCvar("sv_revive_time", 3f, "Seconds a teammate holds Interact to revive.", Sv, 0.5f, 15f);
         public static readonly FloatCvar ReviveHealth = new FloatCvar("sv_revive_health", 30f, "Health after a revive.", Sv, 1f, MaxHealth);
         public static readonly FloatCvar ReviveRange = new FloatCvar("sv_revive_range", 2.2f, "How close a reviver must stay, metres.", Sv, 1f, 6f);
+        public static readonly FloatCvar ThornDamage = new FloatCvar("sv_thorn_damage", 4f, "Damage from brushing a cactus (once per sv_thorn_interval while touching). 0 = harmless.", Sv, 0f, 50f);
+        public static readonly FloatCvar ThornInterval = new FloatCvar("sv_thorn_interval", 1f, "Seconds between two cactus pricks while you keep touching it.", Sv, 0.1f, 10f);
+        public static readonly FloatCvar ThornReach = new FloatCvar("sv_thorn_reach", 0.12f, "How close counts as touching a cactus, metres past its trunk.", Sv, 0f, 1f);
+        public static readonly FloatCvar ThornPush = new FloatCvar("sv_thorn_push", 2.5f, "Speed a prick shoves you back from the cactus, m/s.", Sv, 0f, 20f);
 
         public static void Register(ConsoleSystem console)
         {
@@ -37,6 +43,10 @@ namespace HowToHunt.Player
             console.Register(ReviveSeconds);
             console.Register(ReviveHealth);
             console.Register(ReviveRange);
+            console.Register(ThornDamage);
+            console.Register(ThornInterval);
+            console.Register(ThornReach);
+            console.Register(ThornPush);
         }
 
         private readonly SyncVar<float> _health = new SyncVar<float>(MaxHealth);
@@ -167,6 +177,7 @@ namespace HowToHunt.Player
         {
             if (IsOwner) UpdateOwner();
             if (IsServerStarted && !_downed.Value && _poisonUntil > 0f) HostPoisonTick();
+            if (IsServerStarted && !_downed.Value) HostThorns();
             if (!IsServerStarted || !_downed.Value) return;
 
             // Revive: any standing teammate close by who is holding Interact on this player.
@@ -205,6 +216,25 @@ namespace HowToHunt.Player
                 if (RespawnPoint != null) Motor.ServerTeleport(RespawnPoint(this));
                 HostRestore();
             }
+        }
+
+        private float _nextThorn;
+
+        /// <summary>Host: brushing a cactus pricks (a little damage, a small shove away), at most once per interval.</summary>
+        private void HostThorns()
+        {
+            float now = Time.time;
+            if (now < _nextThorn || ThornDamage.Value <= 0f || Motor == null) return;
+            MoveState s = Motor.State;
+            Vector3 center = s.Position.ToUnity();
+            Vector3 half = MovementCvars.Config.Hull(s.Ducked).ToUnity();
+            if (!ThornField.Touches(center, half, ThornReach.Value, out Vector3 thorn)) return;
+            _nextThorn = now + ThornInterval.Value;
+            HostDamage(ThornDamage.Value, -1);
+            Vector3 away = center - thorn;
+            away.y = 0f;
+            away = away.sqrMagnitude > 1e-4f ? away.normalized : transform.forward;
+            Motor.HostPush(away * ThornPush.Value);
         }
 
         private void HostPoisonTick()

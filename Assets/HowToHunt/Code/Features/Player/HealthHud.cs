@@ -39,7 +39,7 @@ namespace HowToHunt.Player
             _reviveFill.rectTransform.SetParent(_reviveBack.rectTransform, false);
             _reviveFill.rectTransform.pivot = new Vector2(0f, 0.5f);
             // Poisoned: the bar turns venom green, a label counts down and the screen edges pulse green.
-            _venom = Hud.Text("Poisoned", new Vector2(0f, 0f), new Vector2(40f + BarWidth + 16f, 26f), 22f, TextAlignmentOptions.BottomLeft, Venom);
+            _venom = Hud.Text("Poisoned", new Vector2(0f, 0f), new Vector2(40f + BarWidth + 16f, 26f), 28f, TextAlignmentOptions.BottomLeft, Venom);
             _venom.rectTransform.pivot = new Vector2(0f, 0f);
             _venom.rectTransform.sizeDelta = new Vector2(320f, 30f);
             _venomTint = Hud.Rect("Venom Tint", new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.35f, 0.9f, 0.1f, 0f));
@@ -54,6 +54,9 @@ namespace HowToHunt.Player
         }
 
         /// <summary>The venom label and the green pulse at the screen's edges while poisoned (no pulse with reduce motion).</summary>
+        private const float VenomFlashAlpha = 0.3f, VenomFlashFade = 2.5f; // look of the flash on each venom hit
+        private float _venomFlash;
+
         private void ShowVenom(float left)
         {
             bool on = left > 0f;
@@ -66,8 +69,10 @@ namespace HowToHunt.Player
                 _shownVenom = seconds;
                 _venom.SetText("POISONED {0} s", seconds);
             }
-            float pulse = UiFeel.Calm ? 0.07f : 0.05f + 0.06f * (0.5f + 0.5f * Mathf.Sin(Time.time * 4f));
-            _venomTint.color = new Color(0.35f, 0.9f, 0.1f, pulse);
+            // Owner, 2026-11-25 ("not poisonous from what I can see"): stronger, and each venom hit flashes green.
+            float pulse = UiFeel.Calm ? 0.1f : 0.08f + 0.08f * (0.5f + 0.5f * Mathf.Sin(Time.time * 4f));
+            _venomFlash = Mathf.MoveTowards(_venomFlash, 0f, Time.unscaledDeltaTime * VenomFlashFade);
+            _venomTint.color = new Color(0.35f, 0.9f, 0.1f, pulse + VenomFlashAlpha * _venomFlash);
         }
 
         private void Show(bool on)
@@ -90,6 +95,7 @@ namespace HowToHunt.Player
             int hp = Mathf.CeilToInt(me.Health);
             if (hp != _shownHealth)
             {
+                if (me.Poisoned && _shownHealth > 0 && hp < _shownHealth) _venomFlash = 1f; // a venom tick
                 _shownHealth = hp;
                 _number.SetText("{0}", hp);
                 float k = me.Health / PlayerHealth.MaxHealth;

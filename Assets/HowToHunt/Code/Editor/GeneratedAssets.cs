@@ -33,6 +33,7 @@ namespace HowToHunt.Editor
         public static void RebuildAll()
         {
             EnsurePlatformSettings();
+            ViewmodelRenderSetup.Ensure();
             Palette.EnsureMaterials();
             EnsureMeshes();
             EnsureFxMaterials();

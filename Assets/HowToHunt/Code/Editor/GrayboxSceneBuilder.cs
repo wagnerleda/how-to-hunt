@@ -84,6 +84,7 @@ namespace HowToHunt.Editor
             BuildPineForest(level, zones, signs);
             BuildRedDesert(level, zones, signs);
             BuildDesertRoute(level, zones, signs);
+            StreamAreas(level);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
@@ -394,6 +395,30 @@ namespace HowToHunt.Editor
             brush.Surface = flags;
             GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI);
             return go;
+        }
+
+        /// <summary>
+        /// Each map and surf route is drawn only while the camera is near it (StreamedArea): its bounds are the area
+        /// itself, without its horizon (Backdrop layer) or the invisible collision boxes.
+        /// </summary>
+        private static void StreamAreas(Transform level)
+        {
+            string[] areas = { "Plains", "Pine Forest", "Red Desert", "Surf Route East", "Surf Route South (hard)" };
+            foreach (string name in areas)
+            {
+                Transform root = level.Find(name);
+                if (root == null) { Debug.LogWarning($"[HowToHunt] No area '{name}' to stream"); continue; }
+                Bounds b = default;
+                bool any = false;
+                foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!r.enabled || r.gameObject.layer == BackdropLayer || r is ParticleSystemRenderer || r.bounds.size == Vector3.zero) continue;
+                    if (!any) { b = r.bounds; any = true; }
+                    else b.Encapsulate(r.bounds);
+                }
+                if (!any) continue;
+                root.gameObject.AddComponent<StreamedArea>().Configure(b);
+            }
         }
 
         private static void AddToBuildSettings(string path)

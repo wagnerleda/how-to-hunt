@@ -182,7 +182,9 @@ namespace HowToHunt.Editor
             for (int i = 0; i < ScorpionFlats.Length; i++)
             {
                 Vector3 c = OnGround(ScorpionFlats[i]);
-                Visual(props, $"Scorpion Flat {i + 1}", c + new Vector3(0f, 0.02f, 0f), new Vector3(9f, 0.04f, 7f), "Adobe", Range(rng, 0f, 90f));
+                // A slab of packed dirt: its top just above the ground at the centre, its foot down to the lowest ground under it.
+                float flatLo = LowestGround(c.x, c.z, 5.7f, 5.7f) - 0.05f, flatTop = c.y + 0.04f;
+                Visual(props, $"Scorpion Flat {i + 1}", new Vector3(c.x, (flatTop + flatLo) * 0.5f, c.z), new Vector3(9f, flatTop - flatLo, 7f), "Adobe", Range(rng, 0f, 90f));
                 Spawner(desert, $"Scorpions {i + 1}", "prey.scorpion", c + new Vector3(0f, 0.2f, 0f), 2, 5f, 45f);
             }
             // Coral snakes in the scrub between the dunes (venomous: owner, 2026-11-24).
@@ -225,10 +227,15 @@ namespace HowToHunt.Editor
         private static void MesaStack(Transform parent, Vector3 at, System.Random rng, float height)
         {
             float y = GroundY(at.x, at.z) - 0.5f, w = Range(rng, 4f, 7f), d = Range(rng, 3.5f, 6f);
+            // The bottom tier reaches the lowest ground under it (any turn): no gap on the downhill side.
+            float reach = 0.5f * Mathf.Sqrt(w * w + d * d) + 0.6f;
+            float foot = Mathf.Min(y, LowestGround(at.x, at.z, reach, reach) - 0.3f);
+            float extra = y - foot;
+            y = foot;
             int tiers = 2 + rng.Next(2);
             for (int t = 0; t < tiers; t++)
             {
-                float h = height / tiers + (t == 0 ? 0.5f : 0f);
+                float h = height / tiers + (t == 0 ? 0.5f + extra : 0f);
                 Box(parent, "Mesa Rock", new Vector3(at.x + Range(rng, -0.6f, 0.6f), y + h * 0.5f, at.z + Range(rng, -0.6f, 0.6f)), new Vector3(w, h, d), t % 2 == 0 ? "Mesa" : "MesaDark", Range(rng, 0f, 90f));
                 y += h;
                 w *= Range(rng, 0.6f, 0.8f);
@@ -256,7 +263,7 @@ namespace HowToHunt.Editor
 
             // Rosa's trading post: desert prices (x2), the best in the game so far.
             Station(camp, signs, CampStationKind.Sell, "Desert Trading Post", "DRY CREEK TRADING POST\n<size=55%>desert prices x2</size>",
-                c + new Vector3(8f, 0f, 297f), 90f, "npc.desert_trader", DesertExpectedSale, DesertPriceMultiplier);
+                c + new Vector3(8f, 0f, -3f), 90f, "npc.desert_trader", DesertExpectedSale, DesertPriceMultiplier); // was z +297: it stood 300 m north, in the air
             // Dusty sits on a log at the fire.
             Prop(camp, "log", c + new Vector3(-2.7f, 0f, 0.4f), 3f, rng, collide: false, yaw: 90f);
             NpcAbout(camp, "npc.prospector", c + new Vector3(-2.3f, 0f, 0f), 90f);
@@ -268,11 +275,11 @@ namespace HowToHunt.Editor
             Transform toForest = Marker(zones, "Forest Camp Arrival", ForestCamp + new Vector3(-4.5f, 0.1f, 5.5f), 0f);
             Transform toPlains = Marker(zones, "Plains Camp Arrival (desert)", CampCenter + new Vector3(0f, 0f, -4.5f), 0f);
             DesertPad(camp, zones, signs, "BACK TO THE PINES", c + new Vector3(-4f, 0f, -11f), toForest);
-            DesertPad(camp, zones, signs, "BACK TO THE PLAINS", c + new Vector3(4f, 0f, 288f), toPlains);
+            DesertPad(camp, zones, signs, "BACK TO THE PLAINS", c + new Vector3(4f, 0f, -11f), toPlains); // was z +288: 300 m off, in the air
 
             // The movement lab's test pad (the lab is the test zone: every gun, every map).
             Vector3 labPad = new Vector3(0f, 0.1f, 5.5f);
-            Visual(desert, "Pad Desert (lab)", labPad + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
+            Visual(desert.parent, "Pad Desert (lab)", labPad + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
             Zone(zones, "Teleport Desert (lab)", labPad + new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, arrival);
             Sign(signs, "DESERT\n<size=55%>test pad</size>", labPad + new Vector3(0f, 2.4f, 0f), 180f, 0.9f);
         }
@@ -323,6 +330,9 @@ namespace HowToHunt.Editor
 
             // Saguaros stand alone across the basin; each has a trunk you bump into (the size of the one you see).
             Transform trunks = Group(props, "Cactus Trunks (collision)");
+            // Cacti prick (owner, 2026-11-25): their trunks and the barrel cacti are thorn boxes the host checks players against.
+            var thornCenters = new List<Vector3>();
+            var thornHalves = new List<Vector3>();
             Mesh[] saguaros = { CreatureModels.PropMesh("Prop_Saguaro0"), CreatureModels.PropMesh("Prop_Saguaro1") };
             var saguaroLists = new[] { new List<Matrix4x4>(), new List<Matrix4x4>() };
             for (int i = 0; i < 70; i++)
@@ -332,6 +342,8 @@ namespace HowToHunt.Editor
                 saguaroLists[rng.Next(2)].Add(Instance(p, s, rng));
                 float y = GroundY(p.x, p.z);
                 Box(trunks, "Saguaro Collision", new Vector3(p.x, y + 2.1f * s, p.z), new Vector3(0.5f * s, 4.2f * s, 0.5f * s), "Leaf").GetComponent<MeshRenderer>().enabled = false;
+                thornCenters.Add(new Vector3(p.x, y + 2.1f * s, p.z));
+                thornHalves.Add(new Vector3(0.25f * s, 2.1f * s, 0.25f * s));
             }
             for (int k = 0; k < 2; k++)
                 if (saguaros[k] != null) scatter.SetLayer(saguaros[k], mats, saguaroLists[k], PropChunk, 420f, true);
@@ -347,7 +359,14 @@ namespace HowToHunt.Editor
                 var p = new Vector3(Range(rng, DMinX - 4f, DMaxX + 4f), 0f, Range(rng, DMinZ - 4f, DMaxZ + 4f));
                 if (OutsideDesert(p.x, p.z) > 2f || DesertFlat(p.x, p.z) > 0.6f) continue;
                 double r = rng.NextDouble();
-                if (r < 0.22) barrels.Add(Instance(p, Range(rng, 0.8f, 1.5f), rng));
+                if (r < 0.22) {
+                    float bs = Range(rng, 0.8f, 1.5f);
+                    Matrix4x4 m = Instance(p, bs, rng);
+                    barrels.Add(m);
+                    Vector3 at = m.GetColumn(3);
+                    thornCenters.Add(at + new Vector3(0f, 0.335f * bs, 0f));
+                    thornHalves.Add(new Vector3(0.3f * bs, 0.335f * bs, 0.3f * bs));
+                }
                 else if (r < 0.62) bushes.Add(Instance(p, Range(rng, 0.9f, 1.8f), rng));
                 else if (r < 0.66) skulls.Add(Instance(p, Range(rng, 1f, 1.5f), rng));
                 else pebbles.Add(Instance(p, Range(rng, 1.2f, 2f), rng));
@@ -356,6 +375,9 @@ namespace HowToHunt.Editor
             if (bush != null) scatter.SetLayer(bush, mats, bushes, ClutterChunk, 140f, false, PropFarDensity);
             if (skull != null) scatter.SetLayer(skull, mats, skulls, ClutterChunk, 120f, false, PropFarDensity);
             AddLayer(scatter, "rock_smallA", pebbles, ClutterChunk, 120f, false, PropFarDensity);
+            var thorns = new GameObject("Cactus Thorns");
+            thorns.transform.SetParent(desert, false);
+            thorns.AddComponent<ThornField>().Configure(thornCenters.ToArray(), thornHalves.ToArray());
         }
 
         /// <summary>Far-off mesas all round, and a few clouds (purely visual, past where anyone can go).</summary>

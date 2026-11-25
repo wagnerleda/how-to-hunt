@@ -252,6 +252,30 @@ namespace HowToHunt.Editor
 
         private static Vector3 OnGround(Vector3 p) => new Vector3(p.x, GroundY(p.x, p.z), p.z);
 
+        private const float PropSink = 0.06f; // how far a settled prop's bottom goes into the ground
+
+        /// <summary>Lowest terrain under a footprint (centre, four corners and four edge midpoints).</summary>
+        private static float LowestGround(float x, float z, float halfX, float halfZ)
+        {
+            float lo = GroundY(x, z);
+            for (int i = -1; i <= 1; i++)
+                for (int k = -1; k <= 1; k++)
+                    if (i != 0 || k != 0) lo = Mathf.Min(lo, GroundY(x + i * halfX, z + k * halfZ));
+            return lo;
+        }
+
+        private static bool TryBounds(GameObject go, out Bounds b)
+        {
+            b = default;
+            bool any = false;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
+            {
+                if (!any) { b = r.bounds; any = true; }
+                else b.Encapsulate(r.bounds);
+            }
+            return any;
+        }
+
         // --- river ------------------------------------------------------------------------------------------
 
         private static void BuildWater(Transform plains)
@@ -357,7 +381,7 @@ namespace HowToHunt.Editor
             Vector3 gate = OnGround(new Vector3(PlayMaxX + 3f, 0f, ClearingZ));
             // Phase 6: the logs and their sign go when the party finishes "Beyond the Trees" (world flag), on every machine.
             for (int i = -2; i <= 2; i++)
-                Prop(blocked, "log_large", gate + new Vector3(0f, 0.3f + (i & 1) * 0.7f, i * 2.4f), 3.5f, rng, collide: true, yaw: 0f);
+                Prop(blocked, "log_large", gate + new Vector3(0f, 0f, i * 2.4f), 3.5f, rng, collide: true, yaw: 0f, lift: 0.3f + (i & 1) * 0.7f);
             Sign(blocked, "THE WAY EAST\n<size=55%>blocked by fallen trees - a hunter at camp may know a way</size>", gate + new Vector3(-3f, 3.8f, 0f), 90f, 1.2f);
             Transform open = Group(plains, "East Gate (open)");
             open.gameObject.AddComponent<WorldGate>().Configure(GeneratedContent.EastClearingFlag, showWhenSet: true);
@@ -422,11 +446,17 @@ namespace HowToHunt.Editor
                 string stone = rng.Next(3) == 0 ? stoneB : stoneA;
                 // Sunk 2.5 m so a slope along the piece never opens a gap underneath; jagged in and out, in two tones.
                 Vector3 at = p + side * Range(rng, -0.5f, 0.5f);
-                Box(parent, $"{name} Rock {i}", new Vector3(at.x, g - 2.5f + h * 0.5f, at.z), new Vector3(w, h, step * 1.35f + 0.5f), stone, yaw + Range(rng, -14f, 14f));
+                // Its foot reaches the lowest ground under it too (steep rims: 2.5 m was not always enough).
+                float pieceLen = step * 1.35f + 0.5f, rockTop = g - 2.5f + h;
+                Vector3 along = d / len * (pieceLen * 0.5f), across = side * (w * 0.5f);
+                float rockLo = Mathf.Min(Mathf.Min(ground(at.x + along.x + across.x, at.z + along.z + across.z), ground(at.x + along.x - across.x, at.z + along.z - across.z)),
+                    Mathf.Min(ground(at.x - along.x + across.x, at.z - along.z + across.z), ground(at.x - along.x - across.x, at.z - along.z - across.z)));
+                float rockBottom = Mathf.Min(g - 2.5f, rockLo - 0.5f);
+                Box(parent, $"{name} Rock {i}", new Vector3(at.x, (rockTop + rockBottom) * 0.5f, at.z), new Vector3(w, rockTop - rockBottom, pieceLen), stone, yaw + Range(rng, -14f, 14f));
                 // Fallen blocks at its feet (both sides) break the line; solid like everything you can see.
                 float s = rng.Next(2) == 0 ? -1f : 1f, bh = Range(rng, 1.2f, 2.4f);
                 Vector3 block = p + side * s * (w * 0.5f + Range(rng, 0.2f, 0.9f)) + (d / len) * Range(rng, -1f, 1f);
-                Box(parent, $"{name} Block {i}", new Vector3(block.x, ground(block.x, block.z) - 0.6f + bh * 0.5f, block.z), new Vector3(Range(rng, 1f, 1.9f), bh, Range(rng, 1f, 2f)), stone == stoneA ? stoneB : stoneA, Range(rng, 0f, 90f));
+                Box(parent, $"{name} Block {i}", BlockOnSlope(ground, block, bh, Range(rng, 1f, 1.9f), Range(rng, 1f, 2f), out Vector3 blockSize), blockSize, stone == stoneA ? stoneB : stoneA, Range(rng, 0f, 90f));
                 float capBottom = g + RockMinHeight - 2.5f - 0.4f;
                 GameObject cap = Box(parent, $"{name} Cap {i}", new Vector3(p.x, (capBottom + capTop) * 0.5f, p.z), new Vector3(1f, capTop - capBottom, step + 0.6f), "Wall", yaw);
                 cap.GetComponent<MeshRenderer>().enabled = false;
@@ -434,6 +464,24 @@ namespace HowToHunt.Editor
         }
 
         private const float RockPiece = 3.2f, RockMinHeight = 5.9f, RockMaxHeight = 8.6f; // heights include the 2.5 m sunk
+
+        /// <summary>
+        /// A fallen block at a rock wall's feet: its top where it was (centre ground - 0.6 + height), its bottom reaching
+        /// the lowest ground under it (any turn), so a slope never shows a gap underneath.
+        /// </summary>
+        private static Vector3 BlockOnSlope(System.Func<float, float, float> ground, Vector3 at, float height, float width, float depth, out Vector3 size)
+        {
+            float top = ground(at.x, at.z) - 0.6f + height;
+            float r = 0.5f * Mathf.Sqrt(width * width + depth * depth), lo = ground(at.x, at.z);
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI * 0.25f;
+                lo = Mathf.Min(lo, ground(at.x + Mathf.Sin(a) * r, at.z + Mathf.Cos(a) * r));
+            }
+            float bottom = Mathf.Min(lo - 0.3f, top - 0.6f);
+            size = new Vector3(width, top - bottom, depth);
+            return new Vector3(at.x, (top + bottom) * 0.5f, at.z);
+        }
 
         private static Vector3 RingPoint(float t, float outward)
         {
@@ -662,15 +710,29 @@ namespace HowToHunt.Editor
         /// Places a Kenney prop on the ground (its y is taken from the terrain); collide adds an invisible box brush
         /// from its bounds (trunk only for trees).
         /// </summary>
-        private static void Prop(Transform parent, string model, Vector3 feet, float scale, System.Random rng, bool collide, bool trunkOnly = false, float yaw = float.NaN)
+        private static void Prop(Transform parent, string model, Vector3 feet, float scale, System.Random rng, bool collide, bool trunkOnly = false, float yaw = float.NaN, float lift = 0f)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(KenneyDir + model + ".fbx");
             if (asset == null) { Debug.LogWarning($"[HowToHunt] Missing Kenney model {model}"); return; }
-            feet.y += GroundY(feet.x, feet.z);
+            // Always on the ground: the y given is ignored (callers pass points that may already include the ground,
+            // which used to count it twice: props buried at -2x depth or floating on raised ground). Only `lift`
+            // raises a prop on purpose (the stacked gate logs).
+            feet.y = GroundY(feet.x, feet.z) + lift;
             var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, parent);
             float y = float.IsNaN(yaw) ? (float)rng.NextDouble() * 360f : yaw;
             go.transform.SetPositionAndRotation(feet, Quaternion.Euler(0f, y, 0f));
             go.transform.localScale = Vector3.one * scale;
+            // Settle on slopes: the model's bottom goes to the lowest ground under its footprint (trees: under the
+            // trunk), a little into it, so no side hangs in the air.
+            if (TryBounds(go, out Bounds fp))
+            {
+                float reach = trunkOnly ? 0.15f : 0.8f;
+                float ground = LowestGround(fp.center.x, fp.center.z, fp.extents.x * reach, fp.extents.z * reach);
+                float bottom = trunkOnly ? feet.y : fp.min.y;
+                float target = ground + lift - PropSink;
+                go.transform.position += new Vector3(0f, target - bottom, 0f);
+                feet.y += target - bottom;
+            }
             GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
             foreach (Transform child in go.GetComponentsInChildren<Transform>()) GameObjectUtility.SetStaticEditorFlags(child.gameObject, StaticEditorFlags.BatchingStatic);
             if (!collide) return;
@@ -834,7 +896,9 @@ namespace HowToHunt.Editor
 
         private static Matrix4x4 Instance(Vector3 p, float scale, System.Random rng)
         {
-            p.y = GroundY(p.x, p.z) - 0.03f;
+            // Lowest ground within half a metre per unit of scale, so wide clutter on a slope doesn't hang off it.
+            float r = 0.35f * scale;
+            p.y = LowestGround(p.x, p.z, r, r) - 0.03f;
             return Matrix4x4.TRS(p, Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f), Vector3.one * scale);
         }
 

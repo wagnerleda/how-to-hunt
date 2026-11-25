@@ -24,6 +24,7 @@ namespace HowToHunt.Core
             console.Register(PlayerName);
             console.Register(ScatterRenderer.Density);
             console.Register(ScatterRenderer.FadeStart);
+            StreamedArea.Register(console);
             RenderQuality.Register(console);
             UiFeel.Register(console);
 

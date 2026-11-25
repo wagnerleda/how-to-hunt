@@ -47,10 +47,14 @@ namespace HowToHunt.Core
 
         public List<Layer> Layers => _layers;
 
+        /// <summary>Set by StreamedArea while the camera is far from this map: nothing is drawn.</summary>
+        public bool Hidden { get; set; }
+
         private void LateUpdate()
         {
             // Headless (-nographics, dedicated tests) or very old GPUs: nothing to draw with.
             if (!SystemInfo.supportsInstancing || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
+            if (Hidden) return;
             Camera cam = Camera.main;
 #if UNITY_EDITOR
             if (!Application.isPlaying && UnityEditor.SceneView.lastActiveSceneView != null) cam = UnityEditor.SceneView.lastActiveSceneView.camera;
