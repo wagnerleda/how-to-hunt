@@ -75,6 +75,10 @@ namespace HowToHunt.Player
         /// <summary>Optical zoom while aiming down sights (1 = none), set by the tools feature.</summary>
         public static float Zoom { get; set; } = 1f;
 
+        /// <summary>Extra field of view (degrees) and roll (degrees) for effects: the totem travel transition.</summary>
+        public static float EffectFov { get; set; }
+        public static float EffectRoll { get; set; }
+
         public static void Register(ConsoleSystem console)
         {
             console.Register(RollAngle);
@@ -189,7 +193,7 @@ namespace HowToHunt.Player
             float speed = new Vector2(vel.x, vel.z).magnitude;
             float targetFov = Mathf.Clamp01((speed - cfg.MaxSpeed * 1.4f) / 18f) * SpeedFov.Value;
             _fovBonus = Mathf.Lerp(_fovBonus, targetFov, 1f - Mathf.Exp(-4f * dt));
-            float vfov = HorizontalToVerticalFov(CoreCvars.Fov.Value + _fovBonus, _camera.aspect);
+            float vfov = HorizontalToVerticalFov(Mathf.Clamp(CoreCvars.Fov.Value + _fovBonus + EffectFov, 20f, 160f), _camera.aspect);
             // Aiming down sights magnifies (true zoom: the tangent of the half angle shrinks).
             if (Zoom > 1.001f) vfov = 2f * Mathf.Atan(Mathf.Tan(vfov * 0.5f * Mathf.Deg2Rad) / Zoom) * Mathf.Rad2Deg;
             _camera.fieldOfView = vfov;
@@ -213,7 +217,7 @@ namespace HowToHunt.Player
 
             Vector3 center = _visual.position;
             float feetY = center.y - cfg.Hull(s.Ducked).Y;
-            Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll + HurtRoll(dt));
+            Quaternion view = Quaternion.Euler(_target.ViewPitch - _recoil + _fallTilt, _target.ViewYaw, -_roll + HurtRoll(dt) + EffectRoll);
             transform.SetPositionAndRotation(new Vector3(center.x, feetY + _eyeHeight + _kick, center.z) + view * _bob, view);
             _recoil = Mathf.MoveTowards(_recoil, 0f, dt * (6f + _recoil * 8f));
 

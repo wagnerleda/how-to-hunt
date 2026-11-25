@@ -28,6 +28,8 @@ namespace HowToHunt.Economy
         /// <summary>Quests accepted and their progress, and quests turned in (Phase 6).</summary>
         public readonly Dictionary<uint, int> Quests = new Dictionary<uint, int>();
         public readonly HashSet<uint> QuestsDone = new HashSet<uint>();
+        /// <summary>Sections of the world this hunter has been to (RegionDefinition ids): where a totem can take them.</summary>
+        public readonly HashSet<uint> Discovered = new HashSet<uint>();
 
         public int ResearchOf(uint prey) => Research.TryGetValue(prey, out int r) ? r : 0;
         public bool Owns(uint upgrade) => Upgrades.Contains(upgrade);
@@ -143,6 +145,8 @@ namespace HowToHunt.Economy
             foreach (KeyValuePair<uint, int> kv in other.Quests) Quests[kv.Key] = kv.Value;
             QuestsDone.Clear();
             QuestsDone.UnionWith(other.QuestsDone);
+            Discovered.Clear();
+            Discovered.UnionWith(other.Discovered);
         }
 
         public void Clear()
@@ -160,6 +164,7 @@ namespace HowToHunt.Economy
             LifetimeCoins = BigDouble.Zero;
             Quests.Clear();
             QuestsDone.Clear();
+            Discovered.Clear();
         }
 
         /// <summary>What all prey in the inventory sell for right now (mastery counts research at the moment of sale).</summary>
@@ -228,6 +233,7 @@ namespace HowToHunt.Economy
             public List<string> questKeys = new List<string>();
             public List<int> questProgress = new List<int>();
             public List<string> questsDone = new List<string>();
+            public List<string> discovered = new List<string>();
         }
 
         private readonly EconomyProfile _profile;
@@ -270,6 +276,11 @@ namespace HowToHunt.Economy
             {
                 QuestDefinition q = ContentRegistry.Get<QuestDefinition>(new Foundation.ContentId(done));
                 if (q != null) d.questsDone.Add(q.Key);
+            }
+            foreach (uint region in _profile.Discovered)
+            {
+                RegionDefinition r = ContentRegistry.Get<RegionDefinition>(new Foundation.ContentId(region));
+                if (r != null) d.discovered.Add(r.Key);
             }
             foreach (uint u in _profile.Upgrades)
             {
@@ -345,6 +356,11 @@ namespace HowToHunt.Economy
             {
                 QuestDefinition q = ContentRegistry.Get<QuestDefinition>(key);
                 if (q != null) _profile.QuestsDone.Add(q.Id.Value);
+            }
+            foreach (string key in d.discovered)
+            {
+                RegionDefinition r = ContentRegistry.Get<RegionDefinition>(key);
+                if (r != null) _profile.Discovered.Add(r.Id.Value);
             }
             _profile.ApplyCapacity();
             if (savedVersion >= 3)

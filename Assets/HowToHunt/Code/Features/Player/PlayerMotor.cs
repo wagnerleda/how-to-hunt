@@ -397,6 +397,40 @@ namespace HowToHunt.Player
             if (IsServerStarted && Owner.IsValid && !Owner.IsLocalClient) RpcTeleported(Owner, hullCenter);
         }
 
+        /// <summary>
+        /// Host: travel (a totem): stand on the ground at <paramref name="feet"/>, facing <paramref name="yaw"/>, with
+        /// the spot as the respawn checkpoint (a fall before the next checkpoint brings you back here, not to the
+        /// last surf route). A remote owner is told directly, like a teleport.
+        /// </summary>
+        public void ServerTravel(Vector3 feet, float yaw)
+        {
+            if (!IsServerStarted) return;
+            _checkpointFeet = feet;
+            _checkpointYaw = yaw;
+            _state.Ducked = false;
+            Vector3 center = SpawnCenter(feet);
+            _state.Position = center.ToSim();
+            _state.Velocity = System.Numerics.Vector3.Zero;
+            _state.OnGround = false;
+            _state.KnockTime = 0f;
+            transform.position = center;
+            if (IsOwner) _input.Yaw = yaw;
+            else if (Owner.IsValid) RpcTraveled(Owner, center, yaw, feet);
+        }
+
+        [FishNet.Object.TargetRpc]
+        private void RpcTraveled(FishNet.Connection.NetworkConnection conn, Vector3 center, float yaw, Vector3 feet)
+        {
+            _checkpointFeet = feet;
+            _checkpointYaw = yaw;
+            _state.Ducked = false;
+            _state.Position = center.ToSim();
+            _state.Velocity = System.Numerics.Vector3.Zero;
+            _state.OnGround = false;
+            transform.position = center;
+            _input.Yaw = yaw;
+        }
+
         [FishNet.Object.TargetRpc]
         private void RpcTeleported(FishNet.Connection.NetworkConnection conn, Vector3 hullCenter)
         {

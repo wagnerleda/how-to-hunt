@@ -530,6 +530,8 @@ namespace HowToHunt.Editor
             NpcAbout(camp, "npc.hank", c + new Vector3(-2.25f, 0f, 2.15f), 90f);
             Prop(camp, "stump_round", c + new Vector3(-13f, 0f, -3.9f), 2.6f, rng, collide: true, yaw: 0f);
             NpcAbout(camp, "npc.mae", c + new Vector3(-13f, 0f, -4.75f), 0f);
+            // The sacred totem (2026-11-25): travel to any region you have been to.
+            BuildTotem(camp, GeneratedContent.RegionPlains, c + new Vector3(-5.5f, 0f, 10f), 180f);
             Prop(camp, "pot_large", c + new Vector3(10.3f, 0f, -2.8f), 3f, rng, collide: false, yaw: 0f);
             Prop(camp, "crop_pumpkin", c + new Vector3(9.4f, 0f, 1.3f), 3f, rng, collide: false, yaw: 20f);
         }

@@ -41,6 +41,8 @@ namespace HowToHunt.Economy
         QuestProgress,
         /// <summary>A boss this hunter fought fell: EventContent the boss, EventCoins the reward (trophies in EventCount).</summary>
         BossReward,
+        /// <summary>A new section of the world was reached (EventContent: the RegionDefinition): a totem can take you there.</summary>
+        Discovered,
     }
 
     public enum EconomyRefusal : byte { None, NotAtStation, NothingToSell, TooPoor, AlreadyOwned, Locked, Unknown, TooFar, InventoryFull, BossAwake, NoBossHere }
@@ -74,6 +76,7 @@ namespace HowToHunt.Economy
         public uint[] QuestIds;
         public int[] QuestProgress;
         public uint[] QuestsDone;
+        public uint[] Discovered;
     }
 
     public enum EconomyRequestKind : byte { Sell, Buy, PickUp, Throw, Drop, ReclaimTools, BuyAttachment, FitAttachment, UnfitAttachment, AcceptQuest, TurnInQuest }
@@ -563,6 +566,7 @@ namespace HowToHunt.Economy
                 QuestIds = new List<uint>(p.Quests.Keys).ToArray(),
                 QuestProgress = new List<int>(p.Quests.Values).ToArray(),
                 QuestsDone = new List<uint>(p.QuestsDone).ToArray(),
+                Discovered = new List<uint>(p.Discovered).ToArray(),
                 EventCoins = string.Empty,
             };
             int i = 0;
@@ -616,6 +620,9 @@ namespace HowToHunt.Economy
             if (msg.QuestsDone != null)
                 foreach (uint q in msg.QuestsDone)
                     if (exact || ContentRegistry.Get<QuestDefinition>(new ContentId(q)) != null) p.QuestsDone.Add(q);
+            if (msg.Discovered != null)
+                foreach (uint r in msg.Discovered)
+                    if (exact || ContentRegistry.Get<RegionDefinition>(new ContentId(r)) != null) p.Discovered.Add(r);
 
             int n = msg.SlotKind != null ? msg.SlotKind.Length : 0;
             if (msg.SlotContent == null || msg.SlotFlags == null || msg.SlotCount == null) n = 0;
@@ -638,6 +645,17 @@ namespace HowToHunt.Economy
         public static EconomyProfile LedgerOf(int clientId) => Ledger.TryGetValue(clientId, out EconomyProfile p) ? p : null;
 
         /// <summary>Host cheat: give coins to a client and send them the ledger.</summary>
+        /// <summary>Host: has this hunter been to that section? (A totem only takes you where you have been.)</summary>
+        public static bool HostHasDiscovered(int clientId, uint region) => Ledger.TryGetValue(clientId, out EconomyProfile p) && p.Discovered.Contains(region);
+
+        /// <summary>Host: this hunter reached a section for the first time: remember it (saved with their profile) and tell them.</summary>
+        public static void HostDiscover(int clientId, RegionDefinition region)
+        {
+            if (!IsHost || region == null || !Ledger.TryGetValue(clientId, out EconomyProfile p) || !p.Discovered.Add(region.Id.Value)) return;
+            NetworkConnection conn = Connection(clientId);
+            if (conn != null) Send(conn, p, EconomyEvent.Discovered, content: region.Id.Value);
+        }
+
         public static void HostGrant(int clientId, double coins)
         {
             if (!IsHost || !Ledger.TryGetValue(clientId, out EconomyProfile p)) return;

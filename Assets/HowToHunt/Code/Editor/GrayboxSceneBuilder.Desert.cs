@@ -271,24 +271,14 @@ namespace HowToHunt.Editor
             Sign(signs, "THE RED DESERT\n<size=55%>Dry Creek camp - mind the rocks, snakes wait in the shade</size>", c + new Vector3(0f, 3.8f, 12f), 180f, 1.4f);
             Transform arrival = Marker(zones, "Desert Arrival", c + new Vector3(0f, 0.1f, -6f), 0f);
 
-            // Pads home: back to the forest camp, and to the Plains.
-            Transform toForest = Marker(zones, "Forest Camp Arrival", ForestCamp + new Vector3(-4.5f, 0.1f, 5.5f), 0f);
-            Transform toPlains = Marker(zones, "Plains Camp Arrival (desert)", CampCenter + new Vector3(0f, 0f, -4.5f), 0f);
-            DesertPad(camp, zones, signs, "BACK TO THE PINES", c + new Vector3(-4f, 0f, -11f), toForest);
-            DesertPad(camp, zones, signs, "BACK TO THE PLAINS", c + new Vector3(4f, 0f, -11f), toPlains); // was z +288: 300 m off, in the air
+            // The sacred totem (2026-11-25, replaces the pads back to the forest and the Plains).
+            BuildTotem(camp, GeneratedContent.RegionDesert, c + new Vector3(0f, 0f, -11f), 0f);
 
             // The movement lab's test pad (the lab is the test zone: every gun, every map).
             Vector3 labPad = new Vector3(0f, 0.1f, 5.5f);
             Visual(desert.parent, "Pad Desert (lab)", labPad + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
             Zone(zones, "Teleport Desert (lab)", labPad + new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, arrival);
             Sign(signs, "DESERT\n<size=55%>test pad</size>", labPad + new Vector3(0f, 2.4f, 0f), 180f, 0.9f);
-        }
-
-        private static void DesertPad(Transform camp, Transform zones, Transform signs, string label, Vector3 feet, Transform target)
-        {
-            Visual(camp, $"Pad {label}", feet + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
-            Zone(zones, $"Teleport {label}", feet + new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, target);
-            Sign(signs, $"{label}\n<size=55%>step on the pad</size>", feet + new Vector3(0f, 2.4f, 0f), 0f, 0.8f);
         }
 
         /// <summary>A point in the basin away from the camp, the rim and the animals' places.</summary>

@@ -589,6 +589,7 @@ namespace HowToHunt.Editor
             BuildDesertFauna();
             BuildNpcsAndQuests();
             BuildDesertNpcsAndQuests();
+            BuildRegions();
 
             // How each tool lies when dropped (Phase 3.5: a net tips over onto its side, a gun lies flat; no floating).
             foreach (string guid in AssetDatabase.FindAssets("t:ToolDefinition", new[] { ContentDir + "/Tools" }))

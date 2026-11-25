@@ -71,6 +71,7 @@ namespace HowToHunt.Editor
             // The full armory (owner, 2026-11-24): every gun and attachment, to try them all. No keeper: walk up to it.
             Station(level, signs, CampStationKind.Workshop, "Armory", "ARMORY\n<size=55%>every gun, every attachment</size>",
                 new Vector3(-4.5f, 0.1f, -3.5f), 180f, fullArmory: true);
+            BuildTotem(level, GeneratedContent.RegionLab, new Vector3(-8.5f, 0f, 1f), 90f); // the sacred totem (2026-11-25)
 
             BuildBhopCourse(level, zones, signs, plazaReturn);
             BuildGapsCourse(level, zones, signs, plazaReturn);
@@ -85,6 +86,7 @@ namespace HowToHunt.Editor
             BuildRedDesert(level, zones, signs);
             BuildDesertRoute(level, zones, signs);
             StreamAreas(level);
+            SetTotemAreas(level);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);

@@ -36,6 +36,10 @@ namespace HowToHunt.Editor
             { "Mesa", (Hex("B8603E"), 0.05f) },         // the Red Desert's rock
             { "MesaDark", (Hex("8F4632"), 0.05f) },
             { "Adobe", (Hex("D9A877"), 0.05f) },
+            { "TotemWood", (Hex("6B4A33"), 0.08f) },   // the sacred totems: dark carved wood, painted
+            { "TotemRed", (Hex("B3402E"), 0.12f) },
+            { "TotemTeal", (Hex("2F8A8A"), 0.12f) },
+            { "TotemBone", (Hex("E9DDC0"), 0.1f) },
         };
 
         public static Material Get(string name)

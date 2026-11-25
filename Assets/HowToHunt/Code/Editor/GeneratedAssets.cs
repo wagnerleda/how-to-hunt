@@ -154,6 +154,7 @@ namespace HowToHunt.Editor
         private static void EnsureFxMaterials()
         {
             UnlitFx("M_Tracer", new Color(1f, 0.86f, 0.5f));
+            UnlitFx("M_TotemGlow", new Color(1f, 0.82f, 0.42f)); // a totem's eyes and the light above it
             UnlitFx("M_DebugSeen", new Color(0.3f, 0.55f, 1f));
             UnlitFx("M_DebugChecked", new Color(0.3f, 1f, 0.45f));
             const string path = ResourcesDir + "/FX/M_Dust.mat";

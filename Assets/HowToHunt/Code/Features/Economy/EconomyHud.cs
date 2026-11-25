@@ -114,6 +114,14 @@ namespace HowToHunt.Economy
                     Sfx.Play2D("handleCoins", 0.4f, 0.9f);
                     break;
                 }
+                case EconomyEvent.Discovered:
+                {
+                    RegionDefinition r = ContentRegistry.Get<RegionDefinition>(new Foundation.ContentId(msg.EventContent));
+                    if (r == null) break;
+                    HuntFeedback.Message($"New land: {r.DisplayName}. Its totem can now bring you back here.");
+                    Sfx.Play2D("bong_001", 0.5f, 0.8f);
+                    break;
+                }
                 case EconomyEvent.AttachmentFitted:
                     Sfx.Play2D("click_001", 0.5f, 0.8f);
                     break;
@@ -172,6 +180,8 @@ namespace HowToHunt.Economy
 
             // Characters about camp without a stall (at the fire, chopping wood): talk to them where they are.
             Component wanderer = me != null && !Game.UiHasFocus && item == null && station == null && NearbyWanderer != null ? NearbyWanderer(me.transform.position) : null;
+            // A sacred totem near camp (the Travel feature): consult it to go to another part of the world.
+            if (wanderer == null && me != null && !Game.UiHasFocus && item == null && station == null && NearbyTotem != null) wanderer = NearbyTotem(me.transform.position);
             int bag = EconomyNet.Local.Inventory.PreyCount;
             if (item != _promptItem || station != _promptStation || bag != _promptBag || wanderer != _promptWanderer)
             {
@@ -179,12 +189,13 @@ namespace HowToHunt.Economy
                 _promptStation = station;
                 _promptBag = bag;
                 _promptWanderer = wanderer;
-                string text = item != null ? PromptFor(item) : station != null ? PromptFor(station) : wanderer != null ? WandererPrompt?.Invoke(wanderer) : null;
+                string text = item != null ? PromptFor(item) : station != null ? PromptFor(station) : wanderer != null ? (TotemPrompt != null && TotemPrompt(wanderer) is string t ? t : WandererPrompt?.Invoke(wanderer)) : null;
                 if (text != null) _prompt.SetText(text);
                 _prompt.gameObject.SetActive(text != null);
             }
 
             if (!KeyBindings.WasPressedThisFrame(GameAction.Interact)) return;
+            if (wanderer != null && UseTotem != null && UseTotem(wanderer)) return;
             if (wanderer != null && TalkToWanderer != null && TalkToWanderer(wanderer)) return;
             if (item == null && station != null && TalkAt != null && TalkAt(station)) return; // the stall's NPC takes it from here
             if (item != null) EconomyNet.RequestPickUp(item.Id);
@@ -215,6 +226,10 @@ namespace HowToHunt.Economy
         public static System.Func<Component, bool> TalkToWanderer;
         /// <summary>Set by the NPC feature: the prompt near a stall with someone at it ("[E] Talk to Tomas").</summary>
         public static System.Func<CampStation, string> TalkPrompt;
+        /// <summary>Set by the Travel feature: a totem within reach of a point (null: none), its prompt (null: not a totem) and consulting it.</summary>
+        public static System.Func<Vector3, Component> NearbyTotem;
+        public static System.Func<Component, string> TotemPrompt;
+        public static System.Func<Component, bool> UseTotem;
 
         private string PromptFor(CampStation station)
         {

@@ -379,12 +379,8 @@ namespace HowToHunt.Editor
             Station(camp, signs, CampStationKind.Shop, "Bait Stall", "BAIT STALL\n<size=55%>wake the Old Bear</size>",
                 c + new Vector3(1f, 0f, 7f), 0f, baitStall: true);
 
-            // The quick way back: a pad to the Plains camp.
-            Transform home = Marker(zones, "Plains Camp Arrival", CampCenter + new Vector3(0f, 0f, -4.5f), 0f);
-            Vector3 pad = c + new Vector3(-7f, 0f, 2f);
-            Visual(camp, "Pad Plains", pad + new Vector3(0f, 0.02f, 0f), new Vector3(2.2f, 0.04f, 2.2f), "Pad");
-            Zone(zones, "Teleport Plains", pad + new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f), ZoneKind.Teleport, home);
-            Sign(signs, "BACK TO THE PLAINS\n<size=55%>step on the pad</size>", pad + new Vector3(0f, 2.4f, 0f), 270f, 0.9f);
+            // The sacred totem (2026-11-25, replaces the pad back to the Plains): travel to any region you have been to.
+            BuildTotem(camp, GeneratedContent.RegionForest, c + new Vector3(-7f, 0f, 2f), 90f);
         }
 
         /// <summary>A point inside the forest away from the camp, the landing strip, the glades and the warrens.</summary>
