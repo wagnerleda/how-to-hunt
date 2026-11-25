@@ -31,7 +31,7 @@ Not approved for building. Each needs the owner's yes before work starts.
 
 - **Red canyon map** (owner, 2026-11-17): a later zone of mesas, arches and dry riverbeds whose **canyon walls are surfable** (steep sides you can ride like surf ramps to cross and climb the map). Prey that fit: goats, coyotes. Parked when the pine forest was chosen as map 2.
 - **GPU-driven scatter** (from ADR 0013): grass, flowers and trees through BatchRendererGroup or indirect draws, to bring the plains under the 250 SetPass budget (now ~400). Needs a custom instanced shader.
-- **Graphics settings in the menu**: `r_ssao`, `r_drawdistance`, `r_scatter_distance`, `r_scatter_density`, `fps_max` as sliders in Settings (console only for now).
+- **Graphics settings in the menu**: `r_ssao`, `r_fog_distance`, `r_scatter_distance`, `r_scatter_density`, `fps_max` as sliders in Settings (console only for now).
 - **Bosses for the later biomes** (owner: "we'll see the others later"): one per biome, each summoned by its own bait, with its own attack (the bear has the slam and the pounce; a charge across the arena, a ranged one) as new `PreyStrike` kinds in `PreyBrain.StepAggressive` (ADR 0014).
 - **Bait as a carried item**: set the bait down in the den yourself instead of it working from the stall (the boss comes to the bait).
 - **Blender models** for the squirrel, fox, boar and the Old Bear (now procedural blocks), with a walk cycle.
@@ -39,3 +39,6 @@ Not approved for building. Each needs the owner's yes before work starts.
 - **Desert boss** (after the Old Bear): a giant scorpion or a sand wyrm under the dunes, summoned by its own bait at Dry Creek; a pounce from under the sand as its new `PreyStrike`.
 - **Desert flyers**: vultures circling over a carcass (they'd show where something died).
 - **More camp life**: a fisherman at the Plains river, a gunsmith's apprentice cleaning rifles, characters walking between the stalls.
+- **Totems, next steps** (from the 2026-11-25 totem travel): other hunters see a pillar of golden light where someone leaves and arrives; the spirit light above a totem bobs and pulses; a totem's first discovery plays a short "awakening" (eyes light up one after the other); travelling with the party (everyone near the totem goes together); a map of the regions in the totem menu instead of a list.
+- **Fog per place** (the 2026-11-25 fog is ready for it): thicker fog in the pine forest's hollows and at dawn, a dust storm in the desert that brings it to 80 m (`RenderDistance.CaseFog`), a height fog in the surf ravines.
+- **Horizon behind the fog**: the far horizon mountains now fade into the 350 m fog; a cheap unfogged silhouette layer (or a sky-baked panorama) would keep a skyline without drawing it.

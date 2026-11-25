@@ -28,7 +28,7 @@ New to the project? Read docs/HANDOVER.md first (state of the game, where things
 - Ask before paid services or unclear licenses; log every asset in docs/ASSETS.md. New ideas go to docs/IDEAS.md.
 
 ## Movement lab
-- The lab is the test zone: the full Armory (every gun) next to the spawn plaza and test pads (BHOP, GAPS, SURF, DESERT).
+- The lab is the test zone: the full Armory (every gun) next to the spawn plaza and test pads (BHOP, GAPS, SURF, DESERT). Players travel between camps by the sacred totems (`Features/Travel`); new maps get a `RegionDefinition` and a `BuildTotem`.
 - Maps: Plains (camp at (-30, 0, 135)), Pine Forest (y -50, camp (392, -50, 203)), Red Desert (y -178, camp (410, -178, -231)), reached by the hard surf route from the forest's south rim (`GrayboxSceneBuilder.DesertRoute.cs`; `scripted_desert_surf` proves it can be done: regenerate it with the demos after changing the ramps); each biome is a `GrayboxSceneBuilder.<Biome>.cs` + `GeneratedContent.<Biome>.cs`. Boundaries are visible rock ridges (`RockWall`), never invisible walls.
 - Rebuild the map: `HowToHunt.Editor.GrayboxSceneBuilder.Build()` (also exports collision to Tests/Data/Worlds).
 - Regenerate scripted demos after an intended physics/map change: `HowToHunt.Editor.MovementLabTools.GenerateScriptedDemos()`. ReplayTests replays every demo in Tests/Data/Demos (including ones recorded in the editor with `record`/`stop`).

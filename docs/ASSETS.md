@@ -34,6 +34,9 @@ Every asset and third-party package is listed here with its source and license. 
 | Pine trees, forest terrain | Procedural (`GrayboxSceneBuilder.Forest.cs`) | Ours | Low-poly conifers in vertex colours |
 | Pine Deer | Modelled in Blender for this game (`Art/Source/Deer.blend`) | Ours | `Art/Models/Deer/Deer.fbx`, 332 faces |
 | Red squirrel, red fox, wild boar, the Old Bear | Procedural (`CreatureModels.cs`): flat-shaded tapered blocks in vertex colours | Ours | `Prefabs/Prey/*.prefab`, M_Terrain; placeholders a Blender model can replace via `Visual` |
+| Sacred totems (bear, owl, thunderbird pole, glowing eyes, spirit light) | Procedural (`GrayboxSceneBuilder.Totems.cs`), materials `M_Totem*` and `FX/M_TotemGlow` | Ours | One by each camp and in the lab; travel between discovered regions (2026-11-25) |
+| Mask shell and leather strap | Procedural (`AvatarBuilder.cs`: `MaskPlate`, `MaskStrap`, `M_Strap`) | Ours | Players and NPCs (2026-11-25) |
+| Travel transition glow | Generated at runtime (`TravelTransition.cs`) | Ours | The totem journey's golden ring |
 | Surf ramp bands (`T_SurfRamp.png`, `M_SurfRamp`) | Generated (`Palette.cs`) | Ours | 64 px; orange, cream bands, dark ridge and base lines |
 | Jackrabbit, desert lizard, red scorpion, rattlesnake, coyote; saguaros, barrel cactus, dead bush, skull | Procedural (`CreatureModels.cs`), like the forest animals | Ours | `Prefabs/Prey/*.prefab`, `Generated/Meshes/Prop_*.asset`, M_Terrain (2026-11-24) |
 | Desert terrain, mesas, Dry Creek camp | Procedural (`GrayboxSceneBuilder.Desert.cs`) | Ours | vertex colours, palette `Mesa`/`MesaDark`/`Adobe` |

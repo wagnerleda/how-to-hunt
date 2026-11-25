@@ -131,6 +131,25 @@ The hunt itself gets more physical and the prey smarter. Grind goes up.
 | 7 | Plains freezes: measured in a development build (ADR 0013 follow-up): smooth while standing (4.4 ms worst), 30-40 ms stalls on camera moves, the render thread waiting on the main thread for a cause the new hitch probe in `perf_bench` doesn't see yet. **Not fixed**: next step is a Profiler capture (ADR 0013) | "still freezes in the Plains" |
 | 8 | docs/HANDOVER.md, README, ARCHITECTURE brought up to date for a new developer | "update the docs so someone can take over" |
 
+## Phase 6.8: fixes, hurt feedback, audio, masks (done 2026-11-25, installer 0.1.0.102, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | Desert props on the ground, cacti prick and knock you back, venom cue stronger, held guns drawn after AO (no grain) | "floating models", "stingy cactuses", "verify venom", "TV snow on held models" |
+| 2 | Checkpoint respawns land on the ground (two surf checkpoints started the hull inside the terrain) | "stuck after failing a surf course until I crouch" |
+| 3 | Hurt tilt and cry, a rare cry 1 in 10,000 | "screen tilt and a sound when damaged, like Minecraft" |
+| 4 | Every sound in `Assets/Audio` (Music, SFX by kind) through a generated sound library | "tidy all the sounds in one place" |
+| 5 | Masks at 48 x 56 with a colour cube, image import, a shell over the face with a strap, NPC trade emblems without eyes | "bigger resolution, patterns on the 3D model, a strap, NPC designs, import an image" |
+| 6 | Gun sway while aiming | "the gun stays static when aiming" |
+
+## Phase 6.9: totems, fog, whole zones, the bear's bait, boars (done 2026-11-25, awaiting the owner's play test)
+| # | Change | Owner request |
+|---|---|---|
+| 1 | A sacred totem by every camp (lab, Plains, Pine Forest, Red Desert) replaces the camp pads: consult it for a menu of the regions you have discovered and travel there with a transition (golden glow, stretch and lean, white, arrival). Regions are content; discovery is saved with your profile | "a sacred totem near the camps... a menu of the sections you have discovered... teleport with a cool transition" |
+| 2 | Fog: fully thick at `r_fog_distance` 350 m, starting at a third of it; nothing is drawn past it (replaces `r_drawdistance`). Maps can bring it closer (`StreamedArea` fog limit) and gameplay too (`RenderDistance.CaseFog`) | "fog about 350 m away, adjustable per level" |
+| 3 | On a surf route you are in that route: the whole course and both maps it joins are drawn (the pit's trees appeared only halfway down) | "when you're in the zone you see everything in it" |
+| 4 | The Old Bear goes back to sleep when nobody is within 90 m for 45 s, so its bait can be bought again (a bear woken and left stayed "Awake" for good) | "I couldn't buy baits for the bear" |
+| 5 | Boars wind up in 0.35 s (was 0.45) and strike every 0.8 s (was 1.6) | "boars take too much time to load their attack" |
+
 ## Phase 7: traps and bigger prey
 - Traps: place them to hold difficult prey for an easier kill or catch.
 - Strong prey (wolves, bears...) can break out of traps.

@@ -11,7 +11,7 @@ prey alive with a net or kill it with a knife or guns, carry it (limited slots),
 attachments, do quests for camp characters, and reach new biomes through movement courses. Three maps so far: the
 **Plains** (start, camp, lab gate), the **Pine Forest** (reached by surfing three ramps; the Old Bear boss) and the
 **Red Desert** (reached by a much harder five-ramp surf route once the bear has fallen; snakes and scorpions with venom).
-The **movement lab** next to the Plains is the test zone (courses, the full Armory, test pads to every map).
+The **movement lab** next to the Plains is the test zone (courses, the full Armory, test pads to every map). A sacred **totem** by every camp takes players to any region they have discovered.
 
 ## Where things are
 | What | Where |
@@ -59,7 +59,21 @@ body that returns a string). That is how most verification here is done (telepor
   maps show only their bare terrain (plus the lab's floor and walls), the surf routes between the current map and those
   two are drawn in full, everything else is not drawn. Visual only (`forceRenderingOff`, scatter `Hidden`, lights):
   collision, prey and zones stay for players elsewhere. `r_area_streaming 0` draws everything. New maps or routes: add
-  them to `Chain` in order.
+  them to `Chain` in order. Standing inside a surf route's bounds makes the route the current zone: the route and both
+  maps it joins are drawn in full (2026-11-25).
+- **Fog and draw distance** (`Core/World/RenderDistance.cs`): fog fully thick at `r_fog_distance` (350 m), starting at
+  `r_fog_start` of it; the camera's far plane sits just past it, so nothing past the fog is drawn. A map can bring it
+  closer (`StreamedArea` `_fogDistance`, via `Configure(..., fogDistance)` in `StreamAreas`) and gameplay too
+  (`RenderDistance.CaseFog`); the nearest wins and changes glide. `r_drawdistance` is gone.
+- **Totem travel** (`Features/Travel`, 2026-11-25): `RegionDefinition` content (`Core/World`, `GeneratedContent.Regions`),
+  a `Totem` per region (`GrayboxSceneBuilder.Totems.cs`: model, arrival point, discovery area = its map's bounds).
+  Discovery is host-side (`TravelNet.HostTick` -> `EconomyNet.HostDiscover`) and saved in `EconomyProfile.Discovered`.
+  Consulting: `EconomyHud` totem hooks -> `TotemMenu` -> `TravelTransition` (asks the host once the screen is white) ->
+  host checks and calls `PlayerMotor.ServerTravel` (sets the checkpoint too). `totem_discover_all` (cheat) for tests.
+- **Bosses go back to sleep** (`PreyWorld.HostSleepIfAlone`): no hunter on their feet within `sv_boss_sleep_range` for
+  `sv_boss_sleep_after` and a woken boss returns to its den (no reward), so its bait can be bought again.
+- **Statics and Play mode**: Play mode starts without a domain reload, so static timers carry over between sessions;
+  reset them in a `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` (see `StreamedArea.ResetStatics`).
 - **Thorns** (`Core/World/ThornField.cs`): cactus boxes baked by the desert builder; the host pricks players who touch
   them (`PlayerHealth.HostThorns`) and knocks them back (`PlayerMotor.HostKnock`: a hop plus `MoveState.KnockTime`, which
   turns air control off for a moment so the knock isn't steered straight back in).
@@ -98,7 +112,7 @@ body that returns a string). That is how most verification here is done (telepor
 ## Maps and coordinates
 | Map | Where | Way in |
 |---|---|---|
-| Movement lab | around (0, 0, 0) | spawn plaza pads; north gate to the Plains |
+| Movement lab | around (0, 0, 0) | spawn plaza pads; north gate to the Plains; any totem |
 | Plains | x -100..100, z 115..315, camp (-30, 0, 135) | start |
 | Pine Forest | x 365..485, z 167..287, y -50, camp (392, -50, 203) | east trail (quest "Beyond the Trees") then three surf ramps |
 | Red Desert | x 380..520, z -341..-201, y -178, camp (410, -178, -231) | forest south trail (Old Bear dead) then five hard surf ramps; lab test pad |
