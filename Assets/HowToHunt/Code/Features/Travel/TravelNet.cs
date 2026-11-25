@@ -41,6 +41,9 @@ namespace HowToHunt.Travel
         private static NetworkManager _manager;
         private static float _nextDiscover;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => _nextDiscover = 0f; // statics survive Play mode without a domain reload
+
         /// <summary>Client: the host answered a travel request.</summary>
         public static event Action<TravelResultBroadcast> Result;
 

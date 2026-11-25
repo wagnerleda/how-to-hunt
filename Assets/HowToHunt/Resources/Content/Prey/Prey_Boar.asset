@@ -52,8 +52,8 @@ MonoBehaviour:
   AggroRange: 20
   LeashRadius: 45
   AttackRange: 1.6
-  AttackWindup: 0.45
-  AttackCooldown: 1.6
+  AttackWindup: 0.35
+  AttackCooldown: 0.8
   AttackDamage: 15
   AttackPush: 8
   PoisonDamagePerSecond: 0

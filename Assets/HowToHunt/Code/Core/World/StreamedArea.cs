@@ -40,6 +40,14 @@ namespace HowToHunt.Core
         private static float _nextCheck;
         private static int _checkedFrame = -1;
 
+        /// <summary>Statics survive entering Play mode without a domain reload: start each session afresh.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _nextCheck = 0f;
+            _checkedFrame = -1;
+        }
+
         private Renderer[] _renderers;
         private bool[] _isBare;
         private Light[] _lights;
