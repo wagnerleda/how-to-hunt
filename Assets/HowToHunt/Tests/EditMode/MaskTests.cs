@@ -12,8 +12,8 @@ namespace HowToHunt.Tests
             byte[] cells = MaskData.Default();
             cells[5] = 13;
             cells[MaskData.Cells - 1] = 15;
-            byte[] packed = MaskData.Pack(cells);
             cells[700] = 200; // a colour from the cube (imported pictures)
+            byte[] packed = MaskData.Pack(cells);
             Assert.LessOrEqual(MaskData.MaxPackedBytes, Net.PartyRoster.MaxMaskBytes, "even a photo fits the join message");
             Assert.LessOrEqual(packed.Length, Net.PartyRoster.MaxMaskBytes, "fits the join message");
             var back = new byte[MaskData.Cells];

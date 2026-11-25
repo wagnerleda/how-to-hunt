@@ -105,6 +105,7 @@ namespace HowToHunt.Sim.Movement
             float fallSpeed = 0f;
             if (s.OnGround)
             {
+                s.KnockTime = 0f; // landed: back in control
                 s.Velocity.Y = 0f;
                 float friction = s.GroundTime < cfg.LandGraceSeconds ? cfg.LandGraceFriction : 1f;
                 s.GroundTime += dt;
@@ -115,7 +116,8 @@ namespace HowToHunt.Sim.Movement
             else
             {
                 s.GroundTime = 0f;
-                AirAccelerate(ref s.Velocity, wishDir, wishSpeed, cfg, dt);
+                if (s.KnockTime > 0f) s.KnockTime = MathF.Max(0f, s.KnockTime - dt); // knocked back: no steering
+                else AirAccelerate(ref s.Velocity, wishDir, wishSpeed, cfg, dt);
                 s.Velocity.Y -= cfg.Gravity * dt * 0.5f;
                 fallSpeed = -s.Velocity.Y; // before the floor clips it away
                 FlyMove(ref s.Position, ref s.Velocity, ext, world, dt, airborne: true);

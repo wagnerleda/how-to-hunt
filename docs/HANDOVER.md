@@ -53,12 +53,26 @@ body that returns a string). That is how most verification here is done (telepor
   (`SimTerrain`). Only `SimBrush` collides; renderers are decoration. Boundaries are visible rock ridges
   (`RockWall`), never invisible walls (owner rule).
 - **Zones** (`Core/World/Zone.cs`): axis-aligned triggers: Teleport, Checkpoint, Hazard (back to the last checkpoint).
-- **Area streaming** (`Core/World/StreamedArea.cs`): each map and surf route root (Plains, Pine Forest, Red Desert, both
-  routes) stops drawing everything under it, horizon included, past `r_area_distance` (160 m) from its bounds. Visual
-  only (`forceRenderingOff`, scatter `Hidden`, lights): collision, prey and zones stay for players elsewhere. New maps:
-  add their root to `GrayboxSceneBuilder.StreamAreas`.
+- **Area streaming** (`Core/World/StreamedArea.cs`, owner's rule 2026-11-25): the world is a chain, `Movement Lab`,
+  Plains, Surf Route East, Pine Forest, Surf Route South (hard), Red Desert (`GrayboxSceneBuilder.Chain`; the lab's loose
+  pieces are gathered under a `Movement Lab` root). The map nearest the camera is drawn in full, the previous and next
+  maps show only their bare terrain (plus the lab's floor and walls), the surf routes between the current map and those
+  two are drawn in full, everything else is not drawn. Visual only (`forceRenderingOff`, scatter `Hidden`, lights):
+  collision, prey and zones stay for players elsewhere. `r_area_streaming 0` draws everything. New maps or routes: add
+  them to `Chain` in order.
 - **Thorns** (`Core/World/ThornField.cs`): cactus boxes baked by the desert builder; the host pricks players who touch
-  them (`PlayerHealth.HostThorns`).
+  them (`PlayerHealth.HostThorns`) and knocks them back (`PlayerMotor.HostKnock`: a hop plus `MoveState.KnockTime`, which
+  turns air control off for a moment so the knock isn't steered straight back in).
+- **Checkpoint respawns** land on the real ground under the checkpoint (`PlayerMotor.SpawnCenter`): a checkpoint box a
+  few cm under bumpy terrain used to start the hull inside the ground (stuck until crouching).
+- **Audio** (`Assets/Audio`, see docs/ASSETS.md "Audio layout"): `Sfx` plays clips by file name through the generated
+  `Resources/SoundLibrary`. Hurt feedback: `PlayerHealth.LocalHurt` -> `PlayerCamera` tilt + `HurtSounds`.
+- **Masks** (`Features/Avatar/MaskData.cs`): 48 x 56 colour indices (1-15 palette, 16-255 a colour cube for imported
+  pictures), run-length packed; version 1 masks load doubled. Shell mesh and strap from `AvatarBuilder` (`MaskPlate`,
+  `MaskStrap`, shape in `AvatarShape`). NPC masks: `Npcs/NpcMasks.cs` (trade emblems, no eyes). Import: `ImageFileDialog`
+  (Windows open dialog) + `MaskData.PasteImage`.
+- **Aim sway**: `ViewmodelController.UpdateAdsSway` (`cl_ads_sway`). Shots leave along the barrel, so it moves the aim too:
+  about 0.2° drift, up to ~1° while turning fast.
 - **Held models** are on the `Viewmodel` layer, drawn by a RenderObjects pass right after SSAO
   (`Editor/ViewmodelRenderSetup.cs`, run by `GeneratedAssets.RebuildAll`): the half-resolution AO's noise showed as
   grain on the gun in hand. Anything new parented to the viewmodel needs that layer (`ViewmodelController`).

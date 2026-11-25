@@ -251,7 +251,9 @@ namespace HowToHunt.Avatar
 
             var view = new Rect(panel.xMax - PreviewW - 24f, canvas.y, PreviewW, PreviewH);
             if (_preview != null) GUI.DrawTexture(view, _preview, ScaleMode.ScaleToFit, false);
-            GUI.Label(new Rect(view.x, view.yMax + 6f, PreviewW, 40f), "Left click paints, right click cuts away. Cut cells are see-through.", _small);
+            GUI.Label(new Rect(view.x, view.yMax + 6f, PreviewW, 40f), "Left click paints, right click cuts away, middle click picks a colour. Cut cells are see-through.", _small);
+            if (GUI.Button(new Rect(view.x, view.yMax + 48f, PreviewW, 28f), "Import image...", _button)) ImportImage();
+            if (!string.IsNullOrEmpty(_importNote)) GUI.Label(new Rect(view.x, view.yMax + 80f, PreviewW, 20f), _importNote, _small);
 
             if (GUI.Button(new Rect(panel.xMax - 24f - 150f, panel.yMax - 58f, 150f, 40f), "Save", _button)) Close(save: true);
             if (GUI.Button(new Rect(panel.xMax - 24f - 150f - 12f - 120f, panel.yMax - 58f, 120f, 40f), "Cancel", _button)) Close(save: false);
@@ -344,9 +346,6 @@ namespace HowToHunt.Avatar
                 System.Array.Copy(_undo, _cells, MaskData.Cells);
                 Repaint();
             }
-            y += 34f;
-            if (GUI.Button(new Rect(area.x, y, 176f, 28f), "Import image...", _button)) ImportImage();
-            if (!string.IsNullOrEmpty(_importNote)) GUI.Label(new Rect(area.x, y + 30f, 140f, 40f), _importNote, _small);
         }
 
         private void EnsureStyles()

@@ -101,7 +101,7 @@ namespace HowToHunt.Npcs
         /// <summary>An upright cartridge: pointed bullet, a band, the case and its rim.</summary>
         private static void Bullet(byte[] cells, byte ink)
         {
-            const float half = 3.5f, tip = -13f, neck = -4f, rim = 12f;
+            const float half = 4.5f, tip = -14f, neck = -4f, rim = 12f;
             Fill(cells, ink, (x, y) =>
             {
                 if (y < tip || y > rim + 1.5f) return false;
@@ -114,10 +114,10 @@ namespace HowToHunt.Npcs
                 return Mathf.Abs(x) < half;
             });
             byte band = ink == Dark ? (byte)5 : (byte)2; // the crimp line, a shade off
-            Fill(cells, band, (x, y) => Mathf.Abs(x) < 3.5f && y >= -4f && y < -2.5f);
+            Fill(cells, band, (x, y) => Mathf.Abs(x) < 4.5f && y >= -4f && y < -2.5f);
         }
 
-        /// <summary>A tied sack: round belly, a pinched neck, two ears of cloth.</summary>
+        /// <summary>A tied sack: round belly, a pinched neck, the cloth fanning out above the tie.</summary>
         private static void Bag(byte[] cells, byte ink)
         {
             Fill(cells, ink, (x, y) =>
@@ -125,8 +125,8 @@ namespace HowToHunt.Npcs
                 float by = y - 3f;
                 bool belly = x * x / (9f * 9f) + by * by / (8.5f * 8.5f) < 1f;
                 bool neck = y > -9f && y < -4f && Mathf.Abs(x) < 2.5f;
-                bool ears = y > -13f && y <= -9f && Mathf.Abs(Mathf.Abs(x) - 2.5f) < 1.6f + (y + 9f) * 0.25f;
-                return belly || neck || ears;
+                bool ruffle = y > -13f && y <= -9f && Mathf.Abs(x) < 2.5f + (-9f - y) * 0.9f; // the cloth fanning out above the tie
+                return belly || neck || ruffle;
             });
             byte tie = ink == Dark ? (byte)15 : (byte)6;
             Fill(cells, tie, (x, y) => y > -8f && y < -6f && Mathf.Abs(x) < 3.5f);

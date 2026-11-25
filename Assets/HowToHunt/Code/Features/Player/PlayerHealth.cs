@@ -34,6 +34,7 @@ namespace HowToHunt.Player
         public static readonly FloatCvar ThornReach = new FloatCvar("sv_thorn_reach", 0.12f, "How close counts as touching a cactus, metres past its trunk.", Sv, 0f, 1f);
         public static readonly FloatCvar ThornPush = new FloatCvar("sv_thorn_push", 4.5f, "Speed a prick shoves you back from the cactus, m/s (your speed into it is cancelled first).", Sv, 0f, 20f);
         public static readonly FloatCvar ThornLift = new FloatCvar("sv_thorn_lift", 4f, "Upward hop of a cactus prick, m/s: off the ground, so friction doesn't eat the shove.", Sv, 0f, 20f);
+        public static readonly FloatCvar ThornKnock = new FloatCvar("sv_thorn_knock", 0.35f, "Seconds a cactus prick takes away your air control, so the shove isn't steered straight back in.", Sv, 0f, 2f);
 
         public static void Register(ConsoleSystem console)
         {
@@ -49,6 +50,7 @@ namespace HowToHunt.Player
             console.Register(ThornReach);
             console.Register(ThornPush);
             console.Register(ThornLift);
+            console.Register(ThornKnock);
         }
 
         private readonly SyncVar<float> _health = new SyncVar<float>(MaxHealth);
@@ -248,7 +250,7 @@ namespace HowToHunt.Player
             Vector3 away = center - thorn;
             away.y = 0f;
             away = away.sqrMagnitude > 1e-4f ? away.normalized : transform.forward;
-            Motor.HostKnock(away, ThornPush.Value, ThornLift.Value);
+            Motor.HostKnock(away, ThornPush.Value, ThornLift.Value, ThornKnock.Value);
         }
 
         private void HostPoisonTick()

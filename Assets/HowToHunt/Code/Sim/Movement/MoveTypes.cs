@@ -79,6 +79,8 @@ namespace HowToHunt.Sim.Movement
         public float GroundTime;
         /// <summary>Seconds before another gun shove is accepted (so a command can't shove every tick).</summary>
         public float PushCooldown;
+        /// <summary>Seconds left knocked back (a cactus prick): no air control, so the shove carries you off.</summary>
+        public float KnockTime;
 
         // Derived/feedback fields (not needed to resume simulation).
         /// <summary>Normal of the surface under or against the player (for surf/feel feedback).</summary>

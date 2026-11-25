@@ -65,6 +65,7 @@ namespace HowToHunt.Player
             public float Fatigue;
             public float GroundTime;
             public float PushCooldown;
+            public float KnockTime;
             public Vector3 CheckpointFeet;
             public float CheckpointYaw;
             private uint _tick;
@@ -83,6 +84,7 @@ namespace HowToHunt.Player
                 Fatigue = s.Fatigue;
                 GroundTime = s.GroundTime;
                 PushCooldown = s.PushCooldown;
+                KnockTime = s.KnockTime;
                 _tick = 0;
             }
 
@@ -243,6 +245,7 @@ namespace HowToHunt.Player
             _state.Fatigue = rd.Fatigue;
             _state.GroundTime = rd.GroundTime;
             _state.PushCooldown = rd.PushCooldown;
+            _state.KnockTime = rd.KnockTime;
             _checkpointFeet = rd.CheckpointFeet;
             _checkpointYaw = rd.CheckpointYaw;
             transform.position = rd.Position;
@@ -269,7 +272,7 @@ namespace HowToHunt.Player
         /// Host: shoved away along a horizontal direction (a cactus prick). Speed toward the thing is cancelled first,
         /// so running into it still bounces you off; the lift takes you off the ground so friction doesn't swallow it.
         /// </summary>
-        public void HostKnock(Vector3 away, float speed, float lift)
+        public void HostKnock(Vector3 away, float speed, float lift, float seconds)
         {
             if (!IsServerStarted) return;
             System.Numerics.Vector3 dir = away.ToSim();
@@ -279,6 +282,7 @@ namespace HowToHunt.Player
             v.X += dir.X * speed;
             v.Z += dir.Z * speed;
             if (lift > 0f) { v.Y = System.Math.Max(v.Y, lift); _state.OnGround = false; }
+            _state.KnockTime = System.Math.Max(_state.KnockTime, seconds);
             _state.Velocity = v;
         }
 
