@@ -95,7 +95,7 @@ New forest prey, each with an Ash quest after "Ghost of the Pines":
 |---|---|---|---|---|---|
 | Red Squirrel | 6 | either (Sturdy Net holds it) | 9, stacks 4 | darts off, tires after 3 s | Quick Paws: catch 3 alive (150) |
 | Red Fox | 25 | either (no net strong enough yet) | 28 | wary (sees 40 m), outruns a sprint for 5 s | The Sly One: take down 2 (220) |
-| Wild Boar | 90 | kill only | 60 | flees, but **charges whoever hurts it** for 9 s: 15 damage a hit, after a short rear-up | Tusks and Temper: kill 3 (300) |
+| Wild Boar | 90 | kill only | 60 | flees, but **charges whoever hurts it** for 9 s: 15 damage a hit, after a short rear-up (0.35 s), every 0.8 s while it stays close (2026-11-25: was 0.45 s and 1.6 s) | Tusks and Temper: kill 3 (300) |
 | **The Old Bear of the Pines** (boss) | 3,000 | kill only | 250 carcass | sleeps until a Honeycomb Bait is bought at the Bait Stall in Ash's camp (150 coins); charges any hunter within 30 m: 40-damage swipes after a 0.65 s roar, a ground slam every third strike (50 damage all around, deeper roar: get out or jump), a pounce at hunters 4.5-13 m away (crouches first: sidestep); enraged below 40 % (quicker, faster); gives up 55 m from its den and heals if everyone runs | The Old Bear: bring it down (800) |
 
 **Bosses** (one per biome from the forest on; the others come later): a boss bar shows its health to everyone

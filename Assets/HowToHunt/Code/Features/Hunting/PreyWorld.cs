@@ -17,6 +17,8 @@ namespace HowToHunt.Hunting
     {
         public ushort Id;
         public bool Alive;
+        /// <summary>Gone because it went back to sleep in its den (a boss left alone), not taken down.</summary>
+        public bool Slept;
         public uint Seed;
         public Vector3 Position;
     }
@@ -51,6 +53,10 @@ namespace HowToHunt.Hunting
         /// <summary>Host: client ids of the hunters who hurt it since it spawned (a boss rewards them all).</summary>
         public readonly List<int> Damagers = new List<int>(8);
         public float LastHurtAt = -1000f;
+        /// <summary>Host: when a woken boss was last left with no hunter near it (-1: someone is near).</summary>
+        public float AloneSince = -1f;
+        /// <summary>Not alive because it went back to sleep (a boss left alone), not because it was taken down.</summary>
+        public bool Slept;
         public readonly PoseHistory History = new PoseHistory();
 
         // Client interpolation buffer (ground prey).
@@ -244,6 +250,8 @@ namespace HowToHunt.Hunting
         private static void HostSpawn(PreyInstance p)
         {
             p.Alive = true;
+            p.Slept = false;
+            p.AloneSince = -1f;
             p.Health = p.Def.MaxHealth;
             p.Damagers.Clear();
             p.LastHurtAt = -1000f;
@@ -273,9 +281,30 @@ namespace HowToHunt.Hunting
         /// <summary>Host: prey taken down (captured or killed).</summary>
         public static void HostRemove(PreyInstance p)
         {
+            p.Slept = false;
             p.Alive = false;
             p.RespawnAt = p.Spawner.Summoned ? 0f : Time.time + p.Spawner.RespawnSeconds; // a summoned boss waits for the next bait
             Broadcast(p);
+        }
+
+        /// <summary>
+        /// Host: a woken boss with no hunter on their feet within sv_boss_sleep_range for sv_boss_sleep_after seconds goes
+        /// back to sleep in its den (owner, 2026-11-25: a bear woken and then left, after a death or a trip back to camp,
+        /// stayed out for good and its bait could never be bought again). No reward; the bait can be bought again.
+        /// </summary>
+        private static bool HostSleepIfAlone(PreyInstance p, bool hasThreat, Vec3 threat, float time)
+        {
+            float range = HuntingCvars.BossSleepRange.Value;
+            bool near = hasThreat && Vec3.DistanceSquared(threat, p.State.Position) <= range * range;
+            if (near) { p.AloneSince = -1f; return false; }
+            if (p.AloneSince < 0f) { p.AloneSince = time; return false; }
+            if (time - p.AloneSince < HuntingCvars.BossSleepAfter.Value) return false;
+            p.Alive = false;
+            p.Slept = true;
+            p.Damagers.Clear();
+            p.RespawnAt = 0f;
+            Broadcast(p);
+            return true;
         }
 
         /// <summary>Host: a gunshot at <paramref name="at"/>. Prey that fear guns and hear it bolt away.</summary>
@@ -429,6 +458,7 @@ namespace HowToHunt.Hunting
                     }
                 }
                 else PreyBrain.Step(ref p.State, in b, threat, hasThreat, p.SeesThreat, SimWorld.Current, time, dt);
+                if (p.Spawner.Summoned && HostSleepIfAlone(p, hasThreat, threat, time)) continue;
                 p.History.Record(tick, new EntityPose { Position = p.State.Position, Yaw = p.State.Yaw });
                 p.SetHostRender();
 
@@ -464,6 +494,7 @@ namespace HowToHunt.Hunting
         {
             Id = p.Id,
             Alive = p.Alive,
+            Slept = p.Slept,
             Seed = p.Seed,
             Position = p.IsFlyer ? Vector3.zero : p.State.Position.ToUnity(),
         };
@@ -484,6 +515,7 @@ namespace HowToHunt.Hunting
             if (p == null) return;
             p.Alive = msg.Alive;
             p.Seed = msg.Seed;
+            p.Slept = msg.Slept;
             p.Health = p.Def.MaxHealth;
             p.ClearSnapshots();
             if (msg.Alive && !p.IsFlyer)

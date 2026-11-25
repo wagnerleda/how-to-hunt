@@ -123,8 +123,8 @@ namespace HowToHunt.Editor
                 p.ProvokeSeconds = 9f;
                 p.LeashRadius = 45f;
                 p.AttackRange = 1.6f;
-                p.AttackWindup = 0.45f;
-                p.AttackCooldown = 1.6f;
+                p.AttackWindup = 0.35f;  // owner, 2026-11-25: it took too long to load its attack (was 0.45)
+                p.AttackCooldown = 0.8f; // and too long between strikes (was 1.6)
                 p.AttackDamage = 15f;
                 p.AttackPush = 8f;
                 p.ChargeSpeed = 7.4f;   // a charging boar outpaces a run (6.35) but not a sprint (7.9) or a bunny hop

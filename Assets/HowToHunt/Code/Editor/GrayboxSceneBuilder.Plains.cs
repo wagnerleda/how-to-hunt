@@ -931,7 +931,7 @@ namespace HowToHunt.Editor
                 var pos = center + new Vector3(Mathf.Sin(angle) * dist, -4f, Mathf.Cos(angle) * dist);
                 Mesh m = Mountain(rng, Range(rng, 55f, 110f), Range(rng, 70f, 120f), i);
                 var go = new GameObject($"Mountain {i}", typeof(MeshFilter), typeof(MeshRenderer));
-                go.layer = BackdropLayer; // drawn past r_drawdistance (the horizon)
+                go.layer = BackdropLayer; // the horizon layer (drawn out to the fog)
                 go.transform.SetParent(sky, false);
                 go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, Range(rng, 0f, 360f), 0f));
                 go.GetComponent<MeshFilter>().sharedMesh = m;

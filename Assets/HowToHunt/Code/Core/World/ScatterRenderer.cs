@@ -10,7 +10,7 @@ namespace HowToHunt.Core
     /// GameObject each. Instances are baked by editor code into chunks; each frame only chunks inside the view
     /// frustum and draw distance are submitted. No allocations per frame. No collision (decoration only).
     /// Ground clutter thins out with distance (a layer's FarDensity): full density up close, fewer and fewer instances
-    /// towards the edge of its reach, where fog hides the difference. Nothing is drawn past r_drawdistance.
+    /// towards the edge of its reach, where fog hides the difference. Nothing is drawn past the fog (r_fog_distance).
     /// </summary>
     [ExecuteAlways]
     public sealed class ScatterRenderer : MonoBehaviour
@@ -64,7 +64,7 @@ namespace HowToHunt.Core
             if (density <= 0f) return;
             GeometryUtility.CalculateFrustumPlanes(cam, _planes);
             Vector3 eye = cam.transform.position;
-            float worldReach = Application.isPlaying ? RenderDistance.DrawDistance.Value : float.MaxValue;
+            float worldReach = Application.isPlaying ? RenderDistance.Distance : float.MaxValue;
             float fade = Application.isPlaying ? FadeStart.Value : 1f;
 
             for (int l = 0; l < _layers.Count; l++)

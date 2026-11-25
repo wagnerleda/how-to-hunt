@@ -120,7 +120,7 @@ namespace HowToHunt.DevTools
             _tris = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Triangles Count", 1);
             _shadows = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Shadow Casters Count", 1);
             StartProbes();
-            Report($"[perf] bench start: {(only >= 0 ? 1 : Tour.Length)} stops x {passes} passes, {StopSeconds.Value:0.#} s each, {Screen.width}x{Screen.height}, r_drawdistance {RenderDistance.DrawDistance.Value:0}, quality '{QualitySettings.names[QualitySettings.GetQualityLevel()]}', {SystemInfo.graphicsDeviceName}");
+            Report($"[perf] bench start: {(only >= 0 ? 1 : Tour.Length)} stops x {passes} passes, {StopSeconds.Value:0.#} s each, {Screen.width}x{Screen.height}, fog {RenderDistance.Distance:0} m, quality '{QualitySettings.names[QualitySettings.GetQualityLevel()]}', {SystemInfo.graphicsDeviceName}");
             StartStop(FirstStop);
         }
 

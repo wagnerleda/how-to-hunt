@@ -11,6 +11,8 @@ namespace HowToHunt.Hunting
         public static readonly FloatCvar StrikeHeightSlack = new FloatCvar("sv_strike_height", 2.2f, "A strike hits hunters up to this far above or below the animal's feet (m): jumping over a swipe works.", Sv, 0.5f, 6f);
         public static readonly FloatCvar StrikeLift = new FloatCvar("sv_strike_lift", 0.45f, "Upward share of a strike's shove (0 = straight back).", Sv, 0f, 2f);
         public static readonly FloatCvar RegenDelay = new FloatCvar("sv_boss_regen_delay", 8f, "Seconds without being hurt before a boss starts healing (it resets if everyone runs).", Sv, 0f, 120f);
+        public static readonly FloatCvar BossSleepRange = new FloatCvar("sv_boss_sleep_range", 90f, "A woken boss with no hunter on their feet this close (m)...", Sv, 10f, 1000f);
+        public static readonly FloatCvar BossSleepAfter = new FloatCvar("sv_boss_sleep_after", 45f, "...for this many seconds goes back to sleep in its den (its bait can be bought again).", Sv, 5f, 3600f);
         public static readonly BoolCvar AllTools = new BoolCvar("sv_alltools", false, "Everyone owns every tool (tests, sv_cheats 1).", Sv);
         public static readonly FloatCvar DamageScale = new FloatCvar("sv_damage_scale", 1f, "Multiplies all tool damage (tests, sv_cheats 1).", Sv, 0f, 100f);
         public static readonly FloatCvar CrouchSight = new FloatCvar("sv_crouch_sight", 0.5f, "Prey spot crouching players at this fraction of their sight range.", Sv, 0f, 1f);
@@ -41,6 +43,8 @@ namespace HowToHunt.Hunting
             c.Register(StrikeHeightSlack);
             c.Register(StrikeLift);
             c.Register(RegenDelay);
+            c.Register(BossSleepRange);
+            c.Register(BossSleepAfter);
             c.Register(RecoilScale);
             c.Register(AdsRecoil);
             c.Register(PushScale);

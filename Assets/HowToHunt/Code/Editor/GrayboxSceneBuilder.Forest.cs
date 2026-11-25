@@ -81,7 +81,7 @@ namespace HowToHunt.Editor
             // Far below: a wooded valley floor (pines are added with the forest scatter) and cliff faces under the
             // edges of both maps, so nobody looks into the void. No collision: the hazard catches you long before.
             GameObject floor = Visual(root, "Ravine Floor", new Vector3((RouteStartX + FMaxX) * 0.5f + 100f, RavineFloorY - 0.5f, (FMinZ - FBand + RouteZ + 450f) * 0.5f), new Vector3(FMaxX - RouteStartX + 500f, 1f, RouteZ + 450f - (FMinZ - FBand)), "Grass");
-            floor.layer = BackdropLayer; // drawn past r_drawdistance, out to the horizon
+            floor.layer = BackdropLayer; // the horizon layer (drawn out to the fog)
             float cliffBottom = RavineFloorY - 1f;
             // Just past each terrain's edge, tall enough to hide it (the forest bands rise up to ~15 m); low where
             // the route passes: under the ledge and ramp 1, and where you fly in over the forest landing strip.

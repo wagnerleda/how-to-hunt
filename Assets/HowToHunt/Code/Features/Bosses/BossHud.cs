@@ -84,6 +84,7 @@ namespace HowToHunt.Bosses
             _wasAlive[p.Id] = alive;
             if (PlayerMotor.Local == null) return;
             if (alive) HuntFeedback.Message($"{p.Def.BossTitle} smells the bait and wakes in its den!", warning: true);
+            else if (p.Slept) HuntFeedback.Message($"{p.Def.BossTitle} went back to sleep in its den.");
             else HuntFeedback.Message($"{p.Def.BossTitle} has fallen!");
         }
 

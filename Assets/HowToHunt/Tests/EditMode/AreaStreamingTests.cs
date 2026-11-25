@@ -11,8 +11,8 @@ namespace HowToHunt.Tests
     {
         private const int Lab = 0, Plains = 1, East = 2, Forest = 3, South = 4, Desert = 5;
 
-        private static StreamedArea.Mode Map(int order, int here, int prev, int next) => StreamedArea.ModeFor(order, false, here, prev, next);
-        private static StreamedArea.Mode Route(int order, int here, int prev, int next) => StreamedArea.ModeFor(order, true, here, prev, next);
+        private static StreamedArea.Mode Map(int order, int here, int prev, int next) => StreamedArea.ModeFor(order, false, here, false, prev, next);
+        private static StreamedArea.Mode Route(int order, int here, int prev, int next) => StreamedArea.ModeFor(order, true, here, false, prev, next);
 
         [Test]
         public void InTheDesert_TheForestIsBareAndThePlainsAreGone()
@@ -44,6 +44,18 @@ namespace HowToHunt.Tests
             Assert.AreEqual(StreamedArea.Mode.Full, Route(East, Plains, Lab, Forest));
             Assert.AreEqual(StreamedArea.Mode.Hidden, Route(South, Plains, Lab, Forest));
             Assert.AreEqual(StreamedArea.Mode.Hidden, Map(Desert, Plains, Lab, Forest));
+        }
+
+        [Test]
+        public void OnASurfRoute_TheWholeCourseAndBothEndsAreDrawn()
+        {
+            // On the east route: Plains and Pine Forest in full (the pit's trees belong to the forest), nothing else.
+            Assert.AreEqual(StreamedArea.Mode.Full, StreamedArea.ModeFor(East, true, East, true, Plains, Forest));
+            Assert.AreEqual(StreamedArea.Mode.Full, StreamedArea.ModeFor(Plains, false, East, true, Plains, Forest));
+            Assert.AreEqual(StreamedArea.Mode.Full, StreamedArea.ModeFor(Forest, false, East, true, Plains, Forest));
+            Assert.AreEqual(StreamedArea.Mode.Hidden, StreamedArea.ModeFor(South, true, East, true, Plains, Forest));
+            Assert.AreEqual(StreamedArea.Mode.Hidden, StreamedArea.ModeFor(Desert, false, East, true, Plains, Forest));
+            Assert.AreEqual(StreamedArea.Mode.Hidden, StreamedArea.ModeFor(Lab, false, East, true, Plains, Forest));
         }
     }
 }

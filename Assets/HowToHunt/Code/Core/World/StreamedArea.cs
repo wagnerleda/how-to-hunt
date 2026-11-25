@@ -22,6 +22,7 @@ namespace HowToHunt.Core
             "How often (seconds) map visibility is checked.", CvarFlags.Archive, 0.05f, 2f);
 
         public enum Mode : byte { Full, Bare, Hidden }
+        private const float RouteHeadroom = 30f; // metres above a route's top still count as on it (jumping off the ledge)
 
         [Tooltip("The area itself (terrain, props, ramps), without its far horizon. Set by the scene builder.")]
         [SerializeField] private Bounds _bounds;
@@ -31,6 +32,8 @@ namespace HowToHunt.Core
         [SerializeField] private bool _route;
         [Tooltip("What stays drawn when this map is a neighbour: its bare terrain.")]
         [SerializeField] private Renderer[] _bare = new Renderer[0];
+        [Tooltip("This zone's own fog limit, metres (0 = the player's r_fog_distance). Nearer fog is cheaper.")]
+        [SerializeField] private float _fogDistance;
 
         private static readonly List<StreamedArea> Registered = new List<StreamedArea>();
         public static IReadOnlyList<StreamedArea> All => Registered;
@@ -51,8 +54,9 @@ namespace HowToHunt.Core
         public Mode Current => _mode;
         public bool Shown => _mode != Mode.Hidden;
 
-        public void Configure(Bounds bounds, int order, bool route, Renderer[] bare)
+        public void Configure(Bounds bounds, int order, bool route, Renderer[] bare, float fogDistance = 0f)
         {
+            _fogDistance = fogDistance;
             _bounds = bounds;
             _order = order;
             _route = route;
@@ -96,26 +100,44 @@ namespace HowToHunt.Core
             if (now < _nextCheck) return;
             _nextCheck = now + Interval.Value;
             Camera cam = Camera.main;
-            if (cam == null || !Enabled.Value) { ApplyAll(Mode.Full); return; }
-            StreamedArea here = CurrentMap(cam.transform.position);
+            if (cam == null || !Enabled.Value) { RenderDistance.LevelFog = 0f; ApplyAll(Mode.Full); return; }
+            Vector3 eye = cam.transform.position;
+            StreamedArea here = CurrentRoute(eye) ?? CurrentMap(eye);
+            RenderDistance.LevelFog = here != null ? here._fogDistance : 0f;
             if (here == null) { ApplyAll(Mode.Full); return; }
             int prev = NeighbourMap(here._order, -1), next = NeighbourMap(here._order, 1);
             for (int i = 0; i < Registered.Count; i++)
             {
                 StreamedArea a = Registered[i];
-                a.Apply(ModeFor(a._order, a._route, here._order, prev, next));
+                a.Apply(ModeFor(a._order, a._route, here._order, here._route, prev, next));
             }
         }
 
         /// <summary>
-        /// The rule, by chain order: the current map in full, the routes between it and its neighbour maps in full,
-        /// the neighbour maps bare, the rest hidden. prev/next are int.MinValue/MaxValue when there is none.
+        /// The rule, by chain order. In a map: that map in full, the routes between it and its neighbour maps in full,
+        /// the neighbour maps bare, the rest hidden. On a surf route (owner, 2026-11-25: the pit's trees only appeared
+        /// halfway down): the whole route and both maps it joins in full, the rest hidden. prev/next are the nearest maps
+        /// either side of the current zone (int.MinValue/MaxValue when there is none).
         /// </summary>
-        public static Mode ModeFor(int order, bool route, int current, int prev, int next)
+        public static Mode ModeFor(int order, bool route, int current, bool currentIsRoute, int prev, int next)
         {
+            if (currentIsRoute) return order == current || (!route && (order == prev || order == next)) ? Mode.Full : Mode.Hidden;
             if (order == current) return Mode.Full;
             if (route) return (order > prev && order < current) || (order > current && order < next) ? Mode.Full : Mode.Hidden;
             return order == prev || order == next ? Mode.Bare : Mode.Hidden;
+        }
+
+        /// <summary>The surf route this point is in (inside its bounds, with some headroom above), or null.</summary>
+        private static StreamedArea CurrentRoute(Vector3 p)
+        {
+            for (int i = 0; i < Registered.Count; i++)
+            {
+                StreamedArea a = Registered[i];
+                if (!a._route) continue;
+                Bounds b = a._bounds;
+                if (p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z && p.y >= b.min.y && p.y <= b.max.y + RouteHeadroom) return a;
+            }
+            return null;
         }
 
         /// <summary>The map (not a route) nearest this point: inside its bounds, or closest to them.</summary>
