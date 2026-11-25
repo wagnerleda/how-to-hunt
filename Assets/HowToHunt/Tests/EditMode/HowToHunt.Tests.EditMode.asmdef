@@ -9,6 +9,7 @@
         "HowToHunt.Economy",
         "HowToHunt.Avatar",
         "HowToHunt.Net",
+        "HowToHunt.Npcs",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

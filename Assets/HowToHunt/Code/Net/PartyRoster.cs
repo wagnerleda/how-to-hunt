@@ -97,7 +97,7 @@ namespace HowToHunt.Net
         public static event Action Changed;
 
         // --- masks: sent once on join (not with the 2 s roster) ------------------------------------------
-        public const int MaxMaskBytes = 1024;
+        public const int MaxMaskBytes = 8192; // a mask is at most Avatar.MaskData.MaxPackedBytes (5379)
         private static readonly Dictionary<int, byte[]> ServerMasks = new Dictionary<int, byte[]>();
         private static readonly Dictionary<int, byte[]> ClientMasks = new Dictionary<int, byte[]>();
 

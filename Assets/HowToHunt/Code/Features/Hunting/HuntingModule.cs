@@ -25,6 +25,7 @@ namespace HowToHunt.Hunting
         public void Register(ModuleRegistrar r)
         {
             HuntingCvars.Register(r.Console);
+            r.Console.Register(ViewmodelController.AdsSway);
             r.Command("wpn_autofire", "wpn_autofire <dummy 0-2> <shots>: test aimbot, shoots a dummy where this machine sees it (sv_cheats 1).", args =>
             {
                 if (args.Count < 2 || !int.TryParse(args[0], out int d) || !int.TryParse(args[1], out int n)) { r.Console.Warn("Usage: wpn_autofire <dummy> <shots>"); return; }

@@ -62,7 +62,7 @@ namespace HowToHunt.Npcs
             Transform mask = _head.Find("Mask");
             if (mask == null || _npc.Definition == null) return;
             var cells = new byte[MaskData.Cells];
-            if (!MaskData.FromText(_npc.Definition.Mask, cells)) NpcMasks.Make(_npc.Definition.Key, cells);
+            if (!MaskData.FromText(_npc.Definition.Mask, cells)) NpcMasks.Make(_npc.Definition, cells);
             Texture2D tex = MaskData.NewTexture("NPC Mask");
             MaskData.Paint(tex, cells, new Color32[MaskData.Cells]);
             var block = new MaterialPropertyBlock();

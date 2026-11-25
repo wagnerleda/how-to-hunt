@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HowToHunt.Core;
+using HowToHunt.Foundation;
 using HowToHunt.Player;
 using HowToHunt.Sim.Hunting;
 using HowToHunt.Sim.Movement;
@@ -61,6 +62,18 @@ namespace HowToHunt.Hunting
         private const float AdsSeconds = 0.16f, AdsForward = 0.24f, InspectSeconds = 2.6f;
 
         private float _ads;
+        // Aim-down-sights sway (owner, 2026-11-25: the gun stood dead still while aiming): it trails a little behind your
+        // turns and drifts in a slow figure of eight. Degrees: pitch, yaw, roll.
+        public static readonly FloatCvar AdsSway = new FloatCvar("cl_ads_sway", 1f, "How much the gun sways while aiming down the sights (0 = still).", CvarFlags.Archive, 0f, 3f);
+        private const float AdsSwayLook = 0.012f;     // degrees of lag per degree a second of turning
+        private const float AdsSwayMaxLag = 1.1f;     // degrees, at most
+        private const float AdsSwayIdle = 0.22f;      // degrees of drift
+        private const float AdsSwayIdleHz = 0.23f;    // one figure of eight every ~4 s
+        private const float AdsSwaySmooth = 0.11f;    // seconds the lag takes to follow
+        private const float AdsSwayShift = 0.0016f;   // metres the gun slides per degree of sway
+        private Vector3 _adsSway, _adsSwayVel;
+        private float _swayYaw, _swayPitch, _swayTime;
+        private bool _hasSwayView;
 
         /// <summary>Local: how far the gun is raised to the eye (0 hip .. 1 aiming down sights).</summary>
         public static float AdsBlend { get; private set; }
@@ -362,6 +375,7 @@ namespace HowToHunt.Hunting
             // Aim down sights: the sight comes to the eye on the view axis; sway and bob mostly settle.
             bool gun = gunHeld;
             float a = Smooth(_ads);
+            Vector3 adsSway = UpdateAdsSway(dt);
             if (a > 0f)
             {
                 GunSetup sights = Loadouts.Local.Setup(_tool);
@@ -372,6 +386,9 @@ namespace HowToHunt.Hunting
                 Vector3 adsPos = new Vector3(0f, 0f, AdsForward) - adsRot * sights.SightOffset + (bob + _springPos) * 0.2f;
                 position = Vector3.Lerp(position, adsPos, a);
                 rotation = Quaternion.Slerp(rotation, adsRot, a);
+                // A little life in the aim: turned about the grip, so the sights drift just off the eye line.
+                rotation = Quaternion.Euler(adsSway * a) * rotation;
+                position += new Vector3(adsSway.y, -adsSway.x, 0f) * (AdsSwayShift * a);
             }
             float zoom = gun ? Mathf.Lerp(1f, Mathf.Max(1f, Loadouts.Local.Setup(_tool).AdsZoom), a) : 1f;
             PlayerCamera.Zoom = zoom;
@@ -541,6 +558,25 @@ namespace HowToHunt.Hunting
             Quaternion swing = Quaternion.Euler(_freeAimShown);
             position = swing * position;
             rotation = swing * rotation;
+        }
+
+        /// <summary>The aim sway for this frame (degrees): lag behind the turn on a spring, plus a slow idle drift.</summary>
+        private Vector3 UpdateAdsSway(float dt)
+        {
+            PlayerMotor me = PlayerMotor.Local;
+            if (me == null || dt <= 0f) return _adsSway;
+            if (!_hasSwayView) { _swayYaw = me.ViewYaw; _swayPitch = me.ViewPitch; _hasSwayView = true; }
+            float yawRate = Mathf.DeltaAngle(_swayYaw, me.ViewYaw) / dt, pitchRate = (me.ViewPitch - _swayPitch) / dt;
+            _swayYaw = me.ViewYaw;
+            _swayPitch = me.ViewPitch;
+            float k = AdsSway.Value;
+            _swayTime += dt * AdsSwayIdleHz * Mathf.PI * 2f;
+            var target = new Vector3(
+                Mathf.Clamp(pitchRate * AdsSwayLook, -AdsSwayMaxLag, AdsSwayMaxLag) + Mathf.Sin(_swayTime * 2f) * AdsSwayIdle * 0.5f,
+                Mathf.Clamp(-yawRate * AdsSwayLook, -AdsSwayMaxLag, AdsSwayMaxLag) + Mathf.Sin(_swayTime) * AdsSwayIdle,
+                Mathf.Clamp(-yawRate * AdsSwayLook, -AdsSwayMaxLag, AdsSwayMaxLag) * 1.5f) * k;
+            _adsSway = Vector3.SmoothDamp(_adsSway, target, ref _adsSwayVel, AdsSwaySmooth, Mathf.Infinity, dt);
+            return _adsSway;
         }
 
         /// <summary>A quick smooth bump centred on <paramref name="at"/>, <paramref name="half"/> wide each side.</summary>

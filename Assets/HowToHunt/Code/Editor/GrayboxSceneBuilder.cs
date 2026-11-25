@@ -398,26 +398,45 @@ namespace HowToHunt.Editor
         }
 
         /// <summary>
-        /// Each map and surf route is drawn only while the camera is near it (StreamedArea): its bounds are the area
-        /// itself, without its horizon (Backdrop layer) or the invisible collision boxes.
+        /// The world's chain for StreamedArea, start to end, maps and the surf routes between them interleaved. The
+        /// lab's loose pieces are gathered under one root first. Each area's bounds are the area itself, without its
+        /// horizon (Backdrop layer) or the invisible collision boxes; its bare renderers are its terrain (and the lab's
+        /// floor and walls), all that shows while it's a neighbour.
         /// </summary>
+        private static readonly (string name, bool route)[] Chain =
+        {
+            (LabArea, false), ("Plains", false), ("Surf Route East", true), ("Pine Forest", false),
+            ("Surf Route South (hard)", true), ("Red Desert", false),
+        };
+
+        private const string LabArea = "Movement Lab";
+
         private static void StreamAreas(Transform level)
         {
-            string[] areas = { "Plains", "Pine Forest", "Red Desert", "Surf Route East", "Surf Route South (hard)" };
-            foreach (string name in areas)
+            var lab = new GameObject(LabArea).transform;
+            lab.SetParent(level, false);
+            var loose = new List<Transform>();
+            foreach (Transform child in level)
+                if (child != lab && System.Array.FindIndex(Chain, c => c.name == child.name) < 0) loose.Add(child);
+            foreach (Transform t in loose) t.SetParent(lab, true);
+
+            for (int order = 0; order < Chain.Length; order++)
             {
+                (string name, bool route) = Chain[order];
                 Transform root = level.Find(name);
                 if (root == null) { Debug.LogWarning($"[HowToHunt] No area '{name}' to stream"); continue; }
                 Bounds b = default;
                 bool any = false;
+                var bare = new List<Renderer>();
                 foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
                 {
+                    if (r.GetComponent<SimTerrain>() != null || (root == lab && (r.name == "Ground" || r.name.StartsWith("Wall ", System.StringComparison.Ordinal)))) bare.Add(r);
                     if (!r.enabled || r.gameObject.layer == BackdropLayer || r is ParticleSystemRenderer || r.bounds.size == Vector3.zero) continue;
                     if (!any) { b = r.bounds; any = true; }
                     else b.Encapsulate(r.bounds);
                 }
                 if (!any) continue;
-                root.gameObject.AddComponent<StreamedArea>().Configure(b);
+                root.gameObject.AddComponent<StreamedArea>().Configure(b, order, route, bare.ToArray());
             }
         }
 

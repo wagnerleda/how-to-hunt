@@ -6,11 +6,13 @@ namespace HowToHunt.Avatar
 {
     /// <summary>
     /// Main menu > Customize your mask: paint your tribe mask cell by cell (left click paints, right click cuts away,
-    /// mirror paints both halves, fill floods an area), with a turning preview of your head wearing it. Saved to cl_mask.
+    /// middle click picks a colour, mirror paints both halves, fill floods an area), or import a picture onto it, with
+    /// a turning preview of your head wearing it. Saved to cl_mask.
     /// </summary>
     public sealed class MaskEditor : MonoBehaviour
     {
-        private const float Cell = 15f, PanelW = 860f, PanelH = 560f;
+        private const float Cell = 7.5f, PanelW = 860f, PanelH = 560f;
+        private const int MaxImageBytes = 32 * 1024 * 1024;
         private const int PreviewW = 240, PreviewH = 300;
         private static readonly Vector3 Stage = new Vector3(0f, -950f, 0f);
 
@@ -25,6 +27,8 @@ namespace HowToHunt.Avatar
         private bool _mirror = true, _fill;
         private Texture2D _white, _maskTexture;
         private GUIStyle _title, _label, _small, _button;
+        private Texture2D _checker;
+        private string _importNote;
 
         private GameObject _stage;
         private Camera _camera;
@@ -104,6 +108,10 @@ namespace HowToHunt.Avatar
             plate.AddComponent<MeshFilter>().sharedMesh = maskMesh;
             var r = plate.AddComponent<MeshRenderer>();
             r.sharedMaterial = mask;
+            var strap = new GameObject("Strap");
+            strap.transform.SetParent(plate.transform, false);
+            strap.AddComponent<MeshFilter>().sharedMesh = Resources.Load<Mesh>("Avatar/MaskStrap");
+            strap.AddComponent<MeshRenderer>().sharedMaterial = Resources.Load<Material>("Avatar/M_Strap");
             var block = new MaterialPropertyBlock();
             block.SetTexture("_BaseMap", _maskTexture);
             r.SetPropertyBlock(block);
@@ -185,6 +193,35 @@ namespace HowToHunt.Avatar
             }
         }
 
+        // --- importing a picture ----------------------------------------------------------------------------------
+
+        /// <summary>Pick a PNG or JPG and paste it over the mask (outline and eye holes stay cut). Undo brings it back.</summary>
+        private void ImportImage()
+        {
+            string path = ImageFileDialog.Open("A picture for your mask");
+            if (string.IsNullOrEmpty(path)) { _importNote = ImageFileDialog.Supported ? null : "Importing needs Windows."; return; }
+            try
+            {
+                var info = new System.IO.FileInfo(path);
+                if (!info.Exists || info.Length > MaxImageBytes) { _importNote = "That file is too big."; return; }
+                var image = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                bool ok = image.LoadImage(System.IO.File.ReadAllBytes(path));
+                if (ok)
+                {
+                    MaskData.PasteImage(image.GetPixels32(), image.width, image.height, _cells);
+                    _importNote = "Pasted " + System.IO.Path.GetFileName(path) + ".";
+                    Repaint();
+                }
+                else _importNote = "Not a PNG or JPG picture.";
+                Destroy(image);
+            }
+            catch (System.Exception e)
+            {
+                _importNote = "Could not read that file.";
+                Debug.LogWarning("[Mask] Import failed: " + e.Message);
+            }
+        }
+
         // --- drawing ---------------------------------------------------------------------------------------------
 
         private void DrawGui()
@@ -223,15 +260,9 @@ namespace HowToHunt.Avatar
 
         private void DrawCanvas(Rect canvas)
         {
-            for (int r = 0; r < MaskData.Height; r++)
-            for (int c = 0; c < MaskData.Width; c++)
-            {
-                var cell = new Rect(canvas.x + c * Cell, canvas.y + r * Cell, Cell, Cell);
-                byte v = _cells[r * MaskData.Width + c];
-                // Cut cells show a checkerboard (see-through).
-                GUI.color = v == MaskData.Cut ? ((r + c) % 2 == 0 ? new Color(0.24f, 0.23f, 0.22f) : new Color(0.3f, 0.29f, 0.28f)) : (Color)MaskData.Palette[v];
-                GUI.DrawTexture(cell, _white);
-            }
+            // Cut cells show a checkerboard (see-through) under the mask's own texture.
+            GUI.DrawTextureWithTexCoords(canvas, _checker, new Rect(0f, 0f, MaskData.Width * 0.5f, MaskData.Height * 0.5f));
+            if (_maskTexture != null) GUI.DrawTexture(canvas, _maskTexture, ScaleMode.StretchToFill, true);
             // The middle line helps keep both halves even.
             GUI.color = new Color(1f, 1f, 1f, 0.12f);
             GUI.DrawTexture(new Rect(canvas.center.x - 0.5f, canvas.y, 1f, canvas.height), _white);
@@ -242,6 +273,13 @@ namespace HowToHunt.Avatar
             {
                 int c = Mathf.Clamp((int)((e.mousePosition.x - canvas.x) / Cell), 0, MaskData.Width - 1);
                 int r = Mathf.Clamp((int)((e.mousePosition.y - canvas.y) / Cell), 0, MaskData.Height - 1);
+                if (e.button == 2)
+                {
+                    byte picked = _cells[r * MaskData.Width + c];
+                    if (picked != MaskData.Cut) _colour = picked; // middle click: pick a colour off the mask
+                    e.Use();
+                    return;
+                }
                 byte colour = e.button == 1 ? MaskData.Cut : _colour;
                 if (_fill && e.type == EventType.MouseDown)
                 {
@@ -282,17 +320,16 @@ namespace HowToHunt.Avatar
             float y = area.y;
             GUI.Label(new Rect(area.x, y, area.width, 20f), "Brush", _label);
             y += 22f;
-            if (GUI.Toggle(new Rect(area.x, y, 84f, 28f), _brush == 1, "Small", _button)) _brush = 1;
-            if (GUI.Toggle(new Rect(area.x + 92f, y, 84f, 28f), _brush == 2, "Big", _button)) _brush = 2;
+            if (GUI.Toggle(new Rect(area.x, y, 56f, 28f), _brush == 1, "Fine", _button)) _brush = 1;
+            if (GUI.Toggle(new Rect(area.x + 60f, y, 56f, 28f), _brush == 2, "Mid", _button)) _brush = 2;
+            if (GUI.Toggle(new Rect(area.x + 120f, y, 56f, 28f), _brush == 4, "Big", _button)) _brush = 4;
             y += 36f;
             _mirror = GUI.Toggle(new Rect(area.x, y, 84f, 28f), _mirror, "Mirror", _button);
             _fill = GUI.Toggle(new Rect(area.x + 92f, y, 84f, 28f), _fill, "Fill", _button);
             y += 44f;
             if (GUI.Button(new Rect(area.x, y, 176f, 28f), "Blank mask", _button))
             {
-                for (int r = 0; r < MaskData.Height; r++)
-                for (int c = 0; c < MaskData.Width; c++)
-                    _cells[r * MaskData.Width + c] = MaskData.InsideShield(c, r) ? (byte)1 : MaskData.Cut;
+                System.Array.Copy(MaskData.Blank(1), _cells, MaskData.Cells);
                 Repaint();
             }
             y += 34f;
@@ -307,12 +344,19 @@ namespace HowToHunt.Avatar
                 System.Array.Copy(_undo, _cells, MaskData.Cells);
                 Repaint();
             }
+            y += 34f;
+            if (GUI.Button(new Rect(area.x, y, 176f, 28f), "Import image...", _button)) ImportImage();
+            if (!string.IsNullOrEmpty(_importNote)) GUI.Label(new Rect(area.x, y + 30f, 140f, 40f), _importNote, _small);
         }
 
         private void EnsureStyles()
         {
             if (_white != null) return;
             _white = Texture2D.whiteTexture;
+            _checker = new Texture2D(2, 2, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat, name = "Mask Checker" };
+            Color32 a = new Color32(61, 59, 56, 255), b = new Color32(77, 74, 71, 255);
+            _checker.SetPixels32(new[] { a, b, b, a });
+            _checker.Apply(false);
             _title = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.Bold, normal = { textColor = new Color(1f, 0.95f, 0.85f) } };
             _label = new GUIStyle(GUI.skin.label) { fontSize = 15, normal = { textColor = new Color(0.95f, 0.92f, 0.85f) } };
             _small = new GUIStyle(GUI.skin.label) { fontSize = 13, wordWrap = true, normal = { textColor = new Color(0.78f, 0.75f, 0.7f) } };
